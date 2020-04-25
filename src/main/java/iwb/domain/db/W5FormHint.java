@@ -14,6 +14,10 @@ import org.hibernate.annotations.Immutable;
 @Table(name="w5_form_hint",schema="iwb")
 public class W5FormHint implements java.io.Serializable, W5Base {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 10091283746L;
 	private int formHintId;
 	private int formId;
 	
@@ -109,4 +113,13 @@ public class W5FormHint implements java.io.Serializable, W5Base {
 		this.projectUuid = projectUuid;
 	}
 
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5FormHint))return false;
+		W5FormHint c = (W5FormHint)o;
+		return c!=null && c.getFormHintId()==getFormHintId() && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getFormHintId();
+	}	
 }

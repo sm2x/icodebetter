@@ -15,6 +15,10 @@ import org.hibernate.annotations.Immutable;
 @Table(name="w5_custom_grid_column_condtion", schema="iwb")
 public class W5CustomGridColumnCondition implements java.io.Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 338811232132131L;
 	private int customGridColumnConditionId;
 	private int gridId;
 	private int queryFieldId;
@@ -85,5 +89,14 @@ public class W5CustomGridColumnCondition implements java.io.Serializable {
 	public void setProjectUuid(String projectUuid) {
 		this.projectUuid = projectUuid;
 	}
+
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5CustomGridColumnCondition))return false;
+		W5CustomGridColumnCondition c = (W5CustomGridColumnCondition)o;
+		return c!=null && c.getCustomGridColumnConditionId()==getCustomGridColumnConditionId() && c.getProjectUuid().equals(projectUuid);
+	}
 	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getCustomGridColumnConditionId();
+	}
 }

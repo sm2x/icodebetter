@@ -45,7 +45,7 @@ public class W5FormValueCell implements java.io.Serializable {
 	public void setVal(String val) {
 		this.val = val;
 	}
-	@Id
+
 	@Column(name="customization_id")
 	public int getCustomizationId() {
 		return customizationId;
@@ -58,7 +58,7 @@ public class W5FormValueCell implements java.io.Serializable {
 
 	
 	private String projectUuid;
-	@Id
+
 	@Column(name="project_uuid")
 	public String getProjectUuid() {
 		return projectUuid;
@@ -67,4 +67,7 @@ public class W5FormValueCell implements java.io.Serializable {
 	public void setProjectUuid(String projectUuid) {
 		this.projectUuid = projectUuid;
 	}
+	
+
+
 }

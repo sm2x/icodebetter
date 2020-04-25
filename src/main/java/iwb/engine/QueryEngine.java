@@ -13,9 +13,8 @@ import org.springframework.stereotype.Component;
 import iwb.cache.FrameworkCache;
 import iwb.cache.FrameworkSetting;
 import iwb.cache.LocaleMsgCache;
-import iwb.custom.trigger.QueryTrigger;
+import iwb.dao.metadata.MetadataLoader;
 import iwb.dao.rdbms_impl.ExternalDBSql;
-import iwb.dao.rdbms_impl.MetadataLoaderDAO;
 import iwb.dao.rdbms_impl.PostgreSQL;
 import iwb.domain.db.W5GridColumn;
 import iwb.domain.db.W5LookUp;
@@ -43,7 +42,7 @@ public class QueryEngine {
 	
 	@Lazy
 	@Autowired
-	private MetadataLoaderDAO metaDataDao;
+	private MetadataLoader metadataLoader;
 
 
 	@Lazy
@@ -66,7 +65,7 @@ public class QueryEngine {
 
 	public W5QueryResult executeQuery(Map<String, Object> scd, int queryId, Map<String, String> requestParams) {
 		boolean developer = scd.get("roleId") != null && GenericUtil.uInt(scd.get("roleId")) != 0;
-		W5QueryResult queryResult = metaDataDao.getQueryResult(scd, queryId);
+		W5QueryResult queryResult = metadataLoader.getQueryResult(scd, queryId);
 		if (queryId != 1 && queryId != 824 && queryResult.getMainTable() != null
 				&& (!FrameworkSetting.debug || developer)) {
 			switch (queryResult.getQuery().getQuerySourceTip()) {
@@ -102,8 +101,8 @@ public class QueryEngine {
 			W5WsMethod wsm = FrameworkCache.getWsMethod(scd, queryResult.getQuery().getMainTableId());
 			if (!FrameworkSetting.redisCache && wsm.get_params() == null) {
 				wsm.set_params(
-						dao.find("from W5WsMethodParam t where t.wsMethodId=? AND t.projectUuid=? order by t.tabOrder",
-								wsm.getWsMethodId(), (String) scd.get("projectId")));
+						metadataLoader.findWsMethodParams(wsm.getWsMethodId(), wsm.getProjectUuid())
+						);
 				wsm.set_paramMap(new HashMap());
 				for (W5WsMethodParam wsmp : wsm.get_params())
 					wsm.get_paramMap().put(wsmp.getWsMethodParamId(), wsmp);
@@ -127,8 +126,8 @@ public class QueryEngine {
 			rc.append("function _x_(x){\nreturn {").append(queryResult.getQuery().getSqlSelect())
 					.append("\n}}\nvar result=[], q=$.REST('").append(wsm.get_ws().getDsc() + "." + wsm.getDsc())
 					.append("',").append(GenericUtil.fromMapToJsonString2(m2))
-					.append(");\nif(q && q.get('success')){q=q.get('").append(parentParam.getDsc())
-					.append("');for(var i=0;i<q.size();i++)result.push(_x_(q.get(i)));}");
+					.append(");\nif(q && q.get('success')){var q2=q.get('").append(parentParam.getDsc())
+					.append("');if(q2)for(var i=0;i<q2.size();i++)result.push(_x_(q2.get(i)));}");
 			scriptEngine.executeQueryAsScript(queryResult, rc.toString());
 			break;
 
@@ -137,17 +136,8 @@ public class QueryEngine {
 			break;
 		default:
 			queryResult.setViewLogModeTip((short) GenericUtil.uInt(requestParams, "_vlm"));
-
-			//
-			// queryResult.setOrderBy(PromisUtil.uStrNvl(requestParams.get(PromisUtil.uStrNvl(PromisSetting.appSettings.get("sql_sort"),"sort")),
-			// queryResult.getQuery().getSqlOrderby()));
 			if (!GenericUtil.isEmpty(requestParams.get("sort"))) {
 				if (requestParams.get("sort").equals(FieldDefinitions.queryFieldName_Comment)) {
-					// queryResult.setOrderBy("coalesce((select
-					// qz.last_comment_id from
-					// iwb.w5_comment_summary qz where qz.table_id= AND
-					// qz.table_pk= AND
-					// qz.customization_id=),0) DESC");
 					queryResult.setOrderBy(FieldDefinitions.queryFieldName_Comment); // +
 																						// "
 																						// "
@@ -196,7 +186,6 @@ public class QueryEngine {
 				queryResult.setFetchRowCount(GenericUtil.uIntNvl(requestParams, "limit", GenericUtil.uInt(requestParams, "firstLimit")));
 				queryResult.setStartRowNumber(GenericUtil.uInt(requestParams, "start"));
 				if(queryResult.getQuery().getQuerySourceTip()!=4658) {
-					QueryTrigger.beforeExecuteQuery(queryResult, dao);
 					dao.runQuery(queryResult);
 					if (queryResult.getQuery().getShowParentRecordFlag() != 0 && queryResult.getData() != null) {
 						for (Object[] oz : queryResult.getData()) {
@@ -206,7 +195,6 @@ public class QueryEngine {
 								oz[oz.length - 1] = dao.findRecordParentRecords(scd, tableId, tablePk, 0, true);
 						}
 					}
-					QueryTrigger.afterExecuteQuery(queryResult, dao);
 				} else {
 					externalDB.runQuery(queryResult);
 
@@ -224,7 +212,7 @@ public class QueryEngine {
 																													// alinacak
 					W5QueryResult lookupQueryResult = qrm.get(qf.getLookupQueryId());
 					if (lookupQueryResult == null) {
-						lookupQueryResult = metaDataDao.getQueryResult(scd, qf.getLookupQueryId());
+						lookupQueryResult = metadataLoader.getQueryResult(scd, qf.getLookupQueryId());
 						lookupQueryResult.setErrorMap(new HashMap());
 						lookupQueryResult.setRequestParams(new HashMap());
 						lookupQueryResult.setOrderBy(lookupQueryResult.getQuery().getSqlOrderby());
@@ -233,9 +221,7 @@ public class QueryEngine {
 							W5WsMethod wsm = FrameworkCache.getWsMethod(scd,
 									lookupQueryResult.getQuery().getMainTableId());
 							if (!FrameworkSetting.redisCache && wsm.get_params() == null) {
-								wsm.set_params(dao.find(
-										"from W5WsMethodParam t where t.wsMethodId=? AND t.projectUuid=? order by t.tabOrder",
-										wsm.getWsMethodId(), (String) scd.get("projectId")));
+								wsm.set_params(metadataLoader.findWsMethodParams(wsm.getWsMethodId(), wsm.getProjectUuid()));
 								wsm.set_paramMap(new HashMap());
 								for (W5WsMethodParam wsmp : wsm.get_params())
 									wsm.get_paramMap().put(wsmp.getWsMethodParamId(), wsmp);
@@ -323,15 +309,13 @@ public class QueryEngine {
 
 	public Map<String, Object> executeQuery2Map(Map<String, Object> scd, int queryId,
 			Map<String, String> requestParams) {
-		W5QueryResult queryResult = metaDataDao.getQueryResult(scd, queryId);
+		W5QueryResult queryResult = metadataLoader.getQueryResult(scd, queryId);
 		queryResult.setErrorMap(new HashMap());
 		queryResult.setRequestParams(requestParams);
 		queryResult.prepareQuery(null);
 		if (queryResult.getErrorMap().isEmpty()) {
-			QueryTrigger.beforeExecuteQuery(queryResult, dao);
 			Map<String, Object> m = dao.runSQLQuery2Map(queryResult.getExecutedSql(), queryResult.getSqlParams(),
 					queryResult.getQuery().get_queryFields());
-			QueryTrigger.afterExecuteQuery(queryResult, dao);
 			return m;
 		}
 		return null;
@@ -341,7 +325,7 @@ public class QueryEngine {
 	public List<W5ReportCellHelper> getGridReportResult(Map<String, Object> scd, int gridId, String gridColumns,
 			Map<String, String> requestParams) {
 		String xlocale = (String) scd.get("locale");
-		W5GridResult gridResult = metaDataDao.getGridResult(scd, gridId, requestParams, true);
+		W5GridResult gridResult = metadataLoader.getGridResult(scd, gridId, requestParams, true);
 		int queryId = gridResult.getGrid().getQueryId();
 		requestParams.remove("firstLimit");
 		requestParams.remove("limit");
@@ -356,7 +340,7 @@ public class QueryEngine {
 			// cell_tip, colspan, tag));
 			list.add(
 					new W5ReportCellHelper(0, 1,
-							LocaleMsgCache.get2((Integer) scd.get("customizationId"), xlocale,
+							LocaleMsgCache.get2(scd,
 									gridResult.getGrid().getLocaleMsgKey()),
 							(short) 0, (short) 1, (short) 20, "1;30,70")); // baslik:
 																			// id,
@@ -569,7 +553,7 @@ public class QueryEngine {
 		
 		W5GridReportHelper result = new W5GridReportHelper(gridId);
 		String xlocale = (String) scd.get("locale");
-		W5GridResult gridResult = metaDataDao.getGridResult(scd, gridId, requestParams, true);
+		W5GridResult gridResult = metadataLoader.getGridResult(scd, gridId, requestParams, true);
 		int queryId = gridResult.getGrid().getQueryId();
 		requestParams.remove("firstLimit");
 		requestParams.remove("limit");

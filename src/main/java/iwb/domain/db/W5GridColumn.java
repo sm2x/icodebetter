@@ -20,6 +20,11 @@ import iwb.util.GenericUtil;
 @Table(name="w5_grid_column",schema="iwb")
 public class W5GridColumn implements java.io.Serializable, W5Base {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 9876543215671L;
+
 	private int gridColumnId;
 
 	private int queryFieldId;
@@ -309,6 +314,14 @@ public class W5GridColumn implements java.io.Serializable, W5Base {
 	}
 
 
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5GridColumn))return false;
+		W5GridColumn c = (W5GridColumn)o;
+		return c!=null && c.getGridColumnId()==getGridColumnId() && c.getProjectUuid().equals(projectUuid);
+	}
 	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getGridColumnId();
+	}		
 		
 }

@@ -8,13 +8,16 @@ import javax.persistence.Transient;
 
 import org.hibernate.annotations.Immutable;
 
-// Generated Feb 6, 2007 10:20:24 AM by Hibernate Tools 3.2.0.b9
 
 @Entity
 @Immutable
 @Table(name="w5_object_menu_item",schema="iwb")
 public class W5ObjectMenuItem implements java.io.Serializable, W5Base {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1918273645132L;
 	private int menuItemId;
 	private short tabOrder;
 	private short objectTip; // hangi tablodan geldigi: 2:table_id, 1:gridId, 3:dbFunc
@@ -143,5 +146,14 @@ public class W5ObjectMenuItem implements java.io.Serializable, W5Base {
 	public void setProjectUuid(String projectUuid) {
 		this.projectUuid = projectUuid;
 	}
+
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5ObjectMenuItem))return false;
+		W5ObjectMenuItem c = (W5ObjectMenuItem)o;
+		return c!=null && c.getMenuItemId()==getMenuItemId() && c.getProjectUuid().equals(projectUuid);
+	}
 	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getMenuItemId();
+	}	
 }

@@ -98,7 +98,7 @@ var defineJSCompletionItemProvider = {
         {
           label: '$.query',
           kind: monaco.languages.CompletionItemKind.Function,
-          documentation: "Run iCodeBetter Query",
+          documentation: "Run Code2 Query",
           detail: 'Array',insertText:'$.query(queryId, {params})'
         },
         {
@@ -110,7 +110,7 @@ var defineJSCompletionItemProvider = {
         {
           label: '$.execFunc',
           kind: monaco.languages.CompletionItemKind.Function,
-          documentation: "Execute iCodeBetter Global Funcction",
+          documentation: "Execute Code2 Global Funcction",
           detail: 'W5GlobalFuncResult',insertText:'$.execFunc(globalFuncId, {params})'
         },
         {
@@ -128,19 +128,19 @@ var defineJSCompletionItemProvider = {
             label: '$.influxQuery',
             kind: monaco.languages.CompletionItemKind.Function,
             documentation: "Influx Query",
-            detail: 'null',insertText:'$.influxQuery("host", "dbName", "select X from Y where Z=1")'
+            detail: 'null',insertText:'$.influxQuery(externalDbId, \'select X from Y where Z=1\')'
         },
         {
         	label: '$.influxWrite',
             kind: monaco.languages.CompletionItemKind.Function,
             documentation: "Influx Query",
-            detail: 'null',insertText:'$.influxWrite("host", "dbName", "measName", {tags}, {fields})'
+            detail: 'null',insertText:'$.influxWrite(externalDbId, "measName", {tags}, {fields})'
 	    },
         {
         	label: '$.influxWriteRaw',
             kind: monaco.languages.CompletionItemKind.Function,
             documentation: "Influx Query",
-            detail: 'null',insertText:'$.influxWriteRaw("host", "dbName", "meas_name,tag1=1 field1=2")'
+            detail: 'null',insertText:'$.influxWriteRaw(externalDbId, "meas_name,tag1=1 field1=2")'
 	    },{
             label: '$.redisClient',
             kind: monaco.languages.CompletionItemKind.Function,

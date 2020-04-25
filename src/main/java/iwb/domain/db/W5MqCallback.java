@@ -15,6 +15,11 @@ import org.hibernate.annotations.Immutable;
 @Table(name="w5_mq_callback",schema="iwb")
 public class W5MqCallback implements java.io.Serializable, W5Base{
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 133341129293823L;
+
 	private int mqCallbackId;
 
 	private int mqId;
@@ -93,6 +98,14 @@ public class W5MqCallback implements java.io.Serializable, W5Base{
 		this.funcId = funcId;
 	}
 	
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5MqCallback))return false;
+		W5MqCallback c = (W5MqCallback)o;
+		return c!=null && c.getMqCallbackId()==getMqCallbackId() && c.getProjectUuid().equals(projectUuid);
+	}
 	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getMqCallbackId();
+	}		
 	
 }

@@ -93,7 +93,7 @@ public class RptPdfRenderer extends AbstractPdfView {
 
 		table.setWidthPercentage(100);
 		table.getDefaultCell().setColspan(columnCount);
-        try {        	        	 	       
+        if(!GenericUtil.isEmpty(logoFilePath))try {        	        	 	       
             Image x = Image.getInstance(logoFilePath);
             x.scalePercent(50);
             Chunk ck = new Chunk(x, 0, 0);

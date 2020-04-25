@@ -344,7 +344,7 @@ function approvalHtml(x, y, z) {
     z.data.pkpkpk_arf_id +
     ')"';
   if (z.data.app_role_ids_qw_ || z.data.app_user_ids_qw_) {
-    str += ' title=":' + getLocMsg("js_onaylayacaklar");
+    str += ' title=":' + getLocMsg("approvals");
     var bb = false;
     if (z.data.app_role_ids_qw_) {
       str +=
@@ -979,14 +979,7 @@ function renderTableRecordInfo(j) {
       ' &nbsp; <img src="/images/custom/bullet_file_attach.png" title="Related Files"> ' +
       j.fileAttachCount;
   s += "</td><td width=30% align=right valign=top>";
-  if (false && j.formSmsMailCount)
-    s +=
-      ' &nbsp; <img src="/ext3.4.1/custom/images/email-16.png" title="EMail/SMS Notifications"> ' +
-      j.formSmsMailCount;
-  if (false && j.conversionCount)
-    s +=
-      ' &nbsp; <img src="/ext3.4.1/custom/images/gear-16.png" title="Form Conversions"> ' +
-      j.conversionCount;
+
   s += "</td></tr></table>";
   var rs = j.parents;
   var ss = "";
@@ -1060,7 +1053,7 @@ function renderTableRecordInfo(j) {
           ');return false;">' +
           r.tdsc +
           "</a>"
-        : r.dsc) +
+        : r.tdsc) +
       " <span style='background: #F44336;padding: 1px 6px;border-radius: 20px;color: white;'>" +
       r.tc +
       (_app.table_children_max_record_number &&
@@ -1681,7 +1674,7 @@ function fnNewFileAttachment4Form(tid, tpk, not_image_flag) {
       id: tid + "xf",
       href: href,
       iconCls: "icon-attachment",
-      title: "Dosya Ekle"
+      title: "Attach File"
     }
   });
   return false;
@@ -2241,6 +2234,7 @@ function addDefaultSpecialButtons(xbuttons, xgrid) {
             for (var qi = 0; qi < sels.length; qi++)
               mainPanel.loadTab({
                 attributes: {
+                  __grid:xgrid,
                   href:
                     "showForm?a=2&_fid=" +
                     aq._fid +
@@ -2355,26 +2349,7 @@ function addDefaultSpecialButtons(xbuttons, xgrid) {
                 mainPanel.loadTab(cfg);
               }
           }
-         /* {
-            text: getLocMsg("js_add_from_external_url"),
-            _grid: xgrid,
-            handler: fnNewFileAttachment4ExternalUrl
-          },
-          {
-            text: getLocMsg("js_daha_once_eklenmis_dosyalardan_ekle"),
-            _grid: xgrid,
-            handler: function(a, b) {
-              mainPanel.loadTab({
-                attributes: {
-                  _title_: xgrid.name,
-                  modalWindow: true,
-                  href: "showPage?_tid=238&_gid1=672",
-                  tableId: a._grid.crudTableId,
-                  tablePk: getSel(a._grid).id
-                }
-              });
-            }
-          }*/
+        
         ]
       });
     } else {
@@ -2642,6 +2617,17 @@ function addDefaultReportButtons(xbuttons, xgrid, showMasterDetailReport) {
       });
     }
   }
+  
+  if(xgrid.gsheet || (_app.grid2gsheet && 1*_app.grid2gsheet))xxmenu.push('-',{
+      id: "btn_gsheet_" + xgrid.id,
+      text: '<i class="icon-social-google"></i>Sheet',
+      tooltip:'Export to Google Spreadsheet',
+      cls: "x-btn-no-icon",
+      _activeOnSelection: false,
+      _grid: xgrid,
+      ref: "../btnGSheet",
+      handler: xgrid.fnGSheet || fnGSheet
+  });
   xbuttons.push({
     id: "btn_reports_" + xgrid.id,
     // tooltip: getLocMsg("reports"),
@@ -2760,7 +2746,7 @@ function addDefaultPrivilegeButtons(xbuttons, xgrid) {
       });
       bx = true;
     }
-    if (xgrid.crudTableId) {
+    if (false && xgrid.crudTableId) {
       if (bx) xxmenu.push("-");
       else bx = true;
       xxmenu.push({
@@ -2825,6 +2811,75 @@ function addDefaultCommitButtons(xbuttons, xgrid) {
     });
 }
 
+function exportToGSheet(a, url){
+    var g = a._grid;
+    if (false && g.ds.getTotalCount() == 0) {
+        Ext.infoMsg.alert("info", getLocMsg("no_data"));
+        return;
+    }
+    
+
+
+    var cols = "";
+    for (var z = 0; z < g.columns.length; z++) {
+      if (!g.columns[z].hidden && g.columns[z].dataIndex)
+        cols += ";" + g.columns[z].dataIndex + "," + g.columns[z].width;
+    }
+	iwb.ajax.execFunc(1962, Object.assign({_mask:!0, _columns:cols.substr(1), _url:url, _gridId:a._grid.gridId, _access_token:_scd.googleAccessToken}, a._grid.ds.baseParams||{}),
+			(mj)=>{
+				if(mj.result){
+					if(mj.result.pout_error){
+						Ext.infoMsg.msg("error", mj.result.pout_error);
+						_scd.googleAccessToken = null;
+						Ext.infoMsg.msg("success", "Try again please");
+
+					} else {
+						_scd.googleSheetUrl = url;
+						localStorage.setItem('googleSheetUrl', url);
+						var pid2 = 'px-'+_scd.googleAccessToken;
+						if(!Ext.getCmp(pid2)){
+							if(url.indexOf('#gid=')>-1){
+								url = url.split('#gid=')[0]+'#gid='+mj.result.pout_sheet_id;
+							} else url += '#gid='+mj.result.pout_sheet_id;
+							if(url.indexOf('&rm=minimal')==-1)
+								url+='&rm=minimal';
+							var px = new Ext.Panel({
+					/*			tbar:[{text:'Refresh', _result: mj.result, id:'tb-'+_webPageId+a._grid.gridId,handler:()=>
+								{alert('TODO')}}],*/
+							  closable: !0, title: '<i class="icon-social-google"></i> Google Sheet'  , id: pid2
+							  , html: '<iframe style="border:none;width:100%;height:100%" src="' + url + '"></iframe>'
+							});
+							mainPanel.add(px); 
+						}
+	
+						mainPanel.setActiveTab(pid2);
+					}
+					//mainPanel.loadTab({attributes:{href:'showPage?_tid=1201', id:_scd.googleAccessToken ,url:url, title:g.name}})
+				}
+			});
+}
+
+function fnGSheet(a){
+	var gwin2= null;
+	iwb.googleAuth2 = (waccess_token) => {
+	    _scd.googleAccessToken = waccess_token;
+	    gwin2.destroy(); gwin2 = null;
+	    exportToGSheet(a, gsu);
+	}
+	
+	var gsu = prompt('Enter the Google Spreadsheet URL', _scd.googleSheetUrl||localStorage.getItem('googleSheetUrl')||'');
+	if(!gsu)return;
+
+	if(!_scd.googleAccessToken){
+		var xwid = 'id-xx-' + _webPageId;
+		gwin2 = new Ext.Window({ id: xwid, modal:!0, title: 'Google Authentication', closable: !0, width: 500, height: 180, 
+            html: '<iframe style="border:none; width:100%;" src="showPage?_tid=1202&callback=googleAuth2">' });
+        gwin2.show();
+	} else {
+		exportToGSheet(a,gsu)
+	}
+	
+}
 function addTab4GridWSearchForm(obj) {
   var mainGrid = obj.grid,
     searchFormPanel = null;
@@ -2971,6 +3026,7 @@ function addTab4GridWSearchForm(obj) {
       })
     );
 
+
     // --standart beforeload, ondbliclick, onrowcontextmenu
 
 
@@ -2998,6 +3054,23 @@ function addTab4GridWSearchForm(obj) {
         }
       }
     });
+    if(mainGrid.displayAgg){
+    	searchFormPanel.on('afterrender',(aq)=>{
+    		aq.add(new Ext.Panel({ html: '<span id="top-summary-'+mainGrid.id+'" style="padding: 10px 0 10px 88px;"></span>', autoWidth: true, height:40, border: true }));
+    	});
+    	 mainGridPanel.store.on("load", function(a) {
+    		 var m = a.reader.jsonData.extraOutMap;
+    		 if(m){
+        		 var s = "";
+    			 mainGrid.displayAgg.map(o=>{
+    				 var xx = o.f(m[o.id]); 
+    				if(xx)s+=xx; 
+    			 });
+    			 var d =document.getElementById('top-summary-'+mainGrid.id); 
+    			 d.innerHTML= s;
+    		 }
+    	 });
+    }
     items.push(searchFormPanel);
   }
 
@@ -3035,9 +3108,16 @@ function fnCardSearchListener(card){
 	return function(ax,e){
 		if(!ax._delay){
 			ax._delay = new Ext.util.DelayedTask(function() {
-				if(!card.store.baseParams)card.store.baseParams={};
-				card.store.baseParams.xdsc=ax.getValue();
-				card.store.reload();
+				if(card.pageSize){
+					if(!card.store.baseParams)card.store.baseParams={};
+					card.store.baseParams.xdsc=ax.getValue();
+					card.store.reload();
+				} else if(card.fnSearch){
+					card.fnSearch(ax.getValue())
+				} else {
+					if(!ax.getValue())card.store.clearFilter();
+					else card.store.filter(card._filterField, ax.getValue(), true);
+				}
 			});
 		}
 		ax._delay.delay(200);
@@ -3255,6 +3335,24 @@ function addTab4GridWSearchFormWithDetailGrids(obj, master_flag) {
     searchFormPanel = (mainGrid.searchForm.fp = new Ext.FormPanel(
       Ext.apply(mainGrid.searchForm.render(), sfCfg)
     ));
+    
+    if(mainGrid.displayAgg){
+    	searchFormPanel.on('afterrender',(aq)=>{
+    		aq.add(new Ext.Panel({ html: '<span id="top-summary-'+mainGrid.id+'" style="padding: 10px 0 10px 48px;"></span>', autoWidth: true, height:40, border: true }));
+    	});
+    	 mainGridPanel.store.on("load", function(a) {
+    		 var m = a.reader.jsonData.extraOutMap;
+    		 if(m){
+        		 var s = "";
+    			 mainGrid.displayAgg.map(o=>{
+    				 var xx = o.f(m[o.id]); 
+    				if(xx)s+=xx; 
+    			 });
+    			 var d =document.getElementById('top-summary-'+mainGrid.id); 
+    			 d.innerHTML= s;
+    		 }
+    	 });
+    }
     mainGridPanel.store._formPanel = searchFormPanel;
   }
 
@@ -3395,7 +3493,7 @@ function addTab4GridWSearchFormWithDetailGrids(obj, master_flag) {
       if (detailGrid.hasFilter) {
         if (buttons.length > 0) buttons.push("-");
         buttons.push({
-          // tooltip: getLocMsg("js_filtreyi_kaldir"),
+          // tooltip: getLocMsg("remove_filter"),
           cls: "x-btn-icon x-grid-funnel",
           _grid: detailGrid,
           handler: fnClearFilters
@@ -3406,6 +3504,25 @@ function addTab4GridWSearchFormWithDetailGrids(obj, master_flag) {
  // if (detailGrid.moveUpDown) addMoveUpDownButtons(buttons, detailGrid);
       addDefaultSpecialButtons(buttons, detailGrid);
       addGridExtraButtons(buttons, detailGrid);
+
+      if(detailGrid.displayAgg){
+    	  buttons.push({id:'grid-summary-'+detailGrid.id, xtype:'displayfield', value:''});
+    	  var ds = (detailGrid.store || detailGrid.ds);
+    	  ds._displayAgg = detailGrid.displayAgg;
+    	  ds._id = detailGrid.id;
+    	  ds.on("load", function(a) {
+      		 var m = a.reader.jsonData.extraOutMap;
+      		 var s = "";
+      		 if(m){
+      			 a._displayAgg.map(o=>{
+      				 var xx = o.f(m[o.id]); 
+      				if(xx)s+=xx; 
+      			 });
+      		 }
+  			 var d =document.getElementById('grid-summary-'+a._id); 
+  			 if(d)d.innerHTML= s;
+      	 });
+      }
 
       if (detailGrid.menuButtons) {
         for (var j = 0; j < detailGrid.menuButtons.length; j++) {
@@ -4007,50 +4124,14 @@ function ajaxAuthenticateUser() {
       success: function(o, resp) {
         iwb.mask();
         if (resp.result.success) {
-          if (resp.result.smsFlag) {
-            Ext.MessageBox.prompt("SMS Doğrulama", "Mobil Onay Kodu", function(
-              btn,
-              text
-            ) {
-              if (btn == "ok") {
-                Ext.Ajax.request({
-                  url:
-                    "ajaxSmsCodeValidation?smsCodeValidId=" +
-                    resp.result.smsValidationId +
-                    "&smsCode=" +
-                    text,
-                  success: function(result, request) {
-                    var resp = JSON.parse(result.responseText);// eval("(" +
-																// result.responseText
-																// + ")");
-                    if (resp.success) {
-                      lw.destroy();
-                      hideStatusText();
-                      refreshGridsAfterRelogin();
-                      longPollTask.delay(0);
-                    } else {
-                      Ext.Msg.show({
-                        title: getLocMsg("error"),
-                        msg: "Hatalı SMS Kodu",
-                        icon: Ext.MessageBox.ERROR
-                      });
-                    }
-                  }
-                });
-              }
-            });
-          } else {
-            lw.destroy();
-            hideStatusText();
-            refreshGridsAfterRelogin();
-            longPollTask.delay(0);
-          }
-          // if(typeof onlineUsersGridPanel!='undefined' &&
-			// onlineUsersGridPanel)reloadOnlineUsers();
+           lw.destroy();
+           hideStatusText();
+           refreshGridsAfterRelogin();
+           longPollTask.delay(0);
         } else {
           Ext.infoMsg.alert(
             "error",
-            resp.errorMsg || getLocMsg("js_yanlis_kullanici_adi_sifre")
+            resp.errorMsg || getLocMsg("js_wrong_user_password")
           );
         }
       },
@@ -4064,7 +4145,7 @@ function ajaxAuthenticateUser() {
         } else {
           Ext.infoMsg.alert(
             "error",
-            resp.error || getLocMsg("js_verileri_kontrol"),
+            resp.error || getLocMsg("js_check_data"),
             "error"
           );
         }
@@ -4214,7 +4295,7 @@ function formSubmit(submitConfig) {
       } /*
 		 * else if(1*_app.mail_send_background_flag!=0 && myJson.outs &&
 		 * myJson.outs.thread_id){ //DEPRECATED
-		 * Ext.infoMsg.msg(getLocMsg('js_tamam,getLocMsg('js_eposta_gonderiliyor+'...'); }
+		 * Ext.infoMsg.msg(getLocMsg('ok,getLocMsg('js_eposta_gonderiliyor+'...'); }
 		 */ else if (
         _app.show_info_msg &&
         1 * _app.show_info_msg != 0
@@ -4259,6 +4340,8 @@ function formSubmit(submitConfig) {
               [xg]
             );
           else iwb.reload(xg);
+        } else if (submitConfig._callAttributes._formCell) {
+        	iwb.refreshFormCell(submitConfig._callAttributes._formCell);
         } else if (submitConfig._callAttributes._gridId) {
         	iwb.refreshGrid(submitConfig._callAttributes._gridId);
         }
@@ -4361,7 +4444,7 @@ function promisRequest(rcfg) {
                 else if (_app.show_info_msg && 1 * _app.show_info_msg != 0) {
                   Ext.infoMsg.msg(
                     "success",
-                    getLocMsg("js_islem_basariyla_tamamlandi")
+                    getLocMsg("operation_successful")
                   );
                 }
               } else {
@@ -4696,14 +4779,14 @@ function approveTableRecord(aa, a) {
     rec_id = sel.data.pkpkpk_arf_id;
   }
 
-  var onayMap = [
+  var approveMap = [
     "",
-    getLocMsg("js_onayla"),
-    getLocMsg("js_iade_et"),
-    getLocMsg("js_reddet")
+    getLocMsg("approve"),
+    getLocMsg("return"),
+    getLocMsg("reject")
   ];
-  onayMap[901] = getLocMsg("js_onayi_baslat");
-  var caption = onayMap[aa] + " (" + sel.data.dsc + ")";
+  approveMap[901] = getLocMsg("start_approval");
+  var caption = approveMap[aa] + " (" + sel.data.dsc + ")";
   var e_sign_flag = sel.data.e_sign_flag;
 
   if (1 * e_sign_flag == 1 && aa * 1 == 1) {
@@ -4719,32 +4802,7 @@ function approveTableRecord(aa, a) {
   }
 
   var urlek = "";
-  var dynamix = sel.data.approval_flow_tip * 1 == 3 && aa == 901 ? true : false;
-  if (dynamix)
-    urlek = "&xapp_record_id4user_ids=" + sel.data.approval_record_id;
-  var lvcombo = new Ext.ux.form.LovCombo({
-    labelSeparator: "",
-    fieldLabel: getLocMsg("dynamic_step_user_ids"),
-    hiddenName: "approve_user_ids",
-    store: new Ext.data.JsonStore({
-      url: "ajaxQueryData?_qid=585" + urlek,
-      root: "data",
-      totalProperty: "browseInfo.totalCount",
-      id: "id",
-      autoLoad: true,
-      fields: [{ name: "dsc" }, { name: "id", type: "int" }],
-      listeners: { loadexception: promisLoadException }
-    }),
-    valueField: "id",
-    displayField: "dsc",
-    mode: "local",
-    triggerAction: "all",
-    anchor: "100%"
-  });
 
-  if (!dynamix) {
-    lvcombo.setVisible(false);
-  }
 
   var cform = new Ext.form.FormPanel({
     baseCls: "x-plain",
@@ -4754,10 +4812,9 @@ function approveTableRecord(aa, a) {
     labelAlign: "top",
 
     items: [
-      lvcombo,
       {
         xtype: "textarea",
-        fieldLabel: getLocMsg("js_yorumunuzu_girin"),
+        fieldLabel: getLocMsg("enter_comment"),
         name: "_comment",
         anchor: "100% -5" // anchor width by percentage and height by raw
 							// adjustment
@@ -4777,10 +4834,10 @@ function approveTableRecord(aa, a) {
     items: cform,
     buttons: [
       {
-        text: getLocMsg("js_tamam"),
+        text: getLocMsg("ok"),
         handler: function(ax, bx, cx) {
-          var _dynamic_approval_users = win.items.items[0].items.items[0].getValue();
-          var _comment = win.items.items[0].items.items[1].getValue();
+//          var _dynamic_approval_users = win.items.items[0].items.items[0].getValue();
+          var _comment = win.items.items[0].items.items[0].getValue();
           iwb.request({
             url: "ajaxApproveRecord",requestWaitMsg: true,
             params: {
@@ -4788,7 +4845,7 @@ function approveTableRecord(aa, a) {
               _adsc: _comment,
               _aa: aa,
               _avno: sel.data.ar_version_no || sel.data.version_no,
-              _appUserIds: _dynamic_approval_users
+//              _appUserIds: _dynamic_approval_users
             },
             successDs: a._grid.ds,
             successCallback:
@@ -4798,7 +4855,7 @@ function approveTableRecord(aa, a) {
                     win.close();
                     Ext.infoMsg.alert(
                       "info",
-                      getLocMsg("js_onay_sureci_baslamistir"),
+                      getLocMsg("approval_started"),
                       "info"
                     );
                   }
@@ -4806,7 +4863,7 @@ function approveTableRecord(aa, a) {
         }
       },
       {
-        text: getLocMsg("js_iptal"),
+        text: getLocMsg("cancel"),
         handler: function() {
           win.close();
         }
@@ -4822,7 +4879,7 @@ function approveTableRecords(aa, a) {
   if (sels.length == 0) {
     Ext.Msg.show({
       title: getLocMsg("error"),
-      msg: getLocMsg("js_once_birseyler_secmelisiniz"),
+      msg: getLocMsg("select_something"),
       icon: Ext.MessageBox.ERROR
     });
     return;
@@ -4830,7 +4887,6 @@ function approveTableRecords(aa, a) {
   var tek_kayit = sels.length == 1 ? true : false;
   var sel_ids = [];
   var urlek = "";
-  var dynamix = false;
   var vers = [];
   var step = 0;
   var rec_id;
@@ -4871,7 +4927,7 @@ function approveTableRecords(aa, a) {
     if (step_id * 1 == 998) {
       Ext.Msg.show({
         title: getLocMsg("error"),
-        msg: getLocMsg("js_kayit_onaylanmis"),
+        msg: getLocMsg("record_already_approved"),
         icon: Ext.MessageBox.ERROR
       });
       return;
@@ -4908,69 +4964,23 @@ function approveTableRecords(aa, a) {
       });
       return;
     }
-    var e_sign_flag = sels[i].data.e_sign_flag || 0;
-    if (1 * e_sign_flag == 1 && aa * 1 == 1 && tek_kayit == false) {
-      //
-      Ext.Msg.show({
-        title: getLocMsg("error"),
-        msg: getLocMsg("js_e_imza_onay_tek_kayit_secilmeli"),
-        icon: Ext.MessageBox.ERROR
-      });
-      return;
-    }
-    dynamix =
-      sels[0].data.approval_flow_tip * 1 == 3 && aa == 901 ? true : false;
-    if (dynamix == true && tek_kayit == false) {
-      Ext.Msg.show({
-        title: getLocMsg("error"),
-        msg: getLocMsg("js_dinamik_onay_tek_kayit_secilmeli"),
-        icon: Ext.MessageBox.ERROR
-      });
-      return;
-    }
-    if (dynamix) urlek = "&xapp_record_id4user_ids=" + rec_id;
+
     if (rec_id * 1 > 0) {
       sel_ids.push(rec_id);
       vers.push(sels[i].data.ar_version_no || sels[i].data.version_no);
     }
   }
-  var onayMap = [
+  var approveMap = [
     "",
-    getLocMsg("js_onayla"),
-    getLocMsg("js_iade_et"),
-    getLocMsg("js_reddet")
+    getLocMsg("approve"),
+    getLocMsg("return"),
+    getLocMsg("reject")
   ];
-  onayMap[901] = getLocMsg("js_onayi_baslat");
-  var caption = onayMap[aa];
+  approveMap[901] = getLocMsg("start_approval");
+  var caption = approveMap[aa];
 
   if (sel_ids.length == 0) return;
 
-  var lvcombo = new Ext.ux.form.LovCombo({
-    labelSeparator: "",
-    fieldLabel: getLocMsg("dynamic_step_user_ids"),
-    hiddenName: "approve_user_ids",
-    store:
-      dynamix == true
-        ? new Ext.data.JsonStore({
-            url: "ajaxQueryData?_qid=585" + urlek,
-            root: "data",
-            totalProperty: "browseInfo.totalCount",
-            id: "id",
-            autoLoad: true,
-            fields: [{ name: "dsc" }, { name: "id", type: "int" }],
-            listeners: { loadexception: promisLoadException }
-          })
-        : null,
-    valueField: "id",
-    displayField: "dsc",
-    mode: "local",
-    triggerAction: "all",
-    anchor: "100%"
-  });
-
-  if (!dynamix) {
-    lvcombo.setVisible(false);
-  }
 
   var cform = new Ext.form.FormPanel({
     baseCls: "x-plain",
@@ -4980,10 +4990,10 @@ function approveTableRecords(aa, a) {
     labelAlign: "top",
 
     items: [
-      lvcombo,
+
       {
         xtype: "textarea",
-        fieldLabel: getLocMsg("js_yorumunuzu_girin"),
+        fieldLabel: getLocMsg("enter_comment"),
         name: "_comment",
         anchor: "100% -5" // anchor width by percentage and height by raw
 							// adjustment
@@ -5003,13 +5013,9 @@ function approveTableRecords(aa, a) {
     items: cform,
     buttons: [
       {
-        text: getLocMsg("js_tamam"),
+        text: getLocMsg("ok"),
         handler: function(ax, bx, cx) {
-          var _dynamic_approval_users =
-            dynamix == true
-              ? win.items.items[0].items.items[0].getValue()
-              : null;
-          var _comment = win.items.items[0].items.items[1].getValue();
+          var _comment = win.items.items[0].items.items[0].getValue();
           /*
 			 * promisRequest({ url: 'ajaxApproveRecord',
 			 * params:{_arids:sel_ids,_adsc:_comment,_aa:aa, _avnos:vers,
@@ -5030,11 +5036,7 @@ function approveTableRecords(aa, a) {
             "&" +
             "_aa" +
             "=" +
-            encodeURIComponent(aa) +
-            "&" +
-            "_appUserIds" +
-            "=" +
-            encodeURIComponent(_dynamic_approval_users);
+            encodeURIComponent(aa);
 
           Ext.Msg.wait("", getLocMsg("js_please_wait"));
           var request = promisManuelAjaxObject();
@@ -5053,13 +5055,13 @@ function approveTableRecords(aa, a) {
             iwb.reload(a._grid);
             Ext.infoMsg.msg(
               "success",
-              getLocMsg("js_islem_basariyla_tamamlandi")
+              getLocMsg("operation_successful")
             );
           } else ajaxErrorHandler(json);
         }
       },
       {
-        text: getLocMsg("js_iptal"),
+        text: getLocMsg("cancel"),
         handler: function() {
           win.close();
         }
@@ -5069,44 +5071,19 @@ function approveTableRecords(aa, a) {
   win.show(this);
 }
 
-function submitAndApproveTableRecord(aa, frm, dynamix) {
+function submitAndApproveTableRecord(aa, frm) {
   var caption = null;
   if (aa != null) {
     caption = [
       "",
-      getLocMsg("js_onayla"),
-      getLocMsg("js_iade_et"),
-      getLocMsg("js_reddet")
+      getLocMsg("approve"),
+      getLocMsg("return"),
+      getLocMsg("reject")
     ][aa];
   } else {
     caption = getLocMsg("js_onay_mek_baslat");
   }
   var urlek = "";
-  if (dynamix)
-    urlek = "&xapp_record_id4user_ids=" + frm.approval.approvalRecordId;
-  var lvcombo = new Ext.ux.form.LovCombo({
-    labelSeparator: "",
-    fieldLabel: getLocMsg("dynamic_step_user_ids"),
-    hiddenName: "approve_user_ids",
-    store: new Ext.data.JsonStore({
-      url: "ajaxQueryData?_qid=585" + urlek,
-      root: "data",
-      totalProperty: "browseInfo.totalCount",
-      id: "id",
-      autoLoad: true,
-      fields: [{ name: "dsc" }, { name: "id", type: "int" }],
-      listeners: { loadexception: promisLoadException }
-    }),
-    valueField: "id",
-    displayField: "dsc",
-    mode: "local",
-    triggerAction: "all",
-    anchor: "100%"
-  });
-
-  if (!dynamix) {
-    lvcombo.setVisible(false);
-  }
 
   var cform = new Ext.form.FormPanel({
     baseCls: "x-plain",
@@ -5116,10 +5093,9 @@ function submitAndApproveTableRecord(aa, frm, dynamix) {
     labelAlign: "top",
 
     items: [
-      lvcombo,
       {
         xtype: "textarea",
-        fieldLabel: getLocMsg("js_yorumunuzu_girin"),
+        fieldLabel: getLocMsg("enter_comment"),
         name: "_comment",
         anchor: "100% -5" // anchor width by percentage and height by raw
 							// adjustment
@@ -5138,10 +5114,9 @@ function submitAndApproveTableRecord(aa, frm, dynamix) {
     items: cform,
     buttons: [
       {
-        text: getLocMsg("js_tamam"),
+        text: getLocMsg("ok"),
         handler: function(ax, bx, cx) {
-          var _dynamic_approval_users = win.items.items[0].items.items[0].getValue();
-          var _comment = win.items.items[0].items.items[1].getValue();
+          var _comment = win.items.items[0].items.items[0].getValue();
           if (
             (aa == 1 &&
               (!_app.form_approval_save_flag ||
@@ -5182,7 +5157,7 @@ function submitAndApproveTableRecord(aa, frm, dynamix) {
                 _aa: aa,
                 _adsc: _comment,
                 _avno: frm.approval.versionNo,
-                _appUserIds: _dynamic_approval_users
+//                _appUserIds: _dynamic_approval_users
               });
             } else {
               frm._cfg.extraParams = Ext.apply(frm._cfg.extraParams || {}, {
@@ -5196,7 +5171,7 @@ function submitAndApproveTableRecord(aa, frm, dynamix) {
         }
       },
       {
-        text: getLocMsg("js_iptal"),
+        text: getLocMsg("cancel"),
         handler: function() {
           win.close();
         }
@@ -5242,270 +5217,7 @@ function addTab4Portal(obj) {
                   "&_dtt=" +
                   dg.dtTip,
                 params: Ext.apply(params, dg.queryParams),
-                successCallback: function(az) {
-                  if (!az.data) az.data = [];
-                  var resc = 1;
-                  if (1 * dg.graphTip < 5) {
-                    if (newStat.indexOf(",") > 0) {
-                      resc = newStat.split(",").length;
-                      if (resc > 4) resc = 4;
-                      for (var qi = 0; qi < az.data.length; qi++) {
-                        az.data[qi].xres = Math.round(
-                          1 * (az.data[qi].xres || 0)
-                        );
-                        for (var zi = 2; zi <= resc; zi++) {
-                          az.data[qi]["xres" + zi] = Math.round(
-                            1 * (az.data[qi]["xres" + zi] || 0)
-                          );
-                        }
-                      }
-                    } else {
-                      var colors = [
-                        "#FF0F00",
-                        "#FF6600",
-                        "#FF9E01",
-                        "#FCD202",
-                        "#F8FF01",
-                        "#B0DE09",
-                        "#04D215",
-                        "#0D8ECF",
-                        "#0D52D1",
-                        "#2A0CD0",
-                        "#8A0CCF",
-                        "#CD0D74"
-                      ];
-                      for (var qi = 0; qi < az.data.length; qi++) {
-                        az.data[qi].xres = Math.round(
-                          1 * (az.data[qi].xres || 0)
-                        );
-                        az.data[qi].color = colors[qi % colors.length];
-                      }
-                    }
-                  } else {
-                    for (var ki in az.lookUp) {
-                      if (1 * dg.graphTip == 6)
-                        for (var qi = 0; qi < az.data.length; qi++) {
-                          az.data[qi]["xres_" + ki] = Math.round(
-                            1 * (az.data[qi]["xres_" + ki] || 0)
-                          );
-                        }
-                      if (!az.lookUp[ki]) az.lookUp[ki] = "*" + ki;
-                    }
-                  }
-                  var extraCfg =
-                    dg.is3d && 1 * dg.graphTip < 6
-                      ? { depth3D: 20, angle: 30 }
-                      : {};
-                  switch (1 * dg.graphTip) {
-                    case 6: // stacked area
-                      var graphs = [];
-                      for (var k in az.lookUp)
-                        graphs.push({
-                          balloonText:
-                            "<b>" + az.lookUp[k] + ": [[xres_" + k + "]]</b>",
-                          fillAlphas: 0.6,
-                          lineAlpha: 0.2,
-                          color: "#000000",
-                          title: az.lookUp[k],
-                          valueField: "xres_" + k
-                        });
-                      if (dg.legend)
-                        extraCfg.legend = {
-                          equalWidths: false,
-                          periodValueText: "total: [[value.sum]]",
-                          position: "top",
-                          valueAlign: "left",
-                          valueWidth: 100
-                        };
-                      AmCharts.makeChart(
-                        gid,
-                        Ext.apply(extraCfg, {
-                          type: "serial",
-                          theme: "black",
-                          graphs: graphs,
-                          valueAxes: [
-                            {
-                              stackType: "regular",
-                              axisAlpha: 0.3,
-                              gridAlpha: 0.2
-                            }
-                          ],
-                          chartCursor: {
-                            categoryBalloonEnabled: false,
-                            cursorAlpha: 0,
-                            zoomable: false
-                          },
-                          categoryField: "dsc",
-                          categoryAxis: {
-                            labelRotation: 45,
-                            gridPosition: "start",
-                            axisAlpha: 0,
-                            gridAlpha: 0,
-                            position: "left"
-                          },
-                          dataProvider: az.data
-                        })
-                      );
-
-                      break;
-
-                    case 5: // stacked column
-                      var graphs = [];
-                      for (var k in az.lookUp)
-                        graphs.push({
-                          balloonText:
-                            "<b>" + az.lookUp[k] + ": [[xres_" + k + "]]</b>",
-                          fillAlphas: 0.9,
-                          lineAlpha: 0.2,
-                          type: "column",
-                          color: "#000000",
-                          title: az.lookUp[k],
-                          valueField: "xres_" + k
-                        });
-                      if (dg.legend)
-                        extraCfg.legend = {
-                          equalWidths: false,
-                          periodValueText: "total: [[value.sum]]",
-                          position: "top",
-                          valueAlign: "left",
-                          valueWidth: 100
-                        };
-                      AmCharts.makeChart(
-                        gid,
-                        Ext.apply(extraCfg, {
-                          type: "serial",
-                          theme: "black",
-                          graphs: graphs,
-                          valueAxes: [
-                            {
-                              stackType: "regular",
-                              axisAlpha: 0.3,
-                              gridAlpha: 0.2
-                            }
-                          ],
-                          chartCursor: {
-                            categoryBalloonEnabled: false,
-                            cursorAlpha: 0,
-                            zoomable: false
-                          },
-                          categoryField: "dsc",
-                          categoryAxis: {
-                            labelRotation: 45,
-                            gridPosition: "start",
-                            axisAlpha: 0,
-                            gridAlpha: 0,
-                            position: "left"
-                          },
-                          dataProvider: az.data
-                        })
-                      );
-
-                      break;
-
-                    case 3:
-                      if (dg.legend) extraCfg.legend = { position: "left" };
-                      AmCharts.makeChart(
-                        gid,
-                        Ext.apply(extraCfg, {
-                          type: "pie",
-                          theme: "black",
-                          startDuration: 2,
-                          labelRadius: 15,
-                          labelText: dg.legend
-                            ? "[[percents]]%"
-                            : "[[dsc]]: [[value]]",
-                          innerRadius: "50%",
-
-                          // "legend":{"position":"left"},
-							// //","marginRight":100,"autoMargins":false
-                          dataProvider: az.data,
-                          balloonText: "[[dsc]]: [[value]]",
-                          valueField: "xres",
-                          titleField: "dsc"
-                        })
-                      );
-                      break;
-                    case 1:
-                      if (resc > 1) {
-                        // pek cok var
-                        var qq = newStat.split(",");
-                        var graphs = [
-                          {
-                            balloonText:
-                              "<b>" +
-                              "TODO" /* mf._func_query_field_ids.store.getById(qq[0].split('=')[1]).get('dsc') */ +
-                              ": [[xres]]</b>",
-                            fillAlphas: 0.9,
-                            lineAlpha: 0.2,
-                            type: "column",
-                            valueField: "xres"
-                          }
-                        ];
-                        for (var zi = 2; zi <= resc; zi++)
-                          graphs.push({
-                            balloonText:
-                              "<b>" +
-                              "TODO" /* mf._func_query_field_ids.store.getById(qq[zi-1]).get('dsc') */ +
-                              ": [[xres" +
-                              zi +
-                              "]]</b>",
-                            fillAlphas: 0.9,
-                            lineAlpha: 0.2,
-                            type: "column",
-                            valueField: "xres" + zi
-                          });
-                        AmCharts.makeChart(
-                          gid,
-                          Ext.apply(extraCfg, {
-                            type: "serial",
-                            theme: "black",
-                            startDuration: 2,
-                            graphs: graphs,
-                            chartCursor: {
-                              categoryBalloonEnabled: false,
-                              cursorAlpha: 0,
-                              zoomable: false
-                            },
-                            categoryField: "dsc",
-                            categoryAxis: {
-                              gridPosition: "start",
-                              labelRotation: 45
-                            },
-                            dataProvider: az.data
-                          })
-                        );
-                      } else
-                        AmCharts.makeChart(
-                          gid,
-                          Ext.apply(extraCfg, {
-                            type: "serial",
-                            theme: "black",
-                            startDuration: 2,
-                            graphs: [
-                              {
-                                balloonText: "<b>[[dsc]]: [[xres]]</b>",
-                                fillColorsField: "color",
-                                fillAlphas: 0.9,
-                                lineAlpha: 0.2,
-                                type: "column",
-                                valueField: "xres"
-                              }
-                            ],
-                            chartCursor: {
-                              categoryBalloonEnabled: false,
-                              cursorAlpha: 0,
-                              zoomable: false
-                            },
-                            categoryField: "dsc",
-                            categoryAxis: {
-                              gridPosition: "start",
-                              labelRotation: 45
-                            },
-                            dataProvider: az.data
-                          })
-                        );
-                      break;
-                  }
+                successCallback: function(az) {//TODO
                 }
               });
             }
@@ -5547,7 +5259,7 @@ function addTab4Portal(obj) {
       if (detailGrid.hasFilter) {
         if (buttons.length > 0) buttons.push("-");
         buttons.push({
-          tooltip: getLocMsg("js_filtreyi_kaldir"),
+          tooltip: getLocMsg("remove_filter"),
           cls: "x-btn-icon x-grid-funnel",
           _grid: detailGrid,
           handler: fnClearFilters
@@ -6017,7 +5729,7 @@ function addTab4DetailGridsWSearchForm(obj) {
       if (detailGrid.hasFilter) {
         if (buttons.length > 0) buttons.push("-");
         buttons.push({
-          tooltip: getLocMsg("js_filtreyi_kaldir"),
+          tooltip: getLocMsg("remove_filter"),
           cls: "x-btn-icon x-grid-funnel",
           _grid: detailGrid,
           handler: fnClearFilters
@@ -6671,6 +6383,24 @@ function syncMaptoStr(t, m, reload) {
   }
   if (m.timeDif) str += ", " + fmtTimeAgo(m.timeDif) + " önce.";
   return !!reload || m.userId != _scd.userId ? str : null;
+}
+
+iwb.refreshFormCell = (fc)=>{
+    if(fc.id){
+    	var xx =fc.id.split('-'); 
+    	if(xx.length==2){
+    		var oldValue = fc.getValue();
+    		promisRequest({
+	        url: "ajaxReloadFormCell?.t=" + xx[0] + "&_fcid=" + xx[1],
+	        requestWaitMsg: false,
+	        successCallback: function(json) {
+	          fc.store.removeAll();
+	          fc.store.loadData(json.data);
+	          fc.setValue(oldValue);
+	        }
+	      });
+    	} else Ext.infoMsg.msg('error','refreshFormCell Error');
+    }
 }
 
 function showNotifications(t) {
@@ -7667,7 +7397,7 @@ iwb.ui.buildCRUDForm = function(getForm, callAttributes, _page_tab_id) {
           }
           if (!getForm._cfg.callback)
             getForm._cfg.callback = function(js, conf) {
-              if (js.success) Ext.infoMsg.msg("info", "${operation_completed}");
+              if (js.success) Ext.infoMsg.msg("info", "${operation_successful}");
               if(extDef._tab_order.getValue)extDef._tab_order.setValue(extDef._tab_order.getValue()+1)
             };
           getForm._cfg.dontClose = 1;
@@ -7704,7 +7434,7 @@ iwb.ui.buildCRUDForm = function(getForm, callAttributes, _page_tab_id) {
           }
           if (!getForm._cfg.callback)
             getForm._cfg.callback = function(js, conf) {
-              if (js.success) Ext.infoMsg.msg("info", "${operation_completed}");
+              if (js.success) Ext.infoMsg.msg("info", "${operation_successful}");
               if(extDef._tab_order.getValue)extDef._tab_order.setValue(extDef._tab_order.getValue()+1)
             };
           getForm._cfg.dontClose = 1;
@@ -8178,7 +7908,7 @@ iwb.ui.buildCRUDForm = function(getForm, callAttributes, _page_tab_id) {
     var menuItems = [];
     if (_scd.administratorFlag) {
       menuItems.push({
-        text: "Field Settings",
+        text: getLocMsg("settings"),
         handler: function(a, b, c) {
           mainPanel.loadTab({
             attributes: {
@@ -8270,7 +8000,7 @@ iwb.ui.buildCRUDForm = function(getForm, callAttributes, _page_tab_id) {
       });
     }
     btn.push({
-      tooltip: "Settings",
+      tooltip: getLocMsg("settings"),
       id: "fs_" + getForm.id,
       iconAlign: "top",
       scale: "medium",
@@ -8714,11 +8444,21 @@ iwb.formElementProperty = function(opr, elementValue, value){
 }
 
 
+function extractSurveyJsResult(o){
+	if(o && Array.isArray(o)){
+		if(o.length && o[0].content){
+			return o[0].content.substr(o[0].content.lastIndexOf('=')+1);
+		} else 
+			return o.join(','); 
+			
+	} else 
+		return o;
+}
+
 iwb.postSurveyJs=(formId, action, params, surveyData, masterParams)=>{
 //	console.log(params)
 	var params2 = {_mask:!0}, fid = 0;
-	if(masterParams)for(var kk in masterParams)
-		params2[kk] = masterParams[kk];
+	if(masterParams)for(var kk in masterParams)params2[kk] = masterParams[kk];
 	for(var k in params){
 		var o = params[k];
 		if(k.startsWith('_form_')){
@@ -8730,10 +8470,10 @@ iwb.postSurveyJs=(formId, action, params, surveyData, masterParams)=>{
 					var cell = o[qi];
 					params2['a'+fid+'.'+(qi+1)] = 2;
 					for(var kk in cell){
-						params2[kk+fid+'.'+(qi+1)] = cell[kk];
+						params2[kk+fid+'.'+(qi+1)] = extractSurveyJsResult(cell[kk]);
 					}
 					if(masterParams)for(var kk in masterParams)
-						params2[kk.substr(1)+fid+'.'+(qi+1)] = masterParams[kk];
+						params2[kk.substr(1)+fid+'.'+(qi+1)] = extractSurveyJsResult(masterParams[kk]);
 				}			
 			} else {//update
 				var s = surveyData[k], cnt = 0, pkFieldName='';
@@ -8754,10 +8494,10 @@ iwb.postSurveyJs=(formId, action, params, surveyData, masterParams)=>{
 						params2['t'+pkFieldName+fid+'.'+cnt] = cell[kk];
 						delete sm[cell[kk]];
 					} else {
-						params2[kk+fid+'.'+(qi+1)] = cell[kk];
+						params2[kk+fid+'.'+(qi+1)] = extractSurveyJsResult(cell[kk]);
 					}
 					if(masterParams)for(var kk in masterParams)
-						params2[kk.substr(1)+fid+'.'+cnt] = masterParams[kk];
+						params2[kk.substr(1)+fid+'.'+cnt] = extractSurveyJsResult(masterParams[kk]);
 				}
 				for(var sk in sm){
 					cnt++;
@@ -8772,26 +8512,30 @@ iwb.postSurveyJs=(formId, action, params, surveyData, masterParams)=>{
 				}
 			}
 		} else {
-			if(o && Array.isArray(o)){
-				if(o.length && o[0].content){
-					params2[k] = o[0].content.substr(o[0].content.lastIndexOf('=')+1);
-				} else 
-					params2[k] = o.join(','); 
-					
-			} else 
-				params2[k] =  o;
+			params2[k] =  extractSurveyJsResult(o);
 		}
 	}
-
-	iwb.ajax.postForm(formId, action, params2, (j)=>{
+	if(action==1)for(var k in surveyData)if(k.startsWith('_form_') && surveyData[k] && surveyData[k].length && 
+			(!params[k] || !params[k].length)){
+		var o = surveyData[k];
+		fid++;
+		params2['_fid'+fid] = k.substr('_form_'.length);
+		params2['_cnt'+fid] = o.length;
+		for(var qi=0;qi<o.length;qi++){
+			var cell = o[qi];
+			params2['a'+fid+'.'+(qi+1)] = 3;
+			for(var kk in cell)if(kk.startsWith('_id_')){
+				params2['t'+kk.substr('_id_'.length)+fid+'.'+(qi+1)] = cell[kk];
+			}
+		}
+	}
+	iwb.ajax.postForm(formId, action, params2, ()=>{
 		Ext.infoMsg.msg("success", getLocMsg("operation_successful"));
 		mainPanel.remove(mainPanel.getActiveTab());
-	});
+	})
 }
 
-
 iwb.fileUploadSurveyJs=(tableId, tablePk, survey, options)=>{
-	//debugger
 	var formData = new FormData();
     options
         .files

@@ -9,6 +9,7 @@ import iwb.cache.FrameworkCache;
 import iwb.cache.FrameworkSetting;
 import iwb.cache.LocaleMsgCache;
 import iwb.domain.db.W5Table;
+import iwb.domain.db.W5TableField;
 import iwb.domain.db.W5TableParam;
 import iwb.exception.IWBException;
 
@@ -41,13 +42,16 @@ public class DBUtil {
 			} else if(subStr.startsWith("app.")){
 				o = FrameworkCache.getAppSettingStringValue(scd, subStr.substring(4));
 			} else {
-				o = LocaleMsgCache.get2((Integer)scd.get("customizationId"),(String)scd.get("locale"), subStr); // getMsgHTML de olabilirdi
+				//o = LocaleMsgCache.get2((Integer)scd.get("customizationId"),(String)scd.get("locale"), subStr); // getMsgHTML de olabilirdi
+				if(requestParams!=null && requestParams.get(subStr)!=null) {
+					Object oo=requestParams.get(subStr); // request
+					o=oo.toString();
+				}
 			}
-			if(bas>0 &&  sql.charAt(bas-1)=='\'' && bit<sql.length()-1 && sql.charAt(bit+1)=='\''){ // bu string'tir
+			if(bas>0 &&  sql.charAt(bas-1)=='\'' && bit<sql.length()-1 && sql.charAt(bit+1)=='\''){ // string'tir
 				params.add(o);bas--;
 				sql.replace(bas, bit+2, "?");
-			} else try{ //sayidir
-				
+			} else try{ //number				
 				params.add(o==null || o.length()==0 ? null : new BigDecimal(o));
 				sql.replace(bas, bit+1, "?");
 			} catch (Exception e){
@@ -137,4 +141,48 @@ public class DBUtil {
 		
 	}
 	
+	
+
+	public static String getTableFields4VCS(W5Table t, String prefix) {
+		StringBuilder s = new StringBuilder();
+		if (t == null || GenericUtil.isEmpty(t.get_tableFieldList()))
+			return s.toString();
+		for (W5TableField f : t.get_tableFieldList()) {
+			if (f.getTabOrder() < 0 || f.getDsc().equals(t.get_tableFieldList().get(0).getDsc()))
+				continue;
+			if (f.getDsc().equals("version_no") || f.getDsc().equals("insert_user_id")
+					|| f.getDsc().equals("insert_dttm") || f.getDsc().equals("version_user_id")
+					|| f.getDsc().equals("version_dttm") || f.getDsc().equals("customization_id")
+					|| f.getDsc().equals("project_uuid"))
+				continue;
+
+			if (s.length() > 0)
+				s.append(" || '-iwb-' || ");
+			switch (f.getParamTip()) {
+			case 1:
+				s.append("coalesce(").append(prefix).append(".").append(f.getDsc()).append(",'')");
+				break;
+			case 4: // integer
+			case 5: // boolean
+			case 3: // double
+				if (f.getNotNullFlag() != 0)
+					s.append(prefix).append(".").append(f.getDsc()).append("::text");
+				else
+					s.append("case when ").append(prefix).append(".").append(f.getDsc())
+							.append(" is null then '' else ").append(prefix).append(".").append(f.getDsc())
+							.append("::text end");
+				break;
+			case 2:
+				s.append("case when ").append(prefix).append(".").append(f.getDsc())
+						.append(" is null then '' else to_char(").append(prefix).append(".").append(f.getDsc())
+						.append(",'ddmmyyy-hh24miss') end");
+				break;
+			default:
+				s.append("coalesce(").append(prefix).append(".").append(f.getDsc()).append(",'')");
+				break;
+			}
+		}
+
+		return s.toString();
+	}
 }

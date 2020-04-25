@@ -16,7 +16,6 @@ import iwb.domain.db.W5QueryField;
 import iwb.domain.db.W5QueryParam;
 import iwb.domain.db.W5Table;
 import iwb.domain.db.W5TableField;
-import iwb.domain.db.W5TableFilter;
 import iwb.domain.db.W5TableParam;
 import iwb.enums.FieldDefinitions;
 import iwb.util.DBUtil;
@@ -640,31 +639,35 @@ public class W5QueryResult implements W5MetaResult{
 	    			}
     			}
     		} else {
-				Object psonuc = GenericUtil.prepareParam((W5Param)p1, getScd(), getRequestParams(), (short)-1, extraParams, (short)0, null, null, getErrorMap());
+				Object presult = GenericUtil.prepareParam((W5Param)p1, getScd(), getRequestParams(), (short)-1, extraParams, (short)0, null, null, getErrorMap());
 		
-				if(getErrorMap().size()==0 && psonuc!=null){ // artik hata yoksa
+				if(getErrorMap().size()==0 && presult!=null){ // artik hata yoksa
 					if(p1.getOperatorTip()!=10){ // normal operator ise
 						sqlWhere.append(sqlWhere.length()>0 ? " AND ( " : " ( ")
-							.append(p1.getOperatorTip()>10 ? "lower("+pexpressionDsc+")" : pexpressionDsc)
-							.append(FrameworkSetting.operatorMap[p1.getOperatorTip()])
-							.append("? ) ");
-						if(p1.getOperatorTip()>10)psonuc=((String)psonuc).toLowerCase(xlocale) + "%";
-						if(p1.getOperatorTip()==13)psonuc="%" + psonuc;
-						sqlParams.add(psonuc);
+							.append(p1.getOperatorTip()>10 ? FrameworkCache.getAppSettingStringValue(getScd(), "db_lower_fnc","lower")+"("+pexpressionDsc+")" : pexpressionDsc)
+							.append(FrameworkSetting.operatorMap[p1.getOperatorTip()]);
+						if(p1.getOperatorTip()>10)
+							sqlWhere.append(FrameworkCache.getAppSettingStringValue(getScd(), "db_lower_fnc","lower")).append("(?)");
+						else sqlWhere.append(" ?");
+						sqlWhere.append(") ");
+//						if(p1.getOperatorTip()>10)psonuc=((String)psonuc).toLowerCase(xlocale) + "%";
+						if(p1.getOperatorTip()>10)presult+="%";
+						if(p1.getOperatorTip()==13)presult="%" + presult;
+						sqlParams.add(presult);
 	
 					} else { //custom operator ise: ornegin "x.value_tip=? OR -1=?", kac adet ? varsa o kadar params a koyacaksin; eger pexpressionDsc numeric degerse o kadar koyacaksin
 						if(GenericUtil.uInt(pexpressionDsc)!=0){
 							for(int	q9=GenericUtil.uInt(pexpressionDsc);q9>0;q9--){
-								sqlParams.add(psonuc);
+								sqlParams.add(presult);
 							}
 						} else if(pexpressionDsc.contains("?")){
 							sqlWhere.append(sqlWhere.length()>0 ? " AND ( " : " ( ");							
 							int q8=0;
 							for(int	q9=0;q9<pexpressionDsc.length();q9++)if(pexpressionDsc.charAt(q9)=='?'){
-								if(psonuc!=null && psonuc instanceof Object[]){ //eger aradarda veri gelirse
-									sqlParams.add(((Object[])psonuc)[q8++]);
+								if(presult!=null && presult instanceof Object[]){ //eger aradarda veri gelirse
+									sqlParams.add(((Object[])presult)[q8++]);
 								} else
-									sqlParams.add(psonuc);
+									sqlParams.add(presult);
 							}
 							if(pexpressionDsc.contains("${")){//? işaretlerinden sonra başka bir parametre varsa
 								Object[] oz = DBUtil.filterExt4SQL(pexpressionDsc, scd, requestParams2, null);
@@ -706,7 +709,7 @@ public class W5QueryResult implements W5MetaResult{
     		case	1://string
     			sqlWhere.append(sqlWhere.length()>0 ? " AND ( " : " ( ");
     			if(qf.getPostProcessTip()!=11 && qf.getPostProcessTip()!=13){//multi degilse
-    				sqlWhere.append("lower(").append(paramName).append(") like ? ) ");
+    				sqlWhere.append(FrameworkCache.getAppSettingStringValue(getScd(), "db_lower_fnc","lower")).append("(").append(paramName).append(") like ? ) ");
     				sqlParams.add((paramValue.toString()).toLowerCase(xlocale) + "%");
     			} else {
     				sqlWhere.append("position(','||?||',' in ','||coalesce(").append(paramName).append(",'-')||',')>0) ");
@@ -984,19 +987,7 @@ public class W5QueryResult implements W5MetaResult{
 				}
 			}
 			
-			
-			if(mainTable.get_tableFilterList()!=null)for(W5TableFilter tf:mainTable.get_tableFilterList())if(GenericUtil.accessControl(scd, (short)1, tf.getAccessFilterRoles(), tf.getAccessFilterUsers()) // role & user control 
-					){
-				String accessViewSql = tf.getAccessViewSql();
-				if(accessViewSql!=null){//! var ise yetki yok demek ki && !accessViewSql.equals("!")
-					Object[] oz = DBUtil.filterExt4SQL(accessViewSql, scd, requestParams2, null);
-					if(sqlWhere.length()>0)sqlWhere.append(" AND ");
-					sqlWhere.append("(").append(oz[0]).append(")");
-					if(oz[1]!=null)sqlParams.addAll((List)oz[1]);
-				}
-				
-				
-			}
+
 			
 		}
 
@@ -1185,7 +1176,7 @@ public class W5QueryResult implements W5MetaResult{
 					break;
 				default: // normal operator ise
 					sqlWhere.append(sqlWhere.length()>0 ? " AND ( " : " ( ")
-						.append(p1.getOperatorTip()>10 ? "lower("+pexpressionDsc+")" : pexpressionDsc)
+						.append(p1.getOperatorTip()>10 ? FrameworkCache.getAppSettingStringValue(getScd(), "db_lower_fnc","lower")+"("+pexpressionDsc+")" : pexpressionDsc)
 						.append(FrameworkSetting.operatorMap[p1.getOperatorTip()])
 						.append("? ) ");
 					if(p1.getOperatorTip()>10)psonuc=((String)psonuc).toLowerCase(xlocale) + "%";
@@ -1463,18 +1454,7 @@ public class W5QueryResult implements W5MetaResult{
 			}
 			
 			
-			if(mainTable.get_tableFilterList()!=null)for(W5TableFilter tf:mainTable.get_tableFilterList())if(GenericUtil.accessControl(scd, (short)1, tf.getAccessFilterRoles(), tf.getAccessFilterUsers()) // role & user control 
-					){
-				String accessViewSql = tf.getAccessViewSql();
-				if(accessViewSql!=null){//! var ise yetki yok demek ki && !accessViewSql.equals("!")
-					Object[] oz = DBUtil.filterExt4SQL(accessViewSql, scd, requestParams2, null);
-					if(sqlWhere.length()>0)sqlWhere.append(" AND ");
-					sqlWhere.append("(").append(oz[0]).append(")");
-					if(oz[1]!=null)sqlParams.addAll((List)oz[1]);
-				}
-				
-				
-			}
+
 		}
 
 		
@@ -1734,7 +1714,7 @@ public class W5QueryResult implements W5MetaResult{
 				if(getErrorMap().size()==0 && psonuc!=null){ // artik hata yoksa
 					if(p1.getOperatorTip()!=10){ // normal operator ise
 						sqlWhere.append(sqlWhere.length()>0 ? " AND ( " : " ( ")
-							.append(p1.getOperatorTip()>10 ? "lower("+pexpressionDsc+")" : pexpressionDsc)
+							.append(p1.getOperatorTip()>10 ? FrameworkCache.getAppSettingStringValue(getScd(), "db_lower_fnc","lower")+"("+pexpressionDsc+")" : pexpressionDsc)
 							.append(FrameworkSetting.operatorMap[p1.getOperatorTip()])
 							.append("? ) ");
 						if(p1.getOperatorTip()>10)psonuc=((String)psonuc).toLowerCase(xlocale) + "%";
@@ -1883,19 +1863,7 @@ public class W5QueryResult implements W5MetaResult{
 				}
 			}
 		
-			
-			if(mainTable.get_tableFilterList()!=null)for(W5TableFilter tf:mainTable.get_tableFilterList())if(GenericUtil.accessControl(scd, (short)1, tf.getAccessFilterRoles(), tf.getAccessFilterUsers()) // role & user control 
-					){
-				String accessViewSql = tf.getAccessViewSql();
-				if(accessViewSql!=null){//! var ise yetki yok demek ki && !accessViewSql.equals("!")
-					Object[] oz = DBUtil.filterExt4SQL(accessViewSql, scd, requestParams2, null);
-					if(sqlWhere.length()>0)sqlWhere.append(" AND ");
-					sqlWhere.append("(").append(oz[0]).append(")");
-					if(oz[1]!=null)sqlParams.addAll((List)oz[1]);
-				}
-				
-				
-			}
+
 			
 		}
 
@@ -2051,7 +2019,7 @@ public class W5QueryResult implements W5MetaResult{
 						if(getErrorMap().size()==0 && psonuc!=null){ // artik hata yoksa
 							if(p1.getOperatorTip()!=10){ // normal operator ise
 								sqlWhere.append(sqlWhere.length()>0 ? " AND ( " : " ( ")
-									.append(p1.getOperatorTip()>10 ? "lower("+pexpressionDsc+")" : pexpressionDsc)
+									.append(p1.getOperatorTip()>10 ? FrameworkCache.getAppSettingStringValue(getScd(), "db_lower_fnc","lower")+"("+pexpressionDsc+")" : pexpressionDsc)
 									.append(FrameworkSetting.operatorMap[p1.getOperatorTip()])
 									.append("? ) ");
 								if(p1.getOperatorTip()>10)psonuc=((String)psonuc).toLowerCase(xlocale) + "%";
@@ -2219,7 +2187,7 @@ public class W5QueryResult implements W5MetaResult{
 				if(getErrorMap().size()==0 && psonuc!=null){ // artik hata yoksa
 					if(p1.getOperatorTip()!=10){ // normal operator ise
 						sqlWhere.append(sqlWhere.length()>0 ? " AND ( " : " ( ")
-							.append(p1.getOperatorTip()>10 ? "lower("+pexpressionDsc+")" : pexpressionDsc)
+							.append(p1.getOperatorTip()>10 ? FrameworkCache.getAppSettingStringValue(getScd(), "db_lower_fnc","lower")+"("+pexpressionDsc+")" : pexpressionDsc)
 							.append(FrameworkSetting.operatorMap[p1.getOperatorTip()])
 							.append("? ) ");
 						if(p1.getOperatorTip()>10)psonuc=((String)psonuc).toLowerCase(xlocale) + "%";
@@ -2280,7 +2248,7 @@ public class W5QueryResult implements W5MetaResult{
     		case	1://string
     			sqlWhere.append(sqlWhere.length()>0 ? " AND ( " : " ( ");
     			if(qf.getPostProcessTip()!=11 && qf.getPostProcessTip()!=13){//multi degilse
-    				sqlWhere.append("lower(").append(paramName).append(") like ? ) ");
+    				sqlWhere.append(FrameworkCache.getAppSettingStringValue(getScd(), "db_lower_fnc","lower")).append("(").append(paramName).append(") like ? ) ");
     				sqlParams.add((paramValue.toString()).toLowerCase(xlocale) + "%");
     			} else {
     				sqlWhere.append("position(','||?||',' in ','||coalesce(").append(paramName).append(",'-')||',')>0) ");

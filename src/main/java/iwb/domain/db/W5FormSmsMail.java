@@ -14,6 +14,11 @@ import org.hibernate.annotations.Immutable;
 @Table(name="w5_form_sms_mail",schema="iwb")
 public class W5FormSmsMail implements java.io.Serializable, W5Base {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 17675747372L;
+
 	private int formSmsMailId;
 
 	private int formId;
@@ -228,5 +233,14 @@ public class W5FormSmsMail implements java.io.Serializable, W5Base {
 	public void setProjectUuid(String projectUuid) {
 		this.projectUuid = projectUuid;
 	}
+
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5FormSmsMail))return false;
+		W5FormSmsMail c = (W5FormSmsMail)o;
+		return c!=null && c.getFormSmsMailId()==getFormSmsMailId() && c.getProjectUuid().equals(projectUuid);
+	}
 	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getFormSmsMailId();
+	}	
 }

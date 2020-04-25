@@ -17,6 +17,11 @@ import iwb.util.GenericUtil;
 @Table(name="w5_look_up_detay", schema="iwb")
 public class W5LookUpDetay implements java.io.Serializable, W5Detay, W5Base {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1313212312L;
+
 	private int lookUpDetayId;
 	
 	private int lookUpId;
@@ -119,4 +124,14 @@ public class W5LookUpDetay implements java.io.Serializable, W5Detay, W5Base {
 		this.projectUuid = projectUuid;
 	}
 	
+	
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5LookUpDetay))return false;
+		W5LookUpDetay c = (W5LookUpDetay)o;
+		return c!=null && c.getLookUpDetayId()==getLookUpDetayId() && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getLookUpDetayId();
+	}	
 }

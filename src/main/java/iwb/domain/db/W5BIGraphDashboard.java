@@ -13,20 +13,11 @@ import org.hibernate.annotations.Immutable;
 @Immutable
 @Table(name="w5_bi_graph_dashboard",schema="iwb")
 public class W5BIGraphDashboard implements java.io.Serializable, W5Base {
-/*
- * graph_dashboard_id integer NOT NULL,
-  project_uuid character varying(36) NOT NULL DEFAULT '067e6162-3b6f-4ae2-a221-2470b63dff00'::character varying,
-  customization_id integer NOT NULL DEFAULT 0,
-  grid_id integer NOT NULL,
-  table_id integer NOT NULL DEFAULT 0,
-  locale_msg_key character varying(128) NOT NULL,
-  query_base_params character varying(512),
-  public_flag smallint NOT NULL DEFAULT 0,
-  graph_tip smallint NOT NULL DEFAULT 1,
-  graph_group_by_field character varying(256) NOT NULL,
-  graph_func_tip smallint NOT NULL DEFAULT 1,
-  graph_func_fields character varying(256) NOT NULL,
- */
+/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1547555635L;
+
 	private int graphDashboardId;
 	
 	private int customizationId;
@@ -232,5 +223,14 @@ public class W5BIGraphDashboard implements java.io.Serializable, W5Base {
 		return false;
 	}
 
+
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5BIGraphDashboard))return false;
+		W5BIGraphDashboard c = (W5BIGraphDashboard)o;
+		return c!=null && c.getGraphDashboardId()==getGraphDashboardId() && c.getProjectUuid().equals(projectUuid);
+	}
 	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getGraphDashboardId();
+	}
 }

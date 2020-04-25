@@ -16,6 +16,7 @@ import org.hibernate.annotations.Immutable;
 @Table(name="w5_ws_method",schema="iwb")
 public class W5WsMethod  implements java.io.Serializable {
 
+	private static final long serialVersionUID = 161231122L;
 	private int wsMethodId;
 	private int wsId;
 	private String dsc;
@@ -162,5 +163,15 @@ public class W5WsMethod  implements java.io.Serializable {
 	public void setPostUrlFlag(short postUrlFlag) {
 		this.postUrlFlag = postUrlFlag;
 	}
+	
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5WsMethod))return false;
+		W5WsMethod c = (W5WsMethod)o;
+		return c!=null && c.getWsMethodId()==getWsMethodId() && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getWsMethodId();
+	}	
 	
 }

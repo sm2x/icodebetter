@@ -986,8 +986,10 @@ public class UserUtil {
 		}		
 		
 		CachedUserBean3 cub = getCachedUserBean(userId);
+		if(cub==null)return result;
 		
 		if(sessionId==null)sessionId = cub.findSessionIdFromWebPageId(webPageId);
+		
 		if(sessionId==null || cub.getSyncSessionMap()==null){
 			onlineUserLogout(userId, sessionId);
 			return result;
@@ -1619,7 +1621,7 @@ public class UserUtil {
 		
 		return scd;
 	}
-	public static String generateTokenFromScd(Map<String, Object> scd, int integrationObjectId, String ip, int validTimeMillis) {
+/*	public static String generateTokenFromScd(Map<String, Object> scd, int integrationObjectId, String ip, int validTimeMillis) {
 		String qq = ""+(System.currentTimeMillis()+validTimeMillis)+"-"+(scd.get("customizationId")!=null ?scd.get("customizationId"):0) +"-"+scd.get("userId")+"-"+scd.get("roleId")+"-"+scd.get("userRoleId")+"-"+scd.get("userTip")+"-"+scd.get("locale")+"-"+integrationObjectId+"-"+ip;
 		int checksum = 0;
 		for(int i=0;i<qq.length();i++)checksum+=qq.charAt(i);
@@ -1648,7 +1650,7 @@ public class UserUtil {
 		scd.put("userTip", Integer.parseInt(o[6]));
 		scd.put("locale", o[7]);
 		return scd;
-	}
+	}*/
 
 
 	
@@ -1723,6 +1725,7 @@ public class UserUtil {
 			String projectId, int userId, String sessionId, String webPageId, String tabId) {
 		if(userId==0 ||  webPageId==null || tabId==null)return false;
 		CachedUserBean3 cub = getCachedUserBean(userId);
+		if(cub==null)return false;
 		Map<Integer, Map<String, SyncTabMapHelper3>> tableMap = gridSyncMap3.get(projectId);
 		if(sessionId==null)sessionId = cub.findSessionIdFromWebPageId(webPageId);
 		if(sessionId==null)return false;

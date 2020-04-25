@@ -28,4 +28,6 @@ public interface W5Param  {
 	
 	public short getTabOrder();
 	
+	public int getParentId();
+	
 }

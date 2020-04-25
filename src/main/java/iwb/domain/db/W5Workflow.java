@@ -19,6 +19,11 @@ import iwb.util.GenericUtil;
 @Table(name="w5_approval", schema="iwb")
 public class W5Workflow implements java.io.Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 199911882277343L;
+
 	private int approvalId;
 	
 	private String dsc;
@@ -284,4 +289,14 @@ public class W5Workflow implements java.io.Serializable {
 		this.projectUuid = projectUuid;
 	}
 
+	
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5Workflow))return false;
+		W5Workflow c = (W5Workflow)o;
+		return c!=null && c.getApprovalId()==getApprovalId() && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getApprovalId();
+	}	
 }

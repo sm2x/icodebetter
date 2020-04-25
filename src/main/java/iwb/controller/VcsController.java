@@ -588,13 +588,27 @@ public class VcsController implements InitializingBean {
     	Map<String, Object> scd = UserUtil.getScd(request, "scd-dev", true);
     
 		logger.info("hndAjaxVVCSClientSQLCommitsFetchAndRun"); 
-		
-    	int cnt = vcsEngine.vcsClientSqlCommitsFetchAndRun(scd);
+		int maxCount = GenericUtil.uInt(request, "maxCount");
+    	int cnt = vcsEngine.vcsClientSqlCommitsFetchAndRun(scd, maxCount);
 
     	response.getWriter().write("{\"success\":true, \"cnt\":"+cnt+"}");
 		response.getWriter().close();	
 	}
 	
+
+	@RequestMapping("/ajaxVCSClientSQLCommitsFirstSkip")
+	public void hndAjaxVVCSClientSQLCommitsFirstSkip(
+			HttpServletRequest request,
+			HttpServletResponse response)
+			throws ServletException, IOException {
+    	Map<String, Object> scd = UserUtil.getScd(request, "scd-dev", true);
+    
+		logger.info("hndAjaxVVCSClientSQLCommitsFirstSkip"); 
+    	int cnt = vcsEngine.vcsClientSqlCommitsFirstSkip(scd);
+
+    	response.getWriter().write("{\"success\":true, \"cnt\":"+cnt+"}");
+		response.getWriter().close();	
+	}
 	
 	
 	@RequestMapping("/ajaxVCSClientSQLCommitList")

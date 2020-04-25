@@ -18,6 +18,8 @@ import org.hibernate.annotations.Immutable;
 @Table(name="w5_table_child",schema="iwb")
 public class W5TableChild implements java.io.Serializable {
 
+
+	private static final long serialVersionUID = 8385485198231L;
 	private int tableChildId;
 	private short relationTip;
 	private int tableId;
@@ -122,5 +124,15 @@ public class W5TableChild implements java.io.Serializable {
 	public void setProjectUuid(String projectUuid) {
 		this.projectUuid = projectUuid;
 	}
+
 	
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5TableChild))return false;
+		W5TableChild c = (W5TableChild)o;
+		return c!=null && c.getTableChildId()==tableChildId && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*tableChildId;
+	}	
 }

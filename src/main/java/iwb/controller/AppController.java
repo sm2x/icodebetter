@@ -81,16 +81,15 @@ import iwb.domain.result.W5GlobalFuncResult;
 import iwb.domain.result.W5PageResult;
 import iwb.domain.result.W5QueryResult;
 import iwb.domain.result.W5TableRecordInfoResult;
-import iwb.domain.result.W5TutorialResult;
 import iwb.exception.IWBException;
 import iwb.report.RptExcelRenderer;
 import iwb.report.RptPdfRenderer;
 import iwb.service.FrameworkService;
 import iwb.service.VcsService;
 import iwb.timer.Action2Execute;
+import iwb.util.EncryptionUtil;
 import iwb.util.ExcelUtil;
 import iwb.util.GenericUtil;
-import iwb.util.LogUtil;
 import iwb.util.MQUtil;
 import iwb.util.UserUtil;
 
@@ -127,7 +126,7 @@ public class AppController implements InitializingBean {
 		react16 = new React16();
 		vue2 = new Vue2();
 	//	FrameworkCache.activeProjectsStr = "067e6162-3b6f-4ae2-a221-2470b63dff00,29a3d378-3c59-4b5c-8f60-5334e3729959";
-		if(FrameworkSetting.projectId!=null) {
+	/*	if(FrameworkSetting.projectId!=null) {
 			vcsService.icbVCSUpdateSqlAndFields();
 			boolean b = vcsService.projectVCSUpdate("067e6162-3b6f-4ae2-a221-2470b63dff00");
 			if(b && FrameworkSetting.projectId!=null) {
@@ -146,6 +145,8 @@ public class AppController implements InitializingBean {
 		// if(PromisSetting.checkLicenseFlag)engine.checkLicences();
 		// dao.organizeAudit();
 		//service.setJVMProperties(0);
+		 
+		 */
 		try{
 			manPicPath = new ClassPathResource("static/ext3.4.1/custom/images/man-64.png").getFile().getPath();
 			brokenPicPath = new ClassPathResource("static/ext3.4.1/custom/images/broken-64.png").getFile().getPath();
@@ -242,49 +243,7 @@ public class AppController implements InitializingBean {
 		response.getWriter().close();
 	}
 
-	@RequestMapping("/ajaxForgotPass")
-	public void hndAjaxForgotPass(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
 
-		Map<String, String> requestParams = GenericUtil.getParameterMap(request);
-		requestParams.put("_remote_ip", request.getRemoteAddr());
-		if (request.getSession(false) != null && request.getSession(false).getAttribute("securityWordId") != null)
-			requestParams.put("securityWordId", request.getSession(false).getAttribute("securityWordId").toString());
-
-		if (request.getSession(false) != null) {
-			request.getSession(false).removeAttribute("scd-dev");
-		}
-		;
-
-		Locale blocale = request.getLocale();
-		Map m = new HashMap();
-		m.put("customizationId", 0);
-		String xlocale = GenericUtil.uStrNvl(request.getParameter("locale"),
-				getDefaultLanguage(m, blocale.getLanguage()));
-		m.put("locale", xlocale);
-
-		response.setContentType("application/json");
-		Map<String, String> res = service.sendMailForgotPassword(m, requestParams);
-		StringBuilder b = new StringBuilder();
-		b.append("{\"success\": " + (res.get("success").equals("1") == true ? "true" : "false") + ",\n").append(
-				"\"msg\":\"" + (res.get("msg") != null ? LocaleMsgCache.get2(0, xlocale, res.get("msg")) : "") + "\"}");
-		response.getWriter().write(b.toString());
-
-		response.getWriter().close();
-	}
-
-	@RequestMapping("/ajaxFormCellCode")
-	public void hndAjaxFormCellCode(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		int formCellId = GenericUtil.uInt(request, "_formCellId");
-		logger.info("hndAjaxFormCellCode(" + formCellId + ")");
-		Map<String, Object> scd = UserUtil.getScd(request, "scd-dev", true);
-		Map m = service.getFormCellCode(scd, GenericUtil.getParameterMap(request), formCellId, 1);
-		// m.put("success", true);
-		response.setContentType("application/json");
-		response.getWriter().write(GenericUtil.fromMapToJsonString2(m));
-		response.getWriter().close();
-	}
 
 	@RequestMapping("/ajaxChangeChatStatus")
 	public void hndAjaxChangeChatStatus(HttpServletRequest request, HttpServletResponse response)
@@ -734,13 +693,7 @@ public class AppController implements InitializingBean {
 					scd.put("locale", session.getAttribute("locale"));
 					session.removeAttribute("scd-dev");
 					session = request.getSession(true);
-					if (FrameworkCache.getAppSettingIntValue(0, "interactive_tutorial_flag") != 0) {
-						String ws = (String) scd.get("widgetIds");
-						if (ws == null)
-							scd.put("widgetIds", "10");
-						else if (!GenericUtil.hasPartInside(ws, "10"))
-							scd.put("widgetIds", ws + ",10");
-					}
+
 					if(GenericUtil.uInt(scd.get("renderer"))>1)scd.put("_renderer",GenericUtil.getRenderer(scd.get("renderer")));
 					scd.put("sessionId", session.getId());
 					session.setAttribute("scd-dev", scd);
@@ -784,8 +737,8 @@ public class AppController implements InitializingBean {
 				response.getWriter().write(",\"newMsgCnt\":"+ GenericUtil.fromMapToJsonString2Recursive(service.getUserNotReadChatMap(scd)));
 			}
 			if (genToken && scd != null)
-				response.getWriter().write(",\"promis_token\":\""
-						+ UserUtil.generateTokenFromScd(scd, 0, request.getRemoteAddr(), 24 * 60 * 60 * 1000) + "\"");
+				response.getWriter().write(",\"tokenKey\":\""
+						+ EncryptionUtil.encryptAES(GenericUtil.fromMapToJsonString2Recursive(scd)) + "\"");
 			response.getWriter().write("}");
 		} else {
 			response.getWriter().write("{\"success\":false,\"errorMsg\":\"" + errorMsg + "\"}");
@@ -1160,19 +1113,7 @@ public class AppController implements InitializingBean {
 		response.getWriter().close();
 	}
 
-	@RequestMapping("/ajaxGetFormCellCodeDetail")
-	public void hndAjaxGetFormCellCodeDetail(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		
-		logger.info("hndAjaxGetFormCellCodeDetail");
 
-		Map<String, Object> scd = UserUtil.getScd(request, "scd-dev", true);
-		int fccdId = GenericUtil.uInt(request, "_fccdid");
-		String result = service.getFormCellCodeDetail(scd, GenericUtil.getParameterMap(request), fccdId);
-		response.setContentType("application/json");
-		response.getWriter().write("{\"success\":true,\"result\":\"" + result + "\"}");
-		response.getWriter().close();
-	}
 
 	@RequestMapping("/ajaxFeed")
 	public void hndAjaxFeed(HttpServletRequest request, HttpServletResponse response)
@@ -1254,26 +1195,7 @@ public class AppController implements InitializingBean {
 		response.getWriter().close();
 	}
 
-	@RequestMapping("/showTutorial")
-	public void hndShowTutorial(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		
-		int tutorialId = GenericUtil.uInt(request, "_ttid");
-		logger.info("showTutorial(" + tutorialId + ")");
 
-		Map<String, Object> scd = UserUtil.getScd(request, "scd-dev", true);
-
-		W5TutorialResult tutorialResult = service.getTutorialResult(scd, tutorialId,
-				GenericUtil.getParameterMap(request));
-
-		response.setContentType("application/json");
-		if (GenericUtil.uInt(scd.get("mobile")) != 0) {
-			response.getWriter().write("{\"success\":false}");
-		} else {
-			response.getWriter().write(getViewAdapter(scd, request).serializeShowTutorial(tutorialResult).toString());
-		}
-		response.getWriter().close();
-	}
 
 	@RequestMapping("/ajaxLogoutUser")
 	public void hndAjaxLogoutUser(HttpServletRequest request, HttpServletResponse response)
@@ -1551,7 +1473,7 @@ public class AppController implements InitializingBean {
 			if (request.getRequestURI().indexOf(".xls") != -1 || "xls".equals(request.getParameter("_fmt")))
 				result = new ModelAndView(new RptExcelRenderer(), m);
 			else if (request.getRequestURI().indexOf(".pdf") != -1)
-				result = new ModelAndView(new RptPdfRenderer(service.getCustomizationLogoFilePath(scd)), m);
+				result = new ModelAndView(new RptPdfRenderer(null), m);
 			else if (request.getRequestURI().indexOf(".csv") != -1) {
 				response.setContentType("application/octet-stream");
 				response.getWriter().print(GenericUtil.report2csv(list));
@@ -1663,7 +1585,10 @@ public class AppController implements InitializingBean {
 		String filePath = null;
 		W5FileAttachment fa = service.loadFile(scd, fileAttachmentId);
 		if (fa == null) { // bulunamamis TODO
-			throw new IWBException("validation", "File Attachment", fileAttachmentId, null, "Wrong Id: " + fileAttachmentId, null);
+			System.out.println("Wrong File Id: " + fileAttachmentId);
+			//throw new IWBException("validation", "File Attachment", fileAttachmentId, null, "Wrong Id: " + fileAttachmentId, null);
+			fa = new W5FileAttachment(scd);
+			fa.setFileAttachmentId(1);
 		}
 
 		if (fa.getFileAttachmentId() == 1 || fa.getFileAttachmentId() == 2) { // man / woman default picture
@@ -1770,34 +1695,6 @@ public class AppController implements InitializingBean {
 		response.getWriter().close();
 	}
 	
-	@RequestMapping("/getGraphDashboards")
-	public void hndGetGraphDashboards(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		
-		logger.info("hndGetGraphDashboards");
-		Map<String, Object> scd = UserUtil.getScd(request, "scd-dev", true);
-
-		List<W5BIGraphDashboard> l = service.getGraphDashboards(scd);
-		if(GenericUtil.isEmpty(l)){
-			response.getWriter().write("{\"success\":true,\"data\":[]}");
-		} else {
-			StringBuilder s = new StringBuilder();
-			s.append("{\"success\":true,\"data\":[");
-			boolean b = false;
-			for(W5BIGraphDashboard gd:l){
-				if(b)s.append(","); else b=true;
-				s.append(f7.serializeGraphDashboard(gd, scd));
-			}
-			s.append("]}");
-
-			response.getWriter().write(s.toString());
-			
-		}
-		response.getWriter().close();
-	}
-
-
-
 	@RequestMapping("/ajaxGetLoginLang")
 	public void hndGetLoginLang(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -2281,7 +2178,7 @@ public class AppController implements InitializingBean {
 		
     	Map<String, Object> scd = UserUtil.getScd(request, "scd-dev", true);
 		int roleId =(Integer)scd.get("roleId");
-		if(roleId!=0){
+		if(roleId!=0 && !FrameworkSetting.debug){
 			throw new IWBException("security","Developer",0,null, "You Have to Be Developer TO Run this", null);
 		}
 
@@ -2342,7 +2239,7 @@ public class AppController implements InitializingBean {
 		
     	Map<String, Object> scd = UserUtil.getScd(request, "scd-dev", true);
 		int roleId =(Integer)scd.get("roleId");
-		if(roleId!=0){
+		if(roleId!=0 && !FrameworkSetting.debug){
 			throw new IWBException("security","Developer",0,null, "You Have to Be Developer TO Run this", null);
 		}
 

@@ -12,7 +12,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import iwb.cache.FrameworkCache;
 import iwb.cache.FrameworkSetting;
+import iwb.domain.db.W5Project;
 import iwb.domain.helper.W5DeferredResult;
 import iwb.exception.IWBException;
 import iwb.util.GenericUtil;
@@ -28,14 +30,29 @@ public class AsyncServlet {
 	@ResponseBody
 	public W5DeferredResult hndAjaxNotifications(HttpServletRequest request,
 			HttpServletResponse response) {
-//		if(PromisSetting.debug)logger.info("getNotifications - LongPolling");		
+		if(false && FrameworkSetting.debug) {
+			String p = request.getParameter(".p");
+			if(p!=null) {
+					logger.info("LongPoll - " + request.getParameter(".p") + " - " + FrameworkCache.getProject(request.getParameter(".p")).getCustomizationId());		
+			}
+			else logger.info("LongPoll - " + request.getParameter(".w"));		
+		}
 		Map<String, Object> scd = null;
 		try {
-			scd =  GenericUtil.uInt(request,"_preview")!=0 ? UserUtil.getScd4Preview(request, "scd-dev", false):UserUtil.getScd(request, "scd-dev", false);
+			scd =  false && GenericUtil.uInt(request,"_preview")!=0 ? UserUtil.getScd4Preview(request, "scd-dev", false):UserUtil.getScd(request, "scd-dev", false);
 		} catch(IWBException e){
 			try {
 				response.getWriter().write(e.toJsonString(null));
 				response.getWriter().close();
+				
+				if(false && FrameworkSetting.debug) {
+					String p = request.getParameter(".p");
+					if(p!=null) {
+						W5Project po2 = FrameworkCache.getProject(request.getParameter(".p"));
+						logger.info("LongPollError - " + po2.getCustomizationId() + " - " + request.getParameter(".p") + " - " + po2.getDsc());		
+					}
+					else logger.info("LongPollError - " + request.getParameter(".w"));		
+				}
 			} catch (IOException e1) {
 				if(FrameworkSetting.debug)e1.printStackTrace();
 			}
@@ -44,11 +61,11 @@ public class AsyncServlet {
 		final String projectId = (String)scd.get("projectId");
 		final Integer userId = (Integer)scd.get("userId");
 		final String webPageId = request.getParameter(".w");
-		final String webPageId2 = GenericUtil.uInt(scd.get("mobile"))!=0 ? (String)scd.get("mobileDeviceId") : request.getParameter(".w");
+/*		final String webPageId2 = GenericUtil.uInt(scd.get("mobile"))!=0 ? (String)scd.get("mobileDeviceId") : request.getParameter(".w");
 		if(!webPageId.equals(webPageId2)){
-			throw new IWBException("bu ne lan", "oho", 0, null, null, null);
+			throw new IWBException("framework", "WebPageId", 0, null, "Wrong WebPageID", null);
 		}
-		
+		*/
 		final String activeTabId = request.getParameter(".at");
 		String rpid = request.getParameter(".p");
 		if(GenericUtil.isEmpty(rpid))rpid = projectId;

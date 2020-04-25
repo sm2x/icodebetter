@@ -52,7 +52,6 @@ public class W5FormResult implements W5MetaResult{
 	private List<Map<String, String>> previewMapList;
 	private List<Map<String, String>> previewConversionMapList;
 	private Map<Integer, List<W5ConvertedObject>> mapConvertedObject;
-	private Map<Integer,Map<Integer, Integer>> mapWidgetCount; //userId, widgetId, count
 	private List<W5FormSmsMailAlarm> formAlarmList;
 
 	public Map<Integer, M5ListResult> getModuleListMap() {
@@ -241,12 +240,6 @@ public class W5FormResult implements W5MetaResult{
 	public void setMapConvertedObject(
 			Map<Integer, List<W5ConvertedObject>> mapConvertedObject) {
 		this.mapConvertedObject = mapConvertedObject;
-	}
-	public Map<Integer, Map<Integer, Integer>> getMapWidgetCount() {
-		return mapWidgetCount;
-	}
-	public void setMapWidgetCount(Map<Integer, Map<Integer, Integer>> mapWidgetCount) {
-		this.mapWidgetCount = mapWidgetCount;
 	}
 	public List<W5QueuedPushMessageHelper> getQueuedPushMessageList() {
 		return queuedPushMessageList;

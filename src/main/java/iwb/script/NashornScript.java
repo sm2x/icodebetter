@@ -27,21 +27,25 @@ import iwb.domain.db.Log5QueryAction;
 import iwb.domain.db.W5ExternalDb;
 import iwb.domain.db.W5LookUp;
 import iwb.domain.db.W5LookUpDetay;
+import iwb.domain.db.W5QueryField;
 import iwb.domain.db.W5Table;
+import iwb.domain.db.W5TableField;
 import iwb.domain.helper.W5QueuedActionHelper;
 import iwb.domain.result.W5FormResult;
 import iwb.domain.result.W5GlobalFuncResult;
+import iwb.domain.result.W5QueryResult;
 import iwb.engine.GlobalScriptEngine;
 import iwb.exception.IWBException;
 import iwb.mq.MQTTCallback;
 import iwb.timer.Action2Execute;
 import iwb.util.DBUtil;
+import iwb.util.EncryptionUtil;
 import iwb.util.GenericUtil;
 import iwb.util.HttpUtil;
 import iwb.util.InfluxUtil;
 import iwb.util.LogUtil;
 import iwb.util.MQUtil;
-import iwb.util.ScriptUtil;
+import iwb.util.NashornUtil;
 import iwb.util.UserUtil;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 
@@ -175,7 +179,7 @@ public class NashornScript {
 		StringBuilder ss = new StringBuilder();
 		ss.append(measName);
 		if(tagMap instanceof ScriptObjectMirror) {
-			tagMap = ScriptUtil.fromScriptObject2Map((ScriptObjectMirror)tagMap);
+			tagMap = NashornUtil.fromScriptObject2Map((ScriptObjectMirror)tagMap);
 		}
 		if(tagMap instanceof Map) {
 			Map<String, Object> xtagMap = (Map)tagMap;
@@ -188,7 +192,7 @@ public class NashornScript {
 		}
 		ss.append(" ");
 		if(fieldMap instanceof ScriptObjectMirror) {
-			fieldMap = ScriptUtil.fromScriptObject2Map2((ScriptObjectMirror)fieldMap);
+			fieldMap = NashornUtil.fromScriptObject2Map2((ScriptObjectMirror)fieldMap);
 		}
 		if(fieldMap instanceof Map) {
 			Map<String, Object> xfieldMap = (Map)fieldMap;
@@ -258,6 +262,14 @@ public class NashornScript {
 		if(d==null)return value+": ???";
 		return LocaleMsgCache.get2(scd, d.getDsc());
 	}
+	
+	
+	public List getLookUpList(int lookUpId) {
+		W5LookUp lookUp = FrameworkCache.getLookUp(scd, lookUpId);
+		if(lookUp==null)
+			throw new IWBException("rhino", "LookUp", lookUpId, null, "Wrong LookUpId",null);
+		return lookUp.get_detayList();
+	}
 
 	public String md5hash(String s) {
 		return GenericUtil.getMd5Hash(s);
@@ -278,7 +290,7 @@ public class NashornScript {
 	}
 
 	private Map<String, String> fromScriptObject2Map(ScriptObjectMirror jsRequestParams) {
-		Map<String, String> rp = ScriptUtil.fromScriptObject2Map(jsRequestParams);
+		Map<String, String> rp = NashornUtil.fromScriptObject2Map(jsRequestParams);
 		if (requestParams.containsKey(".w") && !rp.containsKey(".w"))
 			rp.put(".w", requestParams.get(".w"));
 		if(requestParams.containsKey("_trid_") && !rp.containsKey("_trid_") )
@@ -299,7 +311,7 @@ public class NashornScript {
 								case '{':
 								case '[':
 									if(o instanceof ScriptObjectMirror && ((ScriptObjectMirror)o).isArray()) {
-										rp.put(key, ScriptUtil.fromScriptObject2List((ScriptObjectMirror)o));
+										rp.put(key, NashornUtil.fromScriptObject2List((ScriptObjectMirror)o));
 									} else
 										rp.put(key, o);
 									break;
@@ -320,10 +332,194 @@ public class NashornScript {
 		return rp;
 	}
 
-	public Object[] query(int queryId, ScriptObjectMirror jsRequestParams) {
+
+	private Map<String, Object> fromScriptObject2Map3(ScriptObjectMirror jsRequestParams) {
+		Map<String, Object> rp = new HashMap<String, Object>();
+		if (jsRequestParams != null && !jsRequestParams.isArray()) {
+			for (String key:jsRequestParams.keySet()) 
+					try {
+						Object o = jsRequestParams.get(key);
+						if (o != null) {
+							String res = o.toString();
+							if (res.length() > 0)
+								switch (res.charAt(0)) {
+								case '{':
+								case '[':
+									if(o instanceof ScriptObjectMirror && ((ScriptObjectMirror)o).isArray()) {
+										rp.put(key, NashornUtil.fromScriptObject2List((ScriptObjectMirror)o));
+									} else
+										rp.put(key, o);
+									break;
+								default:
+									if (res.endsWith(".0") && GenericUtil.uInt(res.substring(0, res.length() - 2)) > 0)
+										res = res.substring(0, res.length() - 2);
+									rp.put(key, res);
+								}
+						} else 
+							rp.put(key, null);
+					} catch (Exception eq) {
+					}
+		}
+		return rp;
+	}
+	public Object[] query(int queryId, Object jsRequestParams) {
 		scriptEngine.getDao().checkTenant(scd);
-		List l = scriptEngine.getDao().runQuery2Map(scd, queryId, fromScriptObject2Map(jsRequestParams));//
+		Map requestMap =null;
+		if(jsRequestParams==null)requestMap = new HashMap();
+		else if(jsRequestParams instanceof ScriptObjectMirror) requestMap = fromScriptObject2Map((ScriptObjectMirror)jsRequestParams);
+		else if(jsRequestParams instanceof Map) requestMap = (Map)jsRequestParams;
+		List l = scriptEngine.getDao().runQuery2Map(scd, queryId, requestMap);//
 		return GenericUtil.isEmpty(l) ? null : l.toArray();
+	}
+	
+	public Object[] query2(int queryId, Object jsRequestParams) {
+		scriptEngine.getDao().checkTenant(scd);
+		Map requestMap =null;
+		if(jsRequestParams==null)requestMap = new HashMap();
+		else if(jsRequestParams instanceof ScriptObjectMirror) requestMap = fromScriptObject2Map((ScriptObjectMirror)jsRequestParams);
+		else if(jsRequestParams instanceof Map) requestMap = (Map)jsRequestParams;
+		W5QueryResult qr = scriptEngine.getQueryEngine().executeQuery(scd, queryId, requestMap);//
+		if(qr.getErrorMap().isEmpty() && !GenericUtil.isEmpty(qr.getData())) {
+			List<Map> nd = new ArrayList(qr.getData().size());
+			W5Table t = null;
+			StringBuilder buf = new StringBuilder();
+			for (Object o : qr.getData()) {
+				Map row = new HashMap();
+			
+				boolean b = false;
+				
+				for (W5QueryField f : qr.getNewQueryFields()) {
+					Object obj = ((Object[])o)[f.getTabOrder() - 1];
+					if (f.getFieldTip() == 5)
+						obj=GenericUtil.uInt(obj) != 0;
+					if(obj==null)continue;
+					switch(f.getPostProcessTip()) {
+					case  9:
+						row.put("_"+f.getDsc(), obj);
+						break;
+					case	6:
+						row.put(f.getDsc().substring(1), obj);
+						break;
+					case 14://dcfryption + data maskng
+						obj = EncryptionUtil.decrypt(obj.toString(), f.getLookupQueryId());
+						if(obj==null)obj="";
+					case	4://data masking
+						int maskType = f.getLookupQueryId();
+						if(f.getMainTableFieldId()>0 && qr.getQuery().getMainTableId()>0 && qr.getQuery().getQuerySourceTip()==15) {
+							if(t == null) t = FrameworkCache.getTable(qr.getScd(), qr.getQuery().getMainTableId());
+							W5TableField tf = t.get_tableFieldMap().get(f.getMainTableFieldId());
+							if(tf!=null && tf.getAccessMaskTip()>0 && GenericUtil.isEmpty(tf.getAccessMaskUserFields()) 
+									&& GenericUtil.accessControl(qr.getScd(), tf.getAccessMaskTip(), tf.getAccessMaskRoles(), tf.getAccessMaskUsers())) {
+								row.put(f.getDsc(), GenericUtil.stringToJS2(obj
+										.toString()));
+								break;
+							}
+							if(tf!=null && f.getPostProcessTip()==14)maskType = tf.getAccessMaskTip();
+						}
+						String strMask = FrameworkCache.getAppSettingStringValue(0, "data_mask", "**********");
+						String sobj = obj.toString();
+						if(sobj.length()==0) sobj = "x";
+						
+						switch(maskType) {
+						case	1://full
+							row.put(f.getDsc(), strMask);break;
+						case	2://beginning
+							row.put(f.getDsc(), sobj.charAt(0)+strMask.substring(1));break;
+						case	3://beg + end
+							row.put(f.getDsc(), sobj.charAt(0)+strMask.substring(2)+sobj.charAt(sobj.length()-1));break;
+						}
+						break;
+					case 5://decryption
+						row.put(f.getDsc(), GenericUtil.stringToJS2(EncryptionUtil.decrypt(obj.toString(), f.getLookupQueryId())));
+						break;
+
+					/*	case	15://convert to []
+							buf.setLength(buf.length()-1);
+							buf.append("[").append(obj).append("]");
+							continue;*/
+				
+					case 3:
+						row.put(f.getDsc(), GenericUtil.onlyHTMLToJS(obj
+								.toString()));
+						break;
+					case 8:
+						row.put(f.getDsc(), GenericUtil.stringToHtml2(obj));
+						break;
+					case 20: // user LookUp
+						row.put(f.getDsc(), obj);
+						row.put(f.getDsc()+"_qw_",UserUtil.getUserName(GenericUtil.uInt(obj)));
+						break;
+					case 21: // users LookUp
+						String[] ids = ((String) obj).split(",");
+						if (ids.length > 0) {
+							String res = "";
+							for (String s : ids) {
+								res += ","+ UserUtil.getUserName(GenericUtil.uInt(s));
+							}
+							row.put(f.getDsc(), obj);
+							row.put(f.getDsc()+"_qw_", res.substring(1));
+						}
+						break;
+					
+					case 1:// duz
+						row.put(f.getDsc(), obj);
+						break;
+					case 2: // locale filtresinden gececek
+						row.put(f.getDsc(), LocaleMsgCache.get2(scd,
+								obj.toString()));
+						break;
+					case 10:
+					case 11: // demek ki static lookup'li deger
+								// tutulacak
+						row.put(f.getDsc(), GenericUtil.stringToJS2(obj
+								.toString()));
+						if (f.getLookupQueryId() == 0)
+							break;
+						W5LookUp lookUp = FrameworkCache.getLookUp(
+								qr.getScd(), f.getLookupQueryId());
+						if (lookUp == null)
+							break;
+						buf.setLength(0);
+						String[] objs = f.getPostProcessTip() == 11 ? ((String) obj)
+								.split(",") : new String[] { obj
+								.toString() };
+						boolean bz = false;
+						if(lookUp.get_detayMap()!=null)for (String q : objs) {
+							if (bz)
+								buf.append(",");
+							else
+								bz = true;
+							W5LookUpDetay d = lookUp.get_detayMap()
+									.get(q);
+							if (d != null) {
+								String s = d.getDsc();
+								if (s != null) {
+									s = LocaleMsgCache.get2(scd, s);
+									buf.append(GenericUtil
+											.stringToJS2(s));
+								}
+							} else {
+								buf.append("???: ").append(q);
+							}
+						}
+						row.put(f.getDsc()+"_qw_", buf.toString());
+						break;
+					case 13:
+					case 12:// table Lookup
+						row.put(f.getDsc(), GenericUtil.stringToJS2(obj
+								.toString()));
+						break;
+					
+					default:
+						row.put(f.getDsc(), GenericUtil.stringToJS2(obj
+								.toString()));
+					}
+				}
+				nd.add(row);
+			}
+			return nd.toArray();
+			
+		} else return null;
 	}
 
 	public void console(Object oMsg) {
@@ -429,7 +625,7 @@ public class NashornScript {
 			String sql2 = sql.toLowerCase(FrameworkSetting.appLocale);
 			if (DBUtil.checkTenantSQLSecurity(sql2)) {
 				throw new IWBException("security", "SQL", 0, null,
-						"Forbidden Command2. Please contact iCodeBetter team ;)", null);
+						"Forbidden Command2. Please contact Code2 team ;)", null);
 			}
 		}
 
@@ -449,7 +645,7 @@ public class NashornScript {
 			String sql2 = sql.toLowerCase(FrameworkSetting.appLocale);
 			if (DBUtil.checkTenantSQLSecurity(sql2)) {
 				throw new IWBException("security", "SQL", 0, null,
-						"Forbidden Command2. Please contact iCodeBetter team ;)", null);
+						"Forbidden Command2. Please contact Code2 team ;)", null);
 			}
 		}
 
@@ -495,17 +691,44 @@ public class NashornScript {
 		}
 		return result;
 	}
-
-	public Map getTableJSON(String tableDsc, String tablePk) {
-		List<Integer> l = (List<Integer>) scriptEngine.getDao().find(
-				"select t.tableId from W5Table t where t.dsc=? AND t.customizationId in (0,?) order by t.customizationId desc",
-				tableDsc, scd.get("customizationId"));
-		if (l.isEmpty())
-			throw new IWBException("rhino", "getTableJSON", 0, tableDsc, "table_not_found", null);
-
-		return getTableJSON(l.get(0), tablePk, 0);
+	private Map<String, Integer> tableNameMap = null;
+	private int getTableId(String tableDsc) {
+		int tableId = 0;
+		if(tableNameMap!=null && tableNameMap.containsKey(tableDsc))
+			tableId = tableNameMap.get(tableDsc);
+		else {
+			List<Integer> l = (List<Integer>) scriptEngine.getDao().find(
+					"select t.tableId from W5Table t where t.dsc=?0 AND t.projectUuid=?1",
+					tableDsc, scd.get("projectId"));
+			if (l.isEmpty()) {
+				if((Integer)scd.get("customizationId")!=0 && tableDsc.startsWith("iwb.")) {
+					l = (List<Integer>) scriptEngine.getDao().find(
+							"select t.tableId from W5Table t where t.dsc=?0 AND t.customizationId=0",
+							tableDsc);
+				} else
+					throw new IWBException("rhino", "getTableJSON", 0, tableDsc, "table_not_found", null);
+	
+			}
+			tableId = l.get(0);
+			if(tableNameMap==null)tableNameMap = new HashMap();
+			tableNameMap.put(tableDsc, tableId);
+		}
+		return tableId;
 	}
 
+	public Map getTableJSON(String tableDsc, String tablePk) {
+
+		return getTableJSON(getTableId(tableDsc), tablePk, 0);
+	}
+
+	public Map insertTableJSON(String tableDsc, ScriptObjectMirror jsRequestParams) {
+		int tableId = getTableId(tableDsc);
+		scriptEngine.getDao().checkTenant(scd);
+		return scriptEngine.getDao().insertTableJSON(scd, tableId, fromScriptObject2Map3(jsRequestParams));
+	}
+
+
+	
 	public Map getTableJSON(int tableId, String tablePk, int forAction) {
 		return getTableJSON(tableId, tablePk, forAction, false, null);
 	}

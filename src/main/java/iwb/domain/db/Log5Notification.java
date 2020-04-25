@@ -69,7 +69,6 @@ public class Log5Notification implements java.io.Serializable, Log5Base {
 	public void setNotificationId(int notificationId) {
 		this.notificationId = notificationId;
 	}
-	@Id
 	@Column(name="customization_id")
 	public int getCustomizationId() {
 		return customizationId;

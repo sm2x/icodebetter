@@ -23,6 +23,10 @@ import iwb.util.GenericUtil;
 @Table(name="w5_table",schema="iwb")
 public class W5Table implements java.io.Serializable, W5Base {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 132324122L;
 	private int tableId;
 	private int customizationId;
 	private String dsc;
@@ -77,8 +81,7 @@ public class W5Table implements java.io.Serializable, W5Base {
 	private	List<W5TableParam> _tableParamList;
 	private	List<W5TableChild> _tableChildList;
 	private	List<W5TableChild> _tableParentList;
-//	private	Map<Integer,W5TableRecordHelper> _cachedObjectMap; //TODO burdan almak lazim
-	private	List<W5TableFilter> _tableFilterList;
+
 	private	List<W5Conversion> _tableConversionList;
 	private short liveSyncFlag;
 	private short tableTip;
@@ -314,15 +317,6 @@ public class W5Table implements java.io.Serializable, W5Base {
 		this.accessPermissionUserFields = accessPermissionUserFields;
 	}
 
-	@Transient
-	public List<W5TableFilter> get_tableFilterList() {
-		return _tableFilterList;
-	}
-
-	public void set_tableFilterList(List<W5TableFilter> tableFilterList) {
-		_tableFilterList = tableFilterList;
-	}
-
 
 	@Transient
 	public List<W5Conversion> get_tableConversionList() {
@@ -539,7 +533,7 @@ public class W5Table implements java.io.Serializable, W5Base {
 		} else if(this._tableFieldList!=null ^ t.get_tableFieldList()!=null) return false;*/
 		
 		
-		if(!GenericUtil.safeEquals(this._tableFilterList, t._tableFilterList))return false;
+//		if(!GenericUtil.safeEquals(this._tableFilterList, t._tableFilterList))return false;
 		/*if(this._tableFilterList!=null && t.get_tableFilterList()!=null){
 			if(this._tableFilterList.size()==t.get_tableFilterList().size())return false;
 			for(int i=0;i<this._tableFilterList.size();i++){
@@ -622,4 +616,13 @@ public class W5Table implements java.io.Serializable, W5Base {
 		this.customizationId = customizationId;
 	}
 
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5Table))return false;
+		W5Table c = (W5Table)o;
+		return c!=null && c.getTableId()==tableId && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*tableId;
+	}	
 }

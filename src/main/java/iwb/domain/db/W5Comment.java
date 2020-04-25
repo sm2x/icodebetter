@@ -17,6 +17,7 @@ import org.hibernate.annotations.Immutable;
 @Table(name="w5_comment",schema="iwb")
 public class W5Comment  implements java.io.Serializable {
 
+	private static final long serialVersionUID = 15235244L;
 	private int commentId;
 	private int tableId;
 	private int tablePk;
@@ -95,7 +96,15 @@ public class W5Comment  implements java.io.Serializable {
 		super();
 	}
 	
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5Comment))return false;
+		W5Comment c = (W5Comment)o;
+		return c!=null && c.getCommentId()==commentId && c.getProjectUuid().equals(projectUuid);
+	}
 	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*commentId;
+	}	
 	
 }
 

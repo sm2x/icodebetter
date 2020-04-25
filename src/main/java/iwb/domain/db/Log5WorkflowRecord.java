@@ -98,7 +98,7 @@ public class Log5WorkflowRecord implements java.io.Serializable {
 	}
     
 	private String projectUuid;
-	@Id
+
 	@Column(name="project_uuid")
 	public String getProjectUuid() {
 		return projectUuid;
@@ -107,4 +107,5 @@ public class Log5WorkflowRecord implements java.io.Serializable {
 	public void setProjectUuid(String projectUuid) {
 		this.projectUuid = projectUuid;
 	}
+	
 }

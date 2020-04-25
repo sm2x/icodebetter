@@ -30,6 +30,9 @@ import com.zaxxer.hikari.HikariDataSource;
 @Table(name="w5_external_db",schema="iwb")
 public class W5ExternalDb implements java.io.Serializable, W5Base{
 
+
+	private static final long serialVersionUID = 2255112231121L;
+
 	private int externalDbId;
 
 	private short lkpDbType;// //oracle, postgre, mssql
@@ -187,6 +190,14 @@ public class W5ExternalDb implements java.io.Serializable, W5Base{
 		this.defaultSchema = defaultSchema;
 	}
 	
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5ExternalDb))return false;
+		W5ExternalDb c = (W5ExternalDb)o;
+		return c!=null && c.getExternalDbId()==getExternalDbId() && c.getProjectUuid().equals(projectUuid);
+	}
 	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getExternalDbId();
+	}	
 	
 }

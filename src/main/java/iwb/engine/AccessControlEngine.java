@@ -48,7 +48,7 @@ public class AccessControlEngine {
 		W5WorkflowStep approvalStep = null;
 		if ((action == 1 || action == 3) && t.get_approvalMap() != null && !t.get_approvalMap().isEmpty()) {
 			List<W5WorkflowRecord> ll = dao.find(
-					"from W5WorkflowRecord t where t.projectUuid=? AND t.tableId=? AND t.tablePk=?",
+					"from W5WorkflowRecord t where t.projectUuid=?0 AND t.tableId=?1 AND t.tablePk=?2",
 					scd.get("projectId"), t.getTableId(), GenericUtil.uInt(requestParams
 							.get(t.get_tableParamList().get(0).getDsc() + (paramSuffix != null ? paramSuffix : ""))));
 			if (!ll.isEmpty()) {
@@ -76,7 +76,7 @@ public class AccessControlEngine {
 						.accessUserFieldControl(t, t.getAccessViewUserFields(), scd, requestParams, paramSuffix)))) { // bu
 			// field'da
 			throw new IWBException("security", "Form", formId, null,
-					LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_guvenlik_onay_kontrol_goruntuleme"), null);
+					LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_access_wf_control_view"), null);
 		}
 		boolean updatableUserFieldFlag = false;
 		boolean deletableUserFieldFlag = false;
@@ -88,7 +88,7 @@ public class AccessControlEngine {
 				// field'da
 				if (dao.accessUserFieldControl(t, t.getAccessUpdateUserFields(), scd, requestParams, paramSuffix)) {
 					formResult.getOutputMessages().add(
-							LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_guvenlik_onay_kontrol_guncelleme"));
+							LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_access_wf_control_update"));
 					formResult.setViewMode(true);
 				} else
 					updatableUserFieldFlag = true;
@@ -101,12 +101,12 @@ public class AccessControlEngine {
 				// icindeyse
 				if (appRecord.getApprovalStepId() == 999) {//rejected
 					formResult.getOutputMessages().add(
-							LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_onay_kontrol_red_kayit_guncelleme"));
+							LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_wf_control_red_kayit_update"));
 					formResult.setViewMode(true);
 				} else if(appRecord.getApprovalStepId() == 998) {//approved
 					if(GenericUtil.isEmpty(app.getAfterFinUpdateUserIds()) || GenericUtil.hasPartInside2(app.getAfterFinUpdateUserIds(), scd.get("userId"))) {
 						formResult.getOutputMessages().add(
-								LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_onay_kontrol_red_kayit_guncelleme"));
+								LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_wf_control_red_kayit_update"));
 						formResult.setViewMode(true);
 					}
 					
@@ -127,7 +127,7 @@ public class AccessControlEngine {
 					// null, "Onay süreci içerisinde bu kaydı
 					// Güncelleyemezsiniz", null);
 					formResult.getOutputMessages()
-							.add(LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_onay_kontrol_surec_devam"));
+							.add(LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_wf_control_surec_devam"));
 					formResult.setViewMode(true);
 					// }
 				}
@@ -138,35 +138,35 @@ public class AccessControlEngine {
 						t.getAccessUpdateRoles(), t.getAccessUpdateUsers())) {
 					// throw new PromisException("security","Form", formId,
 					// null,
-					// PromisLocaleMsg.get2(0,(String)scd.get("locale"),"fw_guvenlik_tablo_kontrol_guncelleme"),
+					// PromisLocaleMsg.get2(0,(String)scd.get("locale"),"fw_access_tablo_control_update"),
 					// null);
 					formResult.getOutputMessages().add(
-							LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_guvenlik_tablo_kontrol_guncelleme"));
+							LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_access_tablo_control_update"));
 					formResult.setViewMode(true);
 				}
 
 				if (t.getAccessTips() != null && t.getAccessTips().indexOf("0") > -1) { // kayit
 					// bazli
-					// kontrol
+					// control
 					// var
 					if (checkAccessRecordControlViolation(scd, 0, t.getTableId(),
 							requestParams.get(t.get_tableParamList().get(0).getDsc()))) {
 						throw new IWBException("security", "Form", formId, null, LocaleMsgCache.get2(0,
-								(String) scd.get("locale"), "fw_guvenlik_kayit_bazli_kontrol_goruntuleme"), null);
+								(String) scd.get("locale"), "fw_access_record_based_control_view"), null);
 					}
 				}
 				if (t.getAccessTips() != null && t.getAccessTips().indexOf("1") > -1) { // kayit
 					// bazli
-					// kontrol
+					// control
 					// var
 					if (checkAccessRecordControlViolation(scd, 1, t.getTableId(),
 							requestParams.get(t.get_tableParamList().get(0).getDsc()))) {
 						// throw new PromisException("security","Form", formId,
-						// null, "Kayıt Bazlı Kontrol:
+						// null, "Kayıt Bazlı control:
 						// Güncelleyemezsiniz", null);
 
 						formResult.getOutputMessages().add(LocaleMsgCache.get2(0, (String) scd.get("locale"),
-								"fw_guvenlik_kayit_bazli_kontrol_guncelleme"));
+								"fw_access_record_based_control_update"));
 						formResult.setViewMode(true);
 					}
 				}
@@ -177,7 +177,7 @@ public class AccessControlEngine {
 			if (!GenericUtil.accessControl(scd, t.getAccessInsertTip(), t.getAccessInsertRoles(),
 					t.getAccessInsertUsers())) { // Table access insert control
 				throw new IWBException("security", "Form", formId, null,
-						LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_guvenlik_tablo_kontrol_kayit_ekleme"),
+						LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_access_tablo_control_record_insert"),
 						null);
 			}
 
@@ -188,7 +188,7 @@ public class AccessControlEngine {
 				// field'da
 				if (dao.accessUserFieldControl(t, t.getAccessDeleteUserFields(), scd, requestParams, paramSuffix)) {
 					formResult.getOutputMessages()
-							.add(LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_guvenlik_onay_kontrol_silme"));
+							.add(LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_access_wf_control_delete"));
 					formResult.setViewMode(true);
 				} else
 					deletableUserFieldFlag = true;
@@ -201,7 +201,7 @@ public class AccessControlEngine {
 			 * scd, requestParams, paramSuffix)) throw new
 			 * PromisException("security","Form", formId, null,
 			 * PromisLocaleMsg.get2(0,(String)scd.get("locale"),
-			 * "fw_guvenlik_silinemez_kullanici_alan_kisit"), null); }
+			 * "fw_access_silinemez_kullanici_alan_kisit"), null); }
 			 */
 
 			if (appRecord != null) { // eger bir approval sureci icindeyse
@@ -211,7 +211,7 @@ public class AccessControlEngine {
 								approvalStep.getAccessDeleteRoles(), approvalStep.getAccessDeleteUsers()))) {
 					throw new IWBException("security",
 							"Workflow", appRecord.getApprovalId(), null, LocaleMsgCache.get2(0,
-									(String) scd.get("locale"), "fw_onay_sureci_icerisindeki_kaydi_silemezsiniz"),
+									(String) scd.get("locale"), "fw_wf_sureci_icerisindeki_kaydi_silemezsiniz"),
 							null);
 				}
 			} else {
@@ -219,29 +219,29 @@ public class AccessControlEngine {
 				if (!deletableUserFieldFlag && !GenericUtil.accessControl(scd, t.getAccessDeleteTip(),
 						t.getAccessDeleteRoles(), t.getAccessDeleteUsers())) {
 					throw new IWBException("security", "Form", formId, null,
-							LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_guvenlik_tablo_kontrol_silme"),
+							LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_access_tablo_control_delete"),
 							null);
 				} /*
 					 * if(!PromisUtil.accessControl(scd, t.getAccessDeleteTip(),
 					 * t.getAccessDeleteRoles(), t.getAccessDeleteUsers())){
 					 * throw new PromisException("security","Form", formId,
 					 * null, PromisLocaleMsg.get2(0,(String)scd.get("locale"),
-					 * "fw_guvenlik_tablo_kontrol_silme"), null); }
+					 * "fw_access_tablo_control_delete"), null); }
 					 */
 
-				// kayit bazli kontrol var
+				// kayit bazli control var
 				if (t.getAccessTips() != null && t.getAccessTips().indexOf("0") > -1) { // show
 					if (checkAccessRecordControlViolation(scd, 0, t.getTableId(),
 							requestParams.get(t.get_tableParamList().get(0).getDsc()))) {
 						throw new IWBException("security", "Form", formId, null, LocaleMsgCache.get2(0,
-								(String) scd.get("locale"), "fw_guvenlik_kayit_bazli_kontrol_goruntuleme"), null);
+								(String) scd.get("locale"), "fw_access_record_based_control_view"), null);
 					}
 				}
 				if (t.getAccessTips() != null && t.getAccessTips().indexOf("3") > -1) { // delete
 					if (checkAccessRecordControlViolation(scd, 3, t.getTableId(),
 							requestParams.get(t.get_tableParamList().get(0).getDsc()))) {
 						throw new IWBException("security", "Form", formId, null, LocaleMsgCache.get2(0,
-								(String) scd.get("locale"), "fw_guvenlik_kayit_bazli_kontrol_silme"), null);
+								(String) scd.get("locale"), "fw_access_record_based_control_delete"), null);
 					}
 				}
 			}

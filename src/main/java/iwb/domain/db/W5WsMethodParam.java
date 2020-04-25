@@ -6,6 +6,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import org.hibernate.annotations.Immutable;
 
@@ -14,6 +15,10 @@ import org.hibernate.annotations.Immutable;
 @Table(name="w5_ws_method_param",schema="iwb")
 public class W5WsMethodParam  implements java.io.Serializable, W5Param {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 18172625342L;
 	private int wsMethodParamId;
 	private int wsMethodId;
 	private int parentWsMethodParamId;
@@ -175,5 +180,22 @@ public class W5WsMethodParam  implements java.io.Serializable, W5Param {
 	public void setCredentialsFlag(short credentialsFlag) {
 		this.credentialsFlag = credentialsFlag;
 	}
+
+	
+	
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5WsMethodParam))return false;
+		W5WsMethodParam c = (W5WsMethodParam)o;
+		return c!=null && c.getWsMethodParamId()==getWsMethodParamId() && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getWsMethodParamId();
+	}
+	
+	@Transient
+	public int getParentId() {
+		return parentWsMethodParamId;
+	}	
 	
 }

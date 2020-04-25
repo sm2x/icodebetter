@@ -19,6 +19,10 @@ import iwb.util.GenericUtil;
 @Immutable
 @Table(name = "W5_JOB_SCHEDULE",schema="iwb")
 public class W5JobSchedule implements java.io.Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 441165423423421L;
 	private int jobScheduleId;
 	private String dsc;
 	private int actionTip;
@@ -404,4 +408,14 @@ public class W5JobSchedule implements java.io.Serializable {
 		this.transactionalFlag = transactionalFlag;
 	}
 
+	
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5JobSchedule))return false;
+		W5JobSchedule c = (W5JobSchedule)o;
+		return c!=null && c.getJobScheduleId()==getJobScheduleId() && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getJobScheduleId();
+	}
 }

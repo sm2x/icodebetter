@@ -4,11 +4,9 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
@@ -17,11 +15,9 @@ import iwb.cache.FrameworkSetting;
 import iwb.domain.db.W5ExternalDb;
 import iwb.domain.db.W5Query;
 import iwb.domain.db.W5QueryField;
-import iwb.domain.db.W5QueryFieldCreation;
 import iwb.domain.db.W5TableField;
 import iwb.domain.result.W5QueryResult;
 import iwb.exception.IWBException;
-import iwb.util.DBUtil;
 import iwb.util.GenericUtil;
 import iwb.util.InfluxUtil;
 
@@ -280,7 +276,7 @@ public class ExternalDBSql {
 	}
 
 	public ExternalDBSql() {
-		if(!FrameworkSetting.externalDb)return;
+		if(true || !FrameworkSetting.externalDb)return;
 		try {
 			Class.forName("oracle.jdbc.driver.OracleDriver");
 		} catch (ClassNotFoundException e) {
@@ -293,111 +289,5 @@ public class ExternalDBSql {
 		}
 	}
 
-	public void organizeQueryFields(Map<String, Object> scd, W5Query query, String sqlStr, List<Object> sqlParams,
-			Map<String, W5QueryFieldCreation> existField, List<W5QueryFieldCreation> updateList,
-			List<W5QueryFieldCreation> insertList) {
-//		String projectId = (String) scd.get("projectId");
-		int userId = (Integer) scd.get("userId");
-		W5ExternalDb edb = FrameworkCache.getExternalDb(scd, query.getMainTableId());//wExternalDbs.get(projectId).get(query.getMainTableId());
-		if(edb.getLkpDbType()==11) {
-			String[] chunks = query.getSqlSelect().split(",");
-			int i = 1, j = 0;
-			for(String c:chunks) {
-				String[] s = c.trim().split(" ");
-				String columnName = s[s.length-1];
-				if (existField.get(columnName) == null) { // eger
-					W5QueryFieldCreation field = new W5QueryFieldCreation();
-					field.setDsc(columnName);
-					field.setCustomizationId((Integer) scd.get("customizationId"));
-					if (columnName.equals("insert_user_id") || columnName.equals("version_user_id"))
-						field.setPostProcessTip((short) 53);
-					field.setTabOrder((short) (i));
-					field.setQueryId(query.getQueryId());
-					field.setFieldTip((short) 1);
-					field.setInsertUserId(userId);
-					field.setVersionUserId(userId);
-					field.setVersionDttm(new java.sql.Timestamp(new java.util.Date().getTime()));
-					field.setProjectUuid((String) scd.get("projectId"));
-					field.setOprojectUuid((String) scd.get("projectId"));
-
-					field.setQueryFieldId(
-							GenericUtil.getGlobalNextval("iwb.seq_query_field", (String) scd.get("projectId"),
-									(Integer) scd.get("userId"), (Integer) scd.get("customizationId")));
-					insertList.add(field);
-					j++; i++;
-				} else if (existField.get(columnName) != null && (existField.get(columnName).getTabOrder() != i)) {
-					W5QueryFieldCreation field = existField.get(columnName);
-					field.setTabOrder((short) (i));
-					field.setVersionUserId(userId);
-					field.setVersionDttm(new java.sql.Timestamp(new java.util.Date().getTime()));
-					updateList.add(field);
-				}
-				existField.remove(columnName);
-				
-			}
-			return;
-		}
-		
-		Connection con = null;
-		PreparedStatement stmt = null;
-		ResultSet rs = null;
-		StringBuilder sql2 = new StringBuilder();
-		try {
-			con = edb.getConnection();
-			stmt = con.prepareStatement(sqlStr);
-			if (sqlParams.size() > 0)
-				applyParameters(stmt, sqlParams);
-			rs = stmt.executeQuery();
-			ResultSetMetaData meta = rs.getMetaData();
-
-			int columnNumber = meta.getColumnCount();
-			for (int i = 1, j = 0; i <= columnNumber; i++) {
-				String columnName = meta.getColumnName(i).toLowerCase(FrameworkSetting.appLocale);
-				if (existField.get(columnName) == null) { // eger
-					W5QueryFieldCreation field = new W5QueryFieldCreation();
-					field.setDsc(columnName);
-					field.setCustomizationId((Integer) scd.get("customizationId"));
-					if (columnName.equals("insert_user_id") || columnName.equals("version_user_id"))
-						field.setPostProcessTip((short) 53);
-					field.setTabOrder((short) (i));
-					field.setQueryId(query.getQueryId());
-					field.setFieldTip((short) DBUtil.java2iwbType(meta.getColumnType(i)));
-					if (field.getFieldTip() == 4) {
-						// numeric değerde ondalık varsa tipi 3 yap
-						int sc = meta.getScale(i);
-						if (sc > 0)
-							field.setFieldTip((short) 3);
-					}
-					field.setInsertUserId(userId);
-					field.setVersionUserId(userId);
-					field.setVersionDttm(new java.sql.Timestamp(new java.util.Date().getTime()));
-					field.setProjectUuid((String) scd.get("projectId"));
-					field.setOprojectUuid((String) scd.get("projectId"));
-
-					field.setQueryFieldId(
-							GenericUtil.getGlobalNextval("iwb.seq_query_field", (String) scd.get("projectId"),
-									(Integer) scd.get("userId"), (Integer) scd.get("customizationId")));
-					insertList.add(field);
-					j++;
-				} else if (existField.get(columnName) != null && (existField.get(columnName).getTabOrder() != i)) {
-					W5QueryFieldCreation field = existField.get(columnName);
-					field.setTabOrder((short) (i));
-					field.setVersionUserId(userId);
-					field.setVersionDttm(new java.sql.Timestamp(new java.util.Date().getTime()));
-					updateList.add(field);
-				}
-				existField.remove(columnName);
-			}
-			rs.close();
-			stmt.close();
-			if (FrameworkSetting.hibernateCloseAfterWork)
-				con.close();
-		} catch (Exception e) {
-//			error = e.getMessage();
-			throw new IWBException("sql", "External.Query", query.getQueryId(),
-					GenericUtil.replaceSql(sqlStr, sqlParams), "[8," + query.getQueryId() + "] " + query.getDsc(), e);
-		}
-
-	}
 
 }

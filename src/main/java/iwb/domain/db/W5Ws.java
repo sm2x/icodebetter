@@ -19,6 +19,10 @@ import org.hibernate.annotations.Immutable;
 @Table(name="w5_ws",schema="iwb")
 public class W5Ws  implements java.io.Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 213123123451L;
 	private int wsId;
 	private String dsc;
 	private String wsUrl;
@@ -33,15 +37,6 @@ public class W5Ws  implements java.io.Serializable {
 	private int timeout;
 	private short wssTip;//0:none, 1:credentials, 2:token
 	private String wssCredentials;
-	private String wssPasswordType;
-	private String wssUserName;
-	private String wssPassWord;
-	private String wssDomain;
-	private String wssTimeToLive;
-	private Integer wssLoginMethodId;
-	private Integer wssLoginMethodParamId;
-	private Integer wssLoginTimeout;
-	private Integer wssLogoutMethodId;
 	
 	@Id
 	@Column(name="ws_id")
@@ -143,43 +138,7 @@ public class W5Ws  implements java.io.Serializable {
 	public void setWssTip(short wssTip) {
 		this.wssTip = wssTip;
 	}
-	@Column(name="wss_password_type")
-	public String getWssPasswordType() {
-		return wssPasswordType;
-	}
-	public void setWssPasswordType(String wssPasswordType) {
-		this.wssPasswordType = wssPasswordType;
-	}
-	@Column(name="wss_user_name")
-	public String getWssUserName() {
-		return wssUserName;
-	}
-	public void setWssUserName(String wssUserName) {
-		this.wssUserName = wssUserName;
-	}
-	@Column(name="wss_pass_word")
-	public String getWssPassWord() {
-		return wssPassWord;
-	}
-	public void setWssPassWord(String wssPassWord) {
-		this.wssPassWord = wssPassWord;
-	}
-	
-	@Column(name="wss_domain")
-	public String getWssDomain() {
-		return wssDomain;
-	}
-	public void setWssDomain(String wssDomain) {
-		this.wssDomain = wssDomain;
-	}
-	
-	@Column(name="wss_time_to_live")
-	public String getWssTimeToLive() {
-		return wssTimeToLive;
-	}
-	public void setWssTimeToLive(String wssTimeToLive) {
-		this.wssTimeToLive = wssTimeToLive;
-	}
+
 	
 	@Column(name="timeout")
 	public int getTimeout() {
@@ -188,34 +147,7 @@ public class W5Ws  implements java.io.Serializable {
 	public void setTimeout(int timeout) {
 		this.timeout = timeout;
 	}
-	@Column(name="wss_login_method_id")
-	public Integer getWssLoginMethodId() {
-		return wssLoginMethodId;
-	}
-	public void setWssLoginMethodId(Integer wssLoginMethodId) {
-		this.wssLoginMethodId = wssLoginMethodId;
-	}
-	@Column(name="wss_login_method_param_id")
-	public Integer getWssLoginMethodParamId() {
-		return wssLoginMethodParamId;
-	}
-	public void setWssLoginMethodParamId(Integer wssLoginMethodParamId) {
-		this.wssLoginMethodParamId = wssLoginMethodParamId;
-	}
-	@Column(name="wss_login_timeout")
-	public Integer getWssLoginTimeout() {
-		return wssLoginTimeout;
-	}
-	public void setWssLoginTimeout(Integer wssLoginTimeout) {
-		this.wssLoginTimeout = wssLoginTimeout;
-	}
-	@Column(name="wss_logout_method_id")
-	public Integer getWssLogoutMethodId() {
-		return wssLogoutMethodId;
-	}
-	public void setWssLogoutMethodId(Integer wssLogoutMethodId) {
-		this.wssLogoutMethodId = wssLogoutMethodId;
-	}
+
 	private String projectUuid;
 	@Id	
 	@Column(name="project_uuid")
@@ -235,4 +167,13 @@ public class W5Ws  implements java.io.Serializable {
 		this.wssCredentials = wssCredentials;
 	}
 	
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5Ws))return false;
+		W5Ws c = (W5Ws)o;
+		return c!=null && c.getWsId()==getWsId() && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getWsId();
+	}	
 }

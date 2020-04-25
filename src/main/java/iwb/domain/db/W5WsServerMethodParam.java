@@ -6,6 +6,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import org.hibernate.annotations.Immutable;
 
@@ -193,5 +194,21 @@ public class W5WsServerMethodParam  implements java.io.Serializable, W5Param {
 	public void setProjectUuid(String projectUuid) {
 		this.projectUuid = projectUuid;
 	}
+
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5WsServerMethodParam))return false;
+		W5WsServerMethodParam c = (W5WsServerMethodParam)o;
+		return c!=null && c.getWsServerMethodParamId()==getWsServerMethodParamId() && c.getProjectUuid().equals(projectUuid);
+	}
 	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getWsServerMethodParamId();
+	}
+	
+	
+	@Transient
+	public int getParentId() {
+		return parentWsMethodParamId;
+	}
+
 }

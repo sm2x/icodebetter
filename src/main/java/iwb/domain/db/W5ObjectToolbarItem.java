@@ -14,6 +14,10 @@ import org.hibernate.annotations.Immutable;
 @Table(name="w5_object_toolbar_item",schema="iwb")
 public class W5ObjectToolbarItem implements java.io.Serializable, W5Base {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 9159238375651L;
 	private int toolbarItemId;
 	private short objectTip; // hangi tablodan geldigi: 2:table_id, 1:gridId, 3:dbFunc
 	private int objectId; //gelen table'in PK'si
@@ -155,5 +159,16 @@ public class W5ObjectToolbarItem implements java.io.Serializable, W5Base {
 	public void setProjectUuid(String projectUuid) {
 		this.projectUuid = projectUuid;
 	}
+
 	
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5ObjectToolbarItem))return false;
+		W5ObjectToolbarItem c = (W5ObjectToolbarItem)o;
+		return c!=null && c.getToolbarItemId()==getToolbarItemId() && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getToolbarItemId();
+	}	
+
 }

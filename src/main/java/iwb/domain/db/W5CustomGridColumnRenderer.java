@@ -15,6 +15,10 @@ import org.hibernate.annotations.Immutable;
 @Table(name="w5_custom_grid_column_renderer", schema="iwb")
 public class W5CustomGridColumnRenderer implements java.io.Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 9982282731231231L;
 	private int customGridColumnRendererId;
 	private int gridId;
 	private int queryFieldId;
@@ -69,5 +73,14 @@ public class W5CustomGridColumnRenderer implements java.io.Serializable {
 	public void setProjectUuid(String projectUuid) {
 		this.projectUuid = projectUuid;
 	}
+
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5CustomGridColumnRenderer))return false;
+		W5CustomGridColumnRenderer c = (W5CustomGridColumnRenderer)o;
+		return c!=null && c.getCustomGridColumnRendererId()==getCustomGridColumnRendererId() && c.getProjectUuid().equals(projectUuid);
+	}
 	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getCustomGridColumnRendererId();
+	}
 }

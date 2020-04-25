@@ -17,6 +17,10 @@ import javax.persistence.Table;
 @Table(name="w5_vcs_object", schema="iwb")
 public class W5VcsObject  implements java.io.Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 166622234734L;
 	private int vcsObjectId;
 	private int tableId;
 	private int tablePk;
@@ -162,5 +166,5 @@ public class W5VcsObject  implements java.io.Serializable {
 		return n;
 		
 	}
-	
+
 }

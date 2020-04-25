@@ -12,6 +12,10 @@ import javax.persistence.Table;
 @Table(name="iwb.w5_excel_import_sheet_data",schema="iwb")
 public class W5ExcelImportSheetData implements java.io.Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 76762342342341L;
 	private int excelImportSheetDataId;
 	private int excelImportSheetId;
 	private int rowNo;
@@ -666,7 +670,7 @@ public class W5ExcelImportSheetData implements java.io.Serializable {
 	
 	
 	private String projectUuid;
-	@Id
+
 	@Column(name="project_uuid")
 	public String getProjectUuid() {
 		return projectUuid;

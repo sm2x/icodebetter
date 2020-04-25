@@ -14,9 +14,11 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import iwb.cache.FrameworkSetting;
 import iwb.service.FrameworkService;
+import iwb.service.VcsService;
 import iwb.timer.GenericTimer;
 import iwb.util.GenericUtil;
 //import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
+import iwb.util.LogUtil;
 
 @SpringBootApplication
 @ServletComponentScan
@@ -34,6 +36,9 @@ public class FrameworkApplication {
 	
 	
 	public static void main(String[] args) {
+		
+		//PropertyConfigurator.configure("./log4j.properties");
+		
 		if(args!=null && args.length>0) {
 			for(int qi=0;qi<args.length;qi++){
 
@@ -65,12 +70,33 @@ public class FrameworkApplication {
 
 		ConfigurableApplicationContext appContext = SpringApplication.run(FrameworkApplication.class, args);
 		
+		
+		FrameworkService service = (FrameworkService)appContext.getBean("frameworkService");
+		VcsService vcsService = (VcsService)appContext.getBean("vcsService");
+		
 		if(FrameworkSetting.localTimer) {
 			TimerTask timerTask = new GenericTimer((TaskExecutor)appContext.getBean("taskExecutor")
-					, (FrameworkService)appContext.getBean("frameworkService"));
+					, service);
 	        //running timer task as daemon thread
 	        Timer timer = new Timer(true);
 	        timer.scheduleAtFixedRate(timerTask, 0, 60*1000); //every minute
 		}
+		
+		if(FrameworkSetting.projectId!=null) {
+			vcsService.icbVCSUpdateSqlAndFields();
+			boolean b = vcsService.projectVCSUpdate("067e6162-3b6f-4ae2-a221-2470b63dff00");
+			if(b && FrameworkSetting.projectId!=null) {
+//				W5Project po = FrameworkCache.getProject(FrameworkSetting.projectId);
+				if(FrameworkSetting.projectId.length()==36) {
+					boolean clean = GenericUtil.uInt(FrameworkSetting.argMap.get("clean"))!=0;
+					if(clean)vcsService.deleteProject(FrameworkSetting.projectId);
+					vcsService.projectVCSUpdate(FrameworkSetting.projectId);
+				}
+			}
+		}
+		if(FrameworkSetting.log2tsdb)LogUtil.activateInflux4Log();
+		if(FrameworkSetting.logType==2)LogUtil.activateMQ4Log();
+		
+		service.reloadCache(-1);
 	}
 }

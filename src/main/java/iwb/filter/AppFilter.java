@@ -27,7 +27,7 @@ import iwb.util.GenericUtil;
 import iwb.util.LogUtil;
 
 @Component
-@WebFilter(urlPatterns = {"/app","/preview","/space"})
+@WebFilter(urlPatterns = {"/app","/preview"})
 public class AppFilter implements Filter {
 //	public static int	transactionCount = 0;
 	
@@ -48,28 +48,47 @@ public class AppFilter implements Filter {
 		}
 		String uri = ((HttpServletRequest) request).getRequestURI();
 		boolean jsonFlag = !uri.contains(".htm") && !uri.contains("/grd/") && !uri.contains("/rpt/") && !uri.contains("/jasper/") && !uri.contains("/dl/") && !uri.contains("ajaxXmlQueryData") && !uri.contains("validateLicense");
-		if(uri.startsWith("/app") || uri.startsWith("/preview") || uri.startsWith("/space"))switch(FrameworkSetting.systemStatus){
+		switch(FrameworkSetting.systemStatus){
 		case	0://working
 			Log5VisitedPage lvp = null;
 			try {
 				String transactionId =  GenericUtil.getTransactionId();
 				request.setAttribute("_trid_", transactionId);
 				Map scd = null;
-				if(FrameworkSetting.logType>0){
+				if(FrameworkSetting.logType>0 && (uri.contains("/app/") || uri.contains("/preview/"))){
 					HttpSession session = ((HttpServletRequest)request).getSession(false);
 					scd = session!=null ? (Map)session.getAttribute("scd-dev"): null;
 					if(scd!=null) {
 						String[] uuri = uri.split("/");
-						String newUri = uuri[uuri.length-1];
-						if(!newUri.equals("ajaxLiveSync"))LogUtil.logObject(new Log5Transaction((String)scd.get("projectId"), newUri, transactionId), true);
-						lvp = new Log5VisitedPage(scd, ((HttpServletRequest) request).getRequestURI(), 0, request.getRemoteAddr(), transactionId);
+						
+						if(uuri.length>1) {
+							String newUri = uuri[uuri.length-1];
+							if(!newUri.equals("ajaxLiveSync")) {
+								LogUtil.logObject(new Log5Transaction((String)scd.get("projectId"), newUri, transactionId), true);
+
+								int pageId = 0;
+								if(newUri.equals("ajaxQueryData"))pageId=GenericUtil.uInt((HttpServletRequest) request, "_qid");
+								else if(newUri.equals("ajaxExecDbFunc"))pageId=GenericUtil.uInt((HttpServletRequest) request, "_did");
+								else if(newUri.equals("showForm") || uri.equals("ajaxPostForm"))pageId=GenericUtil.uInt((HttpServletRequest) request, "_fid");
+								else if(newUri.equals("showPage"))pageId=GenericUtil.uInt((HttpServletRequest) request, "_tid");
+								else if(newUri.startsWith("pic") && newUri.endsWith(".png")) {
+									pageId=GenericUtil.uInt(newUri.substring(3,newUri.length()-4));
+									newUri = "showPic";
+								}
+								lvp = new Log5VisitedPage(scd, newUri, pageId, request.getRemoteAddr(), transactionId);
+								
+							}
+						}
 					}
 				}
 				filterChain.doFilter( request, response );
 			} catch (NestedServletException e) {
-				if(FrameworkSetting.debug)e.printStackTrace();
+				if(FrameworkSetting.debug) {
+					if(e.getMessage().contains("session"))System.out.println("No session: " + ((HttpServletRequest)request).getRequestURI());
+					else e.printStackTrace();				
+				}
 				response.setCharacterEncoding( "UTF-8" );
-				response.setContentType("text/html");
+				response.setContentType(jsonFlag ? "application/json" : "text/html");
 				Exception te = e;
 				IWBException iw = null; 
 				while(te.getCause()!=null && te.getCause() instanceof Exception){
@@ -121,7 +140,8 @@ public class AppFilter implements Filter {
 			if(jsonFlag)response.getWriter().write("{\"success\":false,\n\"errorType\":\"framework\",\n\"error\":\"System Suspended\"}");
 			else response.getWriter().write("<b>System Suspended</b>");
 			break;
-		} else filterChain.doFilter( request, response );
+		}
+		//else filterChain.doFilter( request, response );
 	}
 	public void init(FilterConfig arg0) throws ServletException {
 	}

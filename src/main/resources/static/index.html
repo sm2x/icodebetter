@@ -1,38 +1,34 @@
 
 <!DOCTYPE html><html><head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<title>Sign In with Auth0</title>
-	<script type="text/javascript" src="../ext3.4.1/adapter/ext/ext-base.js"></script>
-	<script type="text/javascript" src="../ext3.4.1/ext-all.js"></script>
-	<script type="text/javascript">
-	function redirectAuth() {
-		if(document.location.origin.includes("sayistay.tedas.gov.tr") ){
-			window.location.href = window.location.href + 'app/login.htm';
-		} else {
-				var parameters = document.location.search;
-				//console.log("this is --->  ",parameters);
-				var both = parameters.replace("?email_projectid=", "");
-				//console.log("both ", both);
-				var projectUuid = both.substring(0, 36);
-				//console.log("projectid ", projectUuid);
-				var mail = both.replace(projectUuid, "");
-				//console.log("email ", mail);
-				Ext.Ajax.request({
-					url: '../auth/login',
-					params: {
-						email: mail,
-						projectId: projectUuid
-					},
-					method: 'GET',
-					success: function (result, request) {
-						window.location.href = result.responseText;
-					},
-					failure: function (result, request) {
-					}
-				});
-			}
+	<title>Code2</title>
+    <script type="text/javascript" src="/enjoyhint/jquery-1.11.1.min.js"></script>
+<script type="text/javascript">
+function redirectAuth() {
 
-		}
+		var parameters = document.location.search;
+		//console.log("this is --->  ",parameters);
+		var both = parameters.replace("?email_projectid=", "");
+		//console.log("both ", both);
+		var projectUuid = both.substring(0, 36);
+		//console.log("projectid ", projectUuid);
+		var mail = both.replace(projectUuid, "");
+		//console.log("email ", mail);
+		$.ajax({
+			url: '/auth/login',
+			data: {
+				email: mail,
+				projectId: projectUuid
+			},
+			type: 'GET', dataType:'text',
+			success: function (result) {
+				window.location.href = result;
+			},
+			failure: function (result) {
+				alert('Error: ' + result)
+			}
+		});
+}
 
 </script>
 </head>

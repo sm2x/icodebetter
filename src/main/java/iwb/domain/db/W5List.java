@@ -11,12 +11,13 @@ import javax.persistence.Transient;
 
 import org.hibernate.annotations.Immutable;
 
-// Generated Feb 5, 2007 3:58:07 PM by Hibernate Tools 3.2.0.b9
 
 @Entity
 @Immutable
 @Table(name="w5_list",schema="iwb")
 public class W5List implements java.io.Serializable {
+
+	private static final long serialVersionUID = 72154123511L;
 
 	private int listId;
 
@@ -250,5 +251,14 @@ public class W5List implements java.io.Serializable {
 	public void setProjectUuid(String projectUuid) {
 		this.projectUuid = projectUuid;
 	}
+
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5List))return false;
+		W5List c = (W5List)o;
+		return c!=null && c.getListId()==getListId() && c.getProjectUuid().equals(projectUuid);
+	}
 	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getListId();
+	}	
 }

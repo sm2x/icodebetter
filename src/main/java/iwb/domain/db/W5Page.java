@@ -22,6 +22,11 @@ import iwb.util.GenericUtil;
 @Table(name="w5_template",schema="iwb")
 public class W5Page implements java.io.Serializable, W5Base {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 223312314121L;
+
 	private int templateId;
 	
 	private short templateTip;
@@ -174,4 +179,13 @@ public class W5Page implements java.io.Serializable, W5Base {
 		this.versionNo = versionNo;
 	}
 
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5Page))return false;
+		W5Page c = (W5Page)o;
+		return c!=null && c.getTemplateId()==getTemplateId() && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getTemplateId();
+	}	
 }

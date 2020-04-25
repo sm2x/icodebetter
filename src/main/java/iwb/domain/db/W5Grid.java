@@ -20,6 +20,11 @@ import iwb.util.GenericUtil;
 @Table(name="w5_grid",schema="iwb")
 public class W5Grid implements java.io.Serializable, W5Base, W5ListBase {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 8761234987321L;
+
 	private int gridId;
 
 	private String dsc;
@@ -61,7 +66,6 @@ public class W5Grid implements java.io.Serializable, W5Base, W5ListBase {
 	private W5QueryField	_groupingField;	
 	private W5QueryField	_fxRowField;	
 	private	List<W5GridColumn> _gridColumnList;
-	private	List<W5GridModule>	_gridModuleList;
 	private	List<W5ObjectToolbarItem>	_toolbarItemList;
 	private	List<W5ObjectMenuItem>	_menuItemList;
 	private	List<W5FormSmsMail>	_crudFormSmsMailList;
@@ -224,13 +228,7 @@ public class W5Grid implements java.io.Serializable, W5Base, W5ListBase {
 	public void set_query(W5Query query) {
 		_query = query;
 	}
-	@Transient
-	public List<W5GridModule> get_gridModuleList() {
-		return _gridModuleList;
-	}
-	public void set_gridModuleList(List<W5GridModule> gridModuleList) {
-		_gridModuleList = gridModuleList;
-	}
+
 	
 	
 	@Column(name="column_render_tip")
@@ -432,15 +430,6 @@ public class W5Grid implements java.io.Serializable, W5Base, W5ListBase {
 			}			
 		} else if(this._gridColumnList!=null ^ g.get_gridColumnList()!=null) return false;*/
 		
-		if(!GenericUtil.safeEquals(this._gridModuleList, g._gridModuleList))return false;
-/*		if(this._gridModuleList!=null && g.get_gridModuleList()!=null){
-			if(this._gridModuleList.size()==g.get_gridModuleList().size())return false;
-			for(int i=0;i<this._gridModuleList.size();i++){
-				W5GridModule c1 = this._gridModuleList.get(i); 
-				W5GridModule c2 = g.get_gridModuleList().get(i);
-				if(!c1.equals(c2))return false;
-			}			
-		} else if(this._gridModuleList!=null ^ g.get_gridModuleList()!=null) return false;*/
 		
 		if(!GenericUtil.safeEquals(this._toolbarItemList, g._toolbarItemList))return false;
 /*		if(this._toolbarItemList!=null && g.get_toolbarItemList()!=null){
@@ -505,5 +494,14 @@ public class W5Grid implements java.io.Serializable, W5Base, W5ListBase {
 	public void setProjectUuid(String projectUuid) {
 		this.projectUuid = projectUuid;
 	}
-		
+
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5Grid))return false;
+		W5Grid c = (W5Grid)o;
+		return c!=null && c.getGridId()==getGridId() && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getGridId();
+	}	
 }

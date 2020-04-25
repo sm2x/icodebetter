@@ -23,6 +23,9 @@ import org.hibernate.annotations.Immutable;
 @Table(name="w5_file_attachment",schema="iwb")
 public class W5FileAttachment implements java.io.Serializable {
 
+
+	private static final long serialVersionUID = 155552352352L;
+
 	private int tableId;
 
 	private String tablePk;
@@ -171,7 +174,7 @@ public class W5FileAttachment implements java.io.Serializable {
 		this.activeFlag = activeFlag;
 	}
 	private String projectUuid;
-	@Id
+
 	@Column(name="project_uuid")
 	public String getProjectUuid() {
 		return projectUuid;

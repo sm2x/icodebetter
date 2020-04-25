@@ -17,6 +17,10 @@ import org.hibernate.annotations.Immutable;
 @Table(name="m5_list",schema="iwb")
 public class M5List implements java.io.Serializable, W5Base, W5ListBase {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 81931327222212211L;
 	private int listId;
 	private int parentListId;
 
@@ -284,5 +288,15 @@ public class M5List implements java.io.Serializable, W5Base, W5ListBase {
 	@Transient
 	public boolean safeEquals(W5Base q){
 		return false;
+	}
+	
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof M5List))return false;
+		M5List c = (M5List)o;
+		return c!=null && c.getListId()==getListId() && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getListId();
 	}
 }

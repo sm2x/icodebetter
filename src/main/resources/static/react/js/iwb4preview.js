@@ -4883,3 +4883,195 @@ class CheckboxGroup extends React.Component {
         );
     }
 }
+
+
+iwb.hasPartInside=function(all,sub){
+	if(typeof all=='undefined')return false;
+	if((''+all).length==0)return false;
+	if((','+all+',').indexOf(','+sub+',')==-1)return false;
+	return true;
+}
+iwb.safeEquals= function(v1, v2){
+	if(v1==='' || v1===false || (typeof v1=='undefined')){
+		return (v2==='' || (typeof v2=='undefined'));
+	} else if(v2==='' || (typeof v2=='undefined'))return false;
+	return v1==v2;
+}
+
+iwb.formElementProperty = function(opr, elementValue, value){
+	switch(1*opr){
+	case -1://is Empty
+		return elementValue==='' || elementValue===null || (typeof elementValue=='undefined');
+	case -2://is not empty
+		return !(elementValue==='' || elementValue===null || (typeof elementValue=='undefined'));
+	case	8://in
+		if(value==='' || (typeof value=='undefined'))return false;
+		return iwb.hasPartInside(value, elementValue);
+	case	9://not in
+		if(value==='' || (typeof value=='undefined'))return true;
+		return !iwb.hasPartInside(value, elementValue);
+	case	0://equals
+		return iwb.safeEquals(elementValue, value);
+	case	1://not equals
+		return !iwb.safeEquals(elementValue, value);
+		
+	}
+	return false;
+	
+}
+iwb.hideColumn= function(columns,name){
+	columns.map(o => {
+		if(o.name == name)o.hidden=true; 
+	})
+}
+
+iwb.postSurveyJs=(formId, action, params, surveyData, masterParams)=>{
+//	console.log(params)
+	var params2 = {_mask:!0}, fid = 0;
+	if(masterParams)for(var kk in masterParams)params2[kk] = masterParams[kk];
+	for(var k in params){
+		var o = params[k];
+		if(k.startsWith('_form_')){
+			fid++;
+			params2['_fid'+fid] = k.substr('_form_'.length);
+			if(action==2 || !surveyData[k] || !surveyData[k].length){
+				params2['_cnt'+fid] = o.length;
+				for(var qi=0;qi<o.length;qi++){
+					var cell = o[qi];
+					params2['a'+fid+'.'+(qi+1)] = 2;
+					for(var kk in cell){
+						params2[kk+fid+'.'+(qi+1)] = cell[kk];
+					}
+					if(masterParams)for(var kk in masterParams)
+						params2[kk.substr(1)+fid+'.'+(qi+1)] = masterParams[kk];
+				}			
+			} else {//update
+				var s = surveyData[k], cnt = 0, pkFieldName='';
+				var sm = {}
+				s.map(scell => {
+					for(var sk in scell)if(sk.startsWith('_id_')){
+						sm[scell[sk]]=scell;
+						pkFieldName = sk.substr('_id_'.length);
+					}
+				});
+				
+				for(var qi=0;qi<o.length;qi++){//for each fresh data
+					var cell = o[qi];
+					cnt++;
+					params2['a'+fid+'.'+cnt] = 2;
+					for(var kk in cell)if(kk.startsWith('_id_')){
+						params2['a'+fid+'.'+cnt] = 1;
+						params2['t'+pkFieldName+fid+'.'+cnt] = cell[kk];
+						delete sm[cell[kk]];
+					} else {
+						params2[kk+fid+'.'+(qi+1)] = cell[kk];
+					}
+					if(masterParams)for(var kk in masterParams)
+						params2[kk.substr(1)+fid+'.'+cnt] = masterParams[kk];
+				}
+				for(var sk in sm){
+					cnt++;
+					params2['a'+fid+'.'+cnt] = 3;
+					params2['t'+pkFieldName+fid+'.'+cnt] = sk;
+				}
+				if(cnt)
+					params2['_cnt'+fid] = cnt;
+				else {
+					delete params2['_fid'+fid];
+					fid--;
+				}
+			}
+		} else {
+			if(o && Array.isArray(o)){
+				if(o.length && o[0].content){
+					params2[k] = o[0].content.substr(o[0].content.lastIndexOf('=')+1);
+				} else 
+					params2[k] = o.join(','); 
+					
+			} else 
+				params2[k] =  o;
+		}
+	}
+	if(action==1)for(var k in surveyData)if(k.startsWith('_form_') && surveyData[k] && surveyData[k].length && 
+			(!params[k] || !params[k].length)){
+		var o = surveyData[k];
+		fid++;
+		params2['_fid'+fid] = k.substr('_form_'.length);
+		params2['_cnt'+fid] = o.length;
+		for(var qi=0;qi<o.length;qi++){
+			var cell = o[qi];
+			params2['a'+fid+'.'+(qi+1)] = 3;
+			for(var kk in cell)if(kk.startsWith('_id_')){
+				params2['t'+kk.substr('_id_'.length)+fid+'.'+(qi+1)] = cell[kk];
+			}
+		}
+	}
+	iwb.ajax.postForm(formId, action, params2, ()=>{
+		toastr.success(
+            "",
+            "Saved Successfully", {
+                timeOut: 3000
+            }
+        );
+		iwb.closeTab({}, !0);
+	})
+}
+
+iwb.fileUploadSurveyJs=(tableId, tablePk, survey, options)=>{
+	debugger
+	console.log(options)
+	var formData = new FormData();
+    options
+        .files
+        .forEach(function (file) {
+            formData.append("file", file);
+            formData.append("table_id", tableId);
+            formData.append("table_pk", tablePk);
+            formData.append("profilePictureFlag", 0);
+        });
+    var xhr = new XMLHttpRequest();
+    xhr.responseType = "json";
+    xhr.open("POST", "upload.form"); // https://surveyjs.io/api/MySurveys/uploadFiles
+    xhr.onload = function () {
+        var data = xhr.response;
+        options.callback("success", options.files.map(file => {
+            return {
+                file: file,
+                content: data.fileUrl
+            };
+        }));
+    };
+    xhr.send(formData);
+}
+
+function gcx(w, h, r) {
+  var l = (screen.width - w) / 2;
+  var t = (screen.height - h) / 2;
+  r = r ? 1 : 0;
+  return (
+    "toolbar=0,scrollbars=0,location=0,status=1,menubar=0,resizable=" +
+    r +
+    ",width=" +
+    w +
+    ",height=" +
+    h +
+    ",left=" +
+    l +
+    ",top=" +
+    t
+  );
+}
+
+function openPopup(url, name, x, y, r) {
+  var wh = window.open(url, name, gcx(x, y, r));
+  if (!wh) toastr.error(getLocMsg("remove_popup_blocker"));
+  else wh.focus();
+  return false;
+}
+
+iwb.findAsyncValue = function(value, options){
+	if(!value || !options || !options.length)return '';
+	for(var qi=0;qi<options.length;qi++)if(options[qi].id==value)return options[qi];
+	return '';
+	
+}

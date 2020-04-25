@@ -18,56 +18,61 @@ import iwb.util.GenericUtil;
 @Table(name = "w5_approval_step", schema = "iwb")
 public class W5WorkflowStep implements java.io.Serializable, W5Base {
 
-  private int approvalStepId;
-  private int approvalStepSeqId;
-  private int approvalId;
-  private String dsc;
-  private String approvalRoles;
-  private String approvalUsers;
-  private int onApproveStepId;
-  private Integer onApproveFormId;
-  private String onApproveStepSql;
-  private short returnFlag;
-  private int onReturnStepId;
-  private Integer onReturnFormId;
-  private String onReturnStepSql;
-  private String onRejectStepSql;
-  private Integer onRejectFormId;
-  private short finalStepFlag;
-  private String visibleFields;
-  private String updatableFields;
-
-
-  private short accessViewTip;
-  private String accessViewRoles;
-  private String accessViewUsers;
-  private String accessViewUserFields;
-
-  private short accessUpdateTip;
-  private String accessUpdateRoles;
-  private String accessUpdateUsers;
-  private String accessUpdateUserFields;
-
-  private short accessDeleteTip;
-  private String accessDeleteRoles;
-  private String accessDeleteUsers;
-  private String accessDeleteUserFields;
-
-
-  private short timeLimitFlag;
-  private int timeLimitDuration;
-  private int onTimeLimitExceedStepId;
-  private short timeLimitDurationTip;
-  private String onEscalationCode;
-
-  private String btnApproveLabel;
-  private String btnReturnLabel;
-  
-  private String approvalNotificationIds;
-  private String onApproveNotificationIds;
-  private String onReturnNotificationIds;
-  private String onRejectNotificationIds;
-  private String onEscalationNotificationIds;
+  /**
+	 * 
+	 */
+	private static final long serialVersionUID = 22993388447511L;
+	
+	private int approvalStepSeqId;
+	private int approvalStepId;
+	private int approvalId;
+	  private String dsc;
+	  private String approvalRoles;
+	  private String approvalUsers;
+	  private int onApproveStepId;
+	  private Integer onApproveFormId;
+	  private String onApproveStepSql;
+	  private short returnFlag;
+	  private int onReturnStepId;
+	  private Integer onReturnFormId;
+	  private String onReturnStepSql;
+	  private String onRejectStepSql;
+	  private Integer onRejectFormId;
+	  private short finalStepFlag;
+	  private String visibleFields;
+	  private String updatableFields;
+	
+	
+	  private short accessViewTip;
+	  private String accessViewRoles;
+	  private String accessViewUsers;
+	  private String accessViewUserFields;
+	
+	  private short accessUpdateTip;
+	  private String accessUpdateRoles;
+	  private String accessUpdateUsers;
+	  private String accessUpdateUserFields;
+	
+	  private short accessDeleteTip;
+	  private String accessDeleteRoles;
+	  private String accessDeleteUsers;
+	  private String accessDeleteUserFields;
+	
+	
+	  private short timeLimitFlag;
+	  private int timeLimitDuration;
+	  private int onTimeLimitExceedStepId;
+	  private short timeLimitDurationTip;
+	  private String onEscalationCode;
+	
+	  private String btnApproveLabel;
+	  private String btnReturnLabel;
+	  
+	  private String approvalNotificationIds;
+	  private String onApproveNotificationIds;
+	  private String onReturnNotificationIds;
+	  private String onRejectNotificationIds;
+	  private String onEscalationNotificationIds;
 
 
   @Column(name = "approval_id")
@@ -547,5 +552,13 @@ public class W5WorkflowStep implements java.io.Serializable, W5Base {
 		this.onEscalationNotificationIds = onEscalationNotificationIds;
 	}
   
-  
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5WorkflowStep))return false;
+		W5WorkflowStep c = (W5WorkflowStep)o;
+		return c!=null && c.getApprovalStepSeqId()==getApprovalStepSeqId() && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getApprovalStepSeqId();
+	}	  
 }

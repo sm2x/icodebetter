@@ -18,6 +18,10 @@ import iwb.util.GenericUtil;
 @Table(name="w5_conversion_col",schema="iwb")
 public class W5ConversionCol implements java.io.Serializable, W5Base {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 12224352342432L;
 	private int conversionColId;
 	private int conversionId;
 	private short tabOrder;
@@ -103,5 +107,15 @@ public class W5ConversionCol implements java.io.Serializable, W5Base {
 	public void setProjectUuid(String projectUuid) {
 		this.projectUuid = projectUuid;
 	}
+
+
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5ConversionCol))return false;
+		W5ConversionCol c = (W5ConversionCol)o;
+		return c!=null && c.getConversionColId()==getConversionColId() && c.getProjectUuid().equals(projectUuid);
+	}
 	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getConversionColId();
+	}
 }

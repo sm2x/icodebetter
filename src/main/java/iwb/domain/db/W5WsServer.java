@@ -136,6 +136,14 @@ public class W5WsServer  implements java.io.Serializable {
 		this._graphQLBuild = _graphQLBuild;
 	}
 	
-
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5WsServer))return false;
+		W5WsServer c = (W5WsServer)o;
+		return c!=null && c.getWsServerId()==getWsServerId() && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getWsServerId();
+	}
 	
 }

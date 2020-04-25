@@ -48,7 +48,7 @@ public class Log5UserAction implements Serializable, Log5Base{
 	public void setLogId(int logId) {
 		this.logId = logId;
 	}
-	@Id
+
 	@Column(name="customization_id")
 	public int getCustomizationId() {
 		return customizationId;

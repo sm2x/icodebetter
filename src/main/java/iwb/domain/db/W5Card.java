@@ -18,6 +18,8 @@ import org.hibernate.annotations.Immutable;
 @Table(name="w5_data_view",schema="iwb")
 public class W5Card implements java.io.Serializable, W5Base, W5ListBase {
 
+	private static final long serialVersionUID = 1435135123L;
+
 	private int dataViewId;
 
 	private String dsc;
@@ -278,5 +280,15 @@ public class W5Card implements java.io.Serializable, W5Base, W5ListBase {
 	@Transient
 	public boolean safeEquals(W5Base q){
 		return false;
+	}
+	
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5Card))return false;
+		W5Card c = (W5Card)o;
+		return c!=null && c.getDataViewId()==dataViewId && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*dataViewId;
 	}
 }

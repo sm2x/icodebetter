@@ -14,6 +14,8 @@ import org.hibernate.annotations.Immutable;
 @Table(name="w5_project",schema="iwb")
 public class W5Project  implements java.io.Serializable {
 
+
+	private static final long serialVersionUID = 98981231241231L;
 	private String projectUuid;
 	private int customizationId;
 
@@ -24,17 +26,6 @@ public class W5Project  implements java.io.Serializable {
 	
 	private String rdbmsSchema;
 
-	
-	private short mqFlag;
-	private short mqTip;
-	private String mqUrl;
-	private String mqQueueName;
-
-	private short tsdbFlag;
-	private String tsdbUrl;
-	private String tsdbUserName;
-	private String tsdbPassWord;
-	private String tsdbDatabase;
 	
 	private short uiWebFrontendTip;
 	private int uiMainTemplateId;
@@ -141,75 +132,6 @@ public class W5Project  implements java.io.Serializable {
 		this.rdbmsSchema = rdbmsSchema;
 	}
 
-	@Column(name="mq_flag")
-	public short getMqFlag() {
-		return mqFlag;
-	}
-	public void setMqFlag(short mqFlag) {
-		this.mqFlag = mqFlag;
-	}
-	
-	@Column(name="mq_tip")
-	public short getMqTip() {
-		return mqTip;
-	}
-	public void setMqTip(short mqTip) {
-		this.mqTip = mqTip;
-	}
-	
-	
-	@Column(name="mq_url")
-	public String getMqUrl() {
-		return mqUrl;
-	}
-	public void setMqUrl(String mqUrl) {
-		this.mqUrl = mqUrl;
-	}
-	
-	
-	@Column(name="mq_queue_name")
-	public String getMqQueueName() {
-		return mqQueueName;
-	}
-	public void setMqQueueName(String mqQueueName) {
-		this.mqQueueName = mqQueueName;
-	}
-	
-	/*@Transient
-	public Channel get_mqChannel() {
-		return _mqChannel;
-	}
-	public void set_mqChannel(Channel _mqChannel) {
-		this._mqChannel = _mqChannel;
-	}*/
-	@Column(name="tsdb_flag")
-	public short getTsdbFlag() {
-		return tsdbFlag;
-	}
-	public void setTsdbFlag(short tsdbFlag) {
-		this.tsdbFlag = tsdbFlag;
-	}
-	@Column(name="tsdb_url")
-	public String getTsdbUrl() {
-		return tsdbUrl;
-	}
-	public void setTsdbUrl(String tsdbUrl) {
-		this.tsdbUrl = tsdbUrl;
-	}
-	@Column(name="tsdb_user_name")
-	public String getTsdbUserName() {
-		return tsdbUserName;
-	}
-	public void setTsdbUserName(String tsdbUserName) {
-		this.tsdbUserName = tsdbUserName;
-	}
-	@Column(name="tsdb_pass_word")
-	public String getTsdbPassWord() {
-		return tsdbPassWord;
-	}
-	public void setTsdbPassWord(String tsdbPassWord) {
-		this.tsdbPassWord = tsdbPassWord;
-	}
 	
 	/*@Transient
 	public InfluxDB get_tsdb() {
@@ -219,13 +141,7 @@ public class W5Project  implements java.io.Serializable {
 		this._tsdb = _tsdb;
 	}*/
 	
-	@Column(name="tsdb_database")
-	public String getTsdbDatabase() {
-		return tsdbDatabase;
-	}
-	public void setTsdbDatabase(String tsdbDatabase) {
-		this.tsdbDatabase = tsdbDatabase;
-	}
+
 	@Column(name="dsc")
 	public String getDsc() {
 		return dsc;
@@ -256,6 +172,7 @@ public class W5Project  implements java.io.Serializable {
 	public void setLocales(String locales) {
 		this.locales = locales;
 	}
+	//@Transient
 	@Column(name="lkp_date_format")
 	public short getLkpDateFormat() {
 		return lkpDateFormat;

@@ -19,6 +19,8 @@ import iwb.util.GenericUtil;
 @Table(name="w5_form",schema="iwb")
 public class W5Form implements java.io.Serializable, W5Base {
 
+	private static final long serialVersionUID = 1222312312L;
+
 	private int formId;
 	
 	private short objectTip; // 2:table_id, 1:gridId, 3:dbFunc
@@ -330,4 +332,13 @@ public class W5Form implements java.io.Serializable, W5Base {
 		this.sourceWsMethodId = sourceWsMethodId;
 	}
 
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5Form))return false;
+		W5Form c = (W5Form)o;
+		return c!=null && c.getFormId()==formId && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*formId;
+	}
 }

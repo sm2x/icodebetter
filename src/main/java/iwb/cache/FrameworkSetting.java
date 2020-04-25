@@ -22,7 +22,7 @@ public class FrameworkSetting {
 	public static  boolean monaco = false;
 	public	static	int	rdbmsTip= 0; //0:PostgreSQL, 1: SQL Server, 2: Oracle
 	public	static	boolean	tsdbFlag= true; //Time SeriesDB
-	public	static	int	systemStatus = 0; //0:working, 1:backup, 2:suspended
+	public	static	int	systemStatus = 2; //0:working, 1:backup, 2:suspended
 	public static final Map<String, Integer> projectSystemStatus = new HashMap<String, Integer>();//
 	public final static Locale appLocale = new Locale("en");
 	public final static String instanceUuid=UUID.randomUUID().toString();
@@ -40,6 +40,7 @@ public class FrameworkSetting {
 //	public static boolean allowMultiLogin=true;
 	public static boolean vcs=true;
 	public static boolean vcsServer=false;
+	public static boolean vcsServerClient=false;
 	public static int rhinoInstructionCount = 10000;
 //	public static boolean commentSummary=true;
 	public static boolean alarm=true;

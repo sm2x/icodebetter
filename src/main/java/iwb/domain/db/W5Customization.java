@@ -17,6 +17,11 @@ import org.hibernate.annotations.Immutable;
 @Table(name="w5_customization",schema="iwb")
 public class W5Customization implements java.io.Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 888213213211L;
+
 	private int customizationId;
 
 	private String dsc;

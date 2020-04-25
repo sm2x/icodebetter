@@ -14,6 +14,10 @@ import org.hibernate.annotations.Immutable;
 @Table(name="w5_form_module",schema="iwb")
 public class W5FormModule implements java.io.Serializable, W5Base {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 100231238127L;
 	private int formModuleId;
 	private int formId;
 	private String localeMsgKey;
@@ -21,9 +25,6 @@ public class W5FormModule implements java.io.Serializable, W5Base {
 	private short moduleTip;
 	private short moduleViewTip;
 	private int objectId;
-	private short accessViewTip;
-	private String accessViewRoles;
-	private String accessViewUsers;
 	private int minRow;
 	private int maxRow;
 	
@@ -69,31 +70,7 @@ public class W5FormModule implements java.io.Serializable, W5Base {
 	public void setModuleTip(short moduleTip) {
 		this.moduleTip = moduleTip;
 	}
-	@Column(name="access_view_tip")
-	public short getAccessViewTip() {
-		return accessViewTip;
-	}
 
-	@Column(name="access_view_roles")
-	public String getAccessViewRoles() {
-		return accessViewRoles;
-	}
-
-
-
-	@Column(name="access_view_users")
-	public String getAccessViewUsers() {
-		return accessViewUsers;
-	}
-	public void setAccessViewTip(short accessViewTip) {
-		this.accessViewTip = accessViewTip;
-	}
-	public void setAccessViewRoles(String accessViewRoles) {
-		this.accessViewRoles = accessViewRoles;
-	}
-	public void setAccessViewUsers(String accessViewUsers) {
-		this.accessViewUsers = accessViewUsers;
-	}
 	
 	@Column(name="object_id")
 	public int getObjectId() {
@@ -164,5 +141,14 @@ public class W5FormModule implements java.io.Serializable, W5Base {
 	public void setMaxRow(int maxRow) {
 		this.maxRow = maxRow;
 	}
+
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5FormModule))return false;
+		W5FormModule c = (W5FormModule)o;
+		return c!=null && c.getFormModuleId()==getFormModuleId() && c.getProjectUuid().equals(projectUuid);
+	}
 	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getFormModuleId();
+	}	
 }

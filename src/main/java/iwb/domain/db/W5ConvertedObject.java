@@ -24,6 +24,11 @@ import iwb.domain.helper.W5TableRecordHelper;
 @Table(name="w5_converted_object",schema="iwb")
 public class W5ConvertedObject implements java.io.Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 166612112131L;
+
 	public W5ConvertedObject() {
 		super();
 	}
@@ -130,4 +135,13 @@ public class W5ConvertedObject implements java.io.Serializable {
 		this.projectUuid = projectUuid;
 	}
 	
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5ConvertedObject))return false;
+		W5ConvertedObject c = (W5ConvertedObject)o;
+		return c!=null && c.getConvertedObjectId()==getConvertedObjectId() && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getConvertedObjectId();
+	}
 }

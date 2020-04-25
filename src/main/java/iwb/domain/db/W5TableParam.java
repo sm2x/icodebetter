@@ -6,6 +6,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import org.hibernate.annotations.Immutable;
 
@@ -19,7 +20,7 @@ import org.hibernate.annotations.Immutable;
 @Table(name="w5_table_param",schema="iwb")
 public class W5TableParam  implements java.io.Serializable, W5Param {
 
-	
+	private static final long serialVersionUID = 1343434342L;
 	private int tableParamId;
 	private int tableId;
 
@@ -197,5 +198,21 @@ public class W5TableParam  implements java.io.Serializable, W5Param {
 	public void setProjectUuid(String projectUuid) {
 		this.projectUuid = projectUuid;
 	}
-
+	
+	
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5TableParam))return false;
+		W5TableParam c = (W5TableParam)o;
+		return c!=null && c.getTableParamId()==tableParamId && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*tableParamId;
+	}
+	
+	
+	@Transient
+	public int getParentId() {
+		return 0;
+	}
 }

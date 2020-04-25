@@ -16,6 +16,10 @@ import javax.persistence.Table;
 @Table(name="w5_approval_record",schema="iwb")
 public class W5WorkflowRecord implements java.io.Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 338816354557731L;
 	private int approvalRecordId;
 	private int approvalStepId;
 	private int approvalId;
@@ -229,5 +233,14 @@ public class W5WorkflowRecord implements java.io.Serializable {
 	    versionNo=1;
 	  }
 
-	
+	  
+		public boolean equals(Object o) {
+			if(o==null || !(o instanceof W5WorkflowRecord))return false;
+			W5WorkflowRecord c = (W5WorkflowRecord)o;
+			return c!=null && c.getApprovalRecordId()==getApprovalRecordId() && c.getProjectUuid().equals(projectUuid);
+		}
+		
+		public int hashCode() {
+			return projectUuid.hashCode() + 100*getApprovalRecordId();
+		}		
 }

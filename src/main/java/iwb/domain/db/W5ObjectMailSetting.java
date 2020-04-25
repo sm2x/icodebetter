@@ -12,6 +12,11 @@ import javax.persistence.Table;
 @Table(name="w5_object_mail_setting",schema="iwb")
 public class W5ObjectMailSetting implements java.io.Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 6161342342341L;
+
 	private int mailSettingId;
 	
 	private int tableId;
@@ -50,7 +55,7 @@ public class W5ObjectMailSetting implements java.io.Serializable {
 	public void setTablePk(int tablePk) {
 		this.tablePk = tablePk;
 	}
-	@Id
+
 	@Column(updatable=false,name="CUSTOMIZATION_ID")
 	public int getCustomizationId() {
 		return customizationId;

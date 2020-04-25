@@ -16,7 +16,7 @@ import iwb.util.GenericUtil;
 @Entity
 @Table(name="log5_console",schema="iwb")
 public class Log5Console implements Serializable, Log5Base{
-	private static final long serialVersionUID = 134252091816162873L;
+	private static final long serialVersionUID = 184252091816162873L;
 
 	private int logId;
 	private int userId;
@@ -56,7 +56,7 @@ public class Log5Console implements Serializable, Log5Base{
 	public void setLogId(int logId) {
 		this.logId = logId;
 	}
-	@Id
+
 	@Column(name="customization_id")
 	public int getCustomizationId() {
 		return customizationId;

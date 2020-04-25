@@ -14,8 +14,7 @@ import org.springframework.stereotype.Component;
 import iwb.cache.FrameworkCache;
 import iwb.cache.FrameworkSetting;
 import iwb.cache.LocaleMsgCache;
-import iwb.custom.trigger.GetFormTrigger;
-import iwb.dao.rdbms_impl.MetadataLoaderDAO;
+import iwb.dao.metadata.MetadataLoader;
 import iwb.dao.rdbms_impl.PostgreSQL;
 import iwb.domain.db.W5BIGraphDashboard;
 import iwb.domain.db.W5Conversion;
@@ -59,7 +58,7 @@ public class UIEngine {
 
 	@Lazy
 	@Autowired
-	private MetadataLoaderDAO metaDataDao;
+	private MetadataLoader metadataLoader;
 	
 	@Lazy
 	@Autowired
@@ -94,11 +93,12 @@ public class UIEngine {
 
 	public W5FormResult getFormResultByQuery(Map<String, Object> scd, int formId, int queryId,
 			Map<String, String> requestParams) {
-		W5FormResult formResult = metaDataDao.getFormResult(scd, formId, 1, requestParams);
+		W5FormResult formResult = metadataLoader.getFormResult(scd, formId, 1, requestParams);
 		// formResult.getForm().get_formCells().clear();
 		if (formId != 1622)
 			formResult.getForm().get_moduleList().clear(); // TODO: neden
 															// yapilmis???
+		formResult.setUniqueId(GenericUtil.getNextId("xfi"));
 
 		W5QueryResult queryResult = queryEngine.executeQuery(scd, queryId, requestParams);
 		formResult.setFormCellResults(new ArrayList<W5FormCellHelper>(queryResult.getData().size()));
@@ -108,6 +108,7 @@ public class UIEngine {
 			W5FormCellHelper result = GenericUtil.getFormCellResultByQueryRecord(d);
 			if (result.getFormCell().getTabOrder() == 0)
 				result.getFormCell().setTabOrder(tabOrder);
+			result.getFormCell().setFormCellId(-tabOrder);
 			tabOrder++;
 			formResult.getFormCellResults().add(result);
 		}
@@ -152,14 +153,11 @@ public class UIEngine {
 			if (formId == 0)
 				formId = t.getDefaultUpdateFormId();
 			if (formId == 0) {
-				List ll = dao.executeSQLQuery(
-						"select min(f.form_id) from iwb.w5_form f where f.project_uuid=? AND f.object_tip=2 AND f.object_id=?",
-						scd.get("projectId"), t.getTableId());
-				if (GenericUtil.isEmpty(ll)) {
+				formId = metadataLoader.findFirstCRUDForm4Table(t.getTableId(), t.getProjectUuid());
+				if (formId == 0) {
 					throw new IWBException("framework", "Table", t.getTableId(), null,
 							LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_no_form_for_table"), null);
 				}
-				formId = GenericUtil.uInt(ll.get(0));
 			}
 			requestParams.put(t.get_tableParamList().get(0).getDsc(), requestParams.get("_tb_pk"));
 			action = 1;
@@ -167,7 +165,7 @@ public class UIEngine {
 		}
 		W5FormResult formResult = null;
 		try {
-			formResult = metaDataDao.getFormResult(scd, formId, action, requestParams);
+			formResult = metadataLoader.getFormResult(scd, formId, action, requestParams);
 			dao.checkTenant(formResult.getScd());
 			formResult.setUniqueId(GenericUtil.getNextId("fi"));
 			if(GenericUtil.uInt(requestParams, "_viewMode")!=0)
@@ -204,55 +202,60 @@ public class UIEngine {
 				if (accessControlSelfFlag)
 					acEngine.accessControl4FormTable(formResult, null);
 				if (formResult.getForm().get_moduleList() != null) {
-					for (W5FormModule m : formResult.getForm().get_moduleList())
-						if ((m.getModuleTip() == 4 || m.getModuleTip() == 3) && GenericUtil.accessControl(scd, m.getAccessViewTip(),
-								m.getAccessViewRoles(), m.getAccessViewUsers())) { // form
-							if (m.getModuleViewTip() == 0 || (m.getModuleViewTip() == 1 && action == 1)
-									|| (m.getModuleViewTip() == 2 && action == 2)) {
-								int newAction = m.getModuleTip() == 3 ? 2 : GenericUtil.uInt(requestParams.get("a" + m.getTabOrder()));
-								if (newAction == 0)
-									newAction = action;
-								if (formResult.getModuleFormMap() == null)
-									formResult.setModuleFormMap(new HashMap());
-								W5FormResult dfr = getFormResult(scd, m.getObjectId(), newAction, requestParams);
-								formResult.getModuleFormMap().put(m.getObjectId(), dfr);
-								if(action==1 && m.getModuleTip() == 3 && !GenericUtil.isEmpty(t.get_tableChildList())) {//TODO: load detail records for form
-									for(W5TableChild tc:t.get_tableChildList()) if(tc.getRelatedTableId() == dfr.getForm().getObjectId()){
-										W5Table dt = FrameworkCache.getTable(scd, tc.getRelatedTableId());
-										StringBuilder sql = new StringBuilder();
-										String pkFieldName = dt.get_tableFieldList().get(0).getDsc();
-										sql.append("select x.").append(pkFieldName);
-										for(W5FormCell fc2:dfr.getForm().get_formCells()) if(fc2.getActiveFlag()!=0 && fc2.getControlTip()>0 && fc2.getControlTip()<90 && fc2.get_sourceObjectDetail()!=null){
-											W5TableField tf2 = (W5TableField)fc2.get_sourceObjectDetail();
-											if(tf2.getTabOrder()!=1)sql.append(", x.").append(tf2.getDsc());											
+					for (W5FormModule m : formResult.getForm().get_moduleList()) if(m.getModuleViewTip() == 0 || m.getModuleViewTip() == action)
+						switch(m.getModuleTip()){
+						case	3://form
+						case	4://multi form
+							int newAction = m.getModuleTip() == 3 ? 2 : GenericUtil.uInt(requestParams.get("a" + m.getTabOrder()));
+							if (newAction == 0)
+								newAction = action;
+							if (formResult.getModuleFormMap() == null)
+								formResult.setModuleFormMap(new HashMap());
+							W5FormResult dfr = getFormResult(scd, m.getObjectId(), newAction, requestParams);
+							formResult.getModuleFormMap().put(m.getObjectId(), dfr);
+							if(action==1 && m.getModuleTip() == 3 && !GenericUtil.isEmpty(t.get_tableChildList())) {//TODO: load detail records for form
+								for(W5TableChild tc:t.get_tableChildList()) if(tc.getRelatedTableId() == dfr.getForm().getObjectId()){
+									W5Table dt = FrameworkCache.getTable(scd, tc.getRelatedTableId());
+									StringBuilder sql = new StringBuilder();
+									String pkFieldName = dt.get_tableFieldList().get(0).getDsc();
+									sql.append("select x.").append(pkFieldName);
+									for(W5FormCell fc2:dfr.getForm().get_formCells()) if(fc2.getActiveFlag()!=0 && fc2.getControlTip()>0 && fc2.getControlTip()<90 && fc2.get_sourceObjectDetail()!=null){
+										W5TableField tf2 = (W5TableField)fc2.get_sourceObjectDetail();
+										if(tf2.getTabOrder()!=1)sql.append(", x.").append(tf2.getDsc());
+										if(fc2.getControlTip()==71) {//file
+											sql.append(", (select a.original_file_name from iwb.w5_file_attachment a where a.project_uuid='").append(scd.get("projectId")).append("' AND a.file_attachment_id=x.").append(tf2.getDsc()).append(") ").append(tf2.getDsc()).append("_qw_");
+											
 										}
-										sql.append(" from ").append(dt.getDsc()).append(" x where x.");
-										sql.append(dt.get_tableFieldMap().get(tc.getRelatedTableFieldId()).getDsc()).append("=?");
-										if(tc.getRelatedStaticTableFieldId()!=0 && tc.getRelatedStaticTableFieldVal()!=0)
-											sql.append(" AND ").append(dt.get_tableFieldMap().get(tc.getRelatedStaticTableFieldId()).getDsc()).append("=").append(tc.getRelatedStaticTableFieldVal());
-										List params = new ArrayList();
-										params.add(GenericUtil.uInt(requestParams.get(t.get_tableParamList().get(0).getDsc())));
-										if(dt.get_tableParamList().size()>0)for(W5TableParam tp2:dt.get_tableParamList())if(tp2.getSourceTip()==2) {
-											sql.append(" AND x.").append(tp2.getExpressionDsc()).append("=?");
-											params.add(scd.get(tp2.getDsc()));
-										}
-										sql.append(" order by 1");
-
-										List<Map> list = dao.executeSQLQuery2Map(sql.toString(), params);
-										if(!GenericUtil.isEmpty(list)) {
-											for(Map m2:list) {//converting PK to specialField 
-												m2.put("_id_"+pkFieldName, m2.get(pkFieldName));
-												m2.remove(pkFieldName);
-											}
-											if(dfr.getOutputFields()==null)dfr.setOutputFields(new HashMap());
-											dfr.getOutputFields().put("list", list);
-										}
-
 									}
-										
+									sql.append(" from ").append(dt.getDsc()).append(" x where x.");
+									sql.append(dt.get_tableFieldMap().get(tc.getRelatedTableFieldId()).getDsc()).append("=?");
+									if(tc.getRelatedStaticTableFieldId()!=0 && tc.getRelatedStaticTableFieldVal()!=0)
+										sql.append(" AND ").append(dt.get_tableFieldMap().get(tc.getRelatedStaticTableFieldId()).getDsc()).append("=").append(tc.getRelatedStaticTableFieldVal());
+									List params = new ArrayList();
+									params.add(GenericUtil.uInt(requestParams.get(t.get_tableParamList().get(0).getDsc())));
+									if(dt.get_tableParamList().size()>0)for(W5TableParam tp2:dt.get_tableParamList())if(tp2.getSourceTip()==2) {
+										sql.append(" AND x.").append(tp2.getExpressionDsc()).append("=?");
+										params.add(scd.get(tp2.getDsc()));
+									}
+									sql.append(" order by 1");
+
+									List<Map> list = dao.executeSQLQuery2Map(sql.toString(), params);
+									if(!GenericUtil.isEmpty(list)) {
+										for(Map m2:list) {//converting PK to specialField 
+											m2.put("_id_"+pkFieldName, m2.get(pkFieldName));
+											m2.remove(pkFieldName);
+										}
+										if(dfr.getOutputFields()==null)dfr.setOutputFields(new HashMap());
+										dfr.getOutputFields().put("list", list);
+									}
+
 								}
+									
 							}
-						}
+
+						break;
+
+					}
 				}
 				break;
 			case 5: // formByQuery:
@@ -267,7 +270,6 @@ public class UIEngine {
 				break;
 			}
 
-			GetFormTrigger.beforeGetForm(formResult);
 			W5Form f = formResult.getForm();
 			if (f.getObjectTip() != 2 && (f.getObjectTip()!=11 || action == 0))
 				action = 2; // eger table degilse sadece initializeForm olabilir
@@ -299,8 +301,8 @@ public class UIEngine {
 								}
 							if (inStr.length() > 1) {
 								List<W5ConvertedObject> lco = dao.find(
-										"from W5ConvertedObject x where x.projectUuid=? AND x.conversionId in ("
-												+ inStr.substring(1) + ") and x.srcTablePk=?",
+										"from W5ConvertedObject x where x.projectUuid=?0 AND x.conversionId in ("
+												+ inStr.substring(1) + ") and x.srcTablePk=?1",
 										projectId,
 										GenericUtil.uInt(requestParams, t.get_tableParamList().get(0).getDsc()));
 								if (!lco.isEmpty()) {
@@ -436,8 +438,8 @@ public class UIEngine {
 							int conversionTablePk = GenericUtil.uInt(requestParams, "_cnvTblPk");
 							if (conversionId != 0 && conversionTablePk != 0) {
 								String prjId = FrameworkCache.getProjectId(scd, "707." + conversionId);
-								W5Conversion c = (W5Conversion) dao.getCustomizedObject(
-										"from W5Conversion t where t.conversionId=? AND t.projectUuid=?", conversionId,
+								W5Conversion c = (W5Conversion) metadataLoader.getMetadataObject(
+										"W5Conversion","conversionId", conversionId,
 										prjId, "Conversion");
 								if (c == null || c.getDstFormId() != formResult.getFormId()) {
 									throw new IWBException("framework", "Conversion", conversionId, null,
@@ -446,7 +448,7 @@ public class UIEngine {
 								}
 								if (c.getMaxNumofConversion() > 0) {
 									List l = dao.find(
-											"select 1 from W5ConvertedObject c where c.conversionId=? AND c.projectUuid=? AND c.srcTablePk=?",
+											"select 1 from W5ConvertedObject c where c.conversionId=?0  AND c.projectUuid=?1 AND c.srcTablePk=?2",
 											conversionId, scd.get("projectId"), conversionTablePk);
 									if (l.size() >= c.getMaxNumofConversion()) {
 										throw new IWBException("framework", "Conversion", conversionId, null,
@@ -464,7 +466,7 @@ public class UIEngine {
 																						// etmek
 																						// lazim
 									List l = dao.find(
-											"select 1 from W5WorkflowRecord c where c.projectUuid=? AND c.finishedFlag=0 AND c.tableId=? AND c.tablePk=?",
+											"select 1 from W5WorkflowRecord c where c.projectUuid=?0  AND c.finishedFlag=0 AND c.tableId=?1 AND c.tablePk=?2",
 											scd.get("projectId"), c.getSrcTableId(), conversionTablePk);
 									if (!l.isEmpty()) {
 										throw new IWBException("framework", "Conversion", conversionId, null,
@@ -790,15 +792,13 @@ public class UIEngine {
 							}
 						if (alarm) {
 							formResult.setFormAlarmList((List<W5FormSmsMailAlarm>) dao.find(
-									"from W5FormSmsMailAlarm a where a.projectUuid=? AND a.insertUserId=? AND a.tableId=? AND a.tablePk=? ",
+									"from W5FormSmsMailAlarm a where a.projectUuid=?0  AND a.insertUserId=?1 AND a.tableId=?2 AND a.tablePk=?3 ",
 									projectId, scd.get("userId"), f.getObjectId(),
 									GenericUtil.uInt(requestParams, t.get_tableParamList().get(0).getDsc())));
 						}
 					}
 				}
 			}
-
-			GetFormTrigger.afterGetForm(formResult);
 
 			return formResult;
 		} catch (Exception e) {
@@ -813,7 +813,7 @@ public class UIEngine {
 		try {
 			boolean developer = scd.get("roleId") != null && (Integer) scd.get("roleId") == 0;
 			boolean debugAndDeveloper = FrameworkSetting.debug && developer;
-			pr = metaDataDao.getPageResult(scd, pageId);
+			pr = metadataLoader.getPageResult(scd, pageId);
 			pr.setRequestParams(requestParams);
 			pr.setPageObjectList(new ArrayList<Object>());
 			List<W5PageObject> templateObjectListExt = new ArrayList<W5PageObject>(
@@ -903,7 +903,7 @@ public class UIEngine {
 				W5Table mainTable = null;
 				switch (Math.abs(o.getObjectTip())) {
 				case 1: // grid
-					W5GridResult gridResult = metaDataDao.getGridResult(scd, o.getObjectId(), requestParams,
+					W5GridResult gridResult = metadataLoader.getGridResult(scd, o.getObjectId(), requestParams,
 							pageId == 298 /* || objectCount!=0 */);
 					if (pageId == 298) { // log template
 						gridResult.setViewLogMode(true);
@@ -931,7 +931,8 @@ public class UIEngine {
 						obz = accessControl ? gridResult : gridResult.getGrid().getDsc();
 					}
 					if (obz instanceof W5GridResult) {
-						Map m = new HashMap();
+						if(gridResult.getExtraOutMap()==null)gridResult.setExtraOutMap(new HashMap());
+						Map m = gridResult.getExtraOutMap();
 						gridResult.setTplObj(o);
 						gridResult.setExtraOutMap(m);
 						m.put("tplId", o.getTemplateId());
@@ -939,7 +940,7 @@ public class UIEngine {
 					}
 					break;
 				case 2: // card view
-					W5CardResult cardResult = metaDataDao.getCardResult(scd, o.getObjectId(), requestParams,
+					W5CardResult cardResult = metadataLoader.getCardResult(scd, o.getObjectId(), requestParams,
 							objectCount != 0);
 					if (o.getObjectTip() < 0)
 						cardResult.setDataViewId(-cardResult.getDataViewId());
@@ -964,7 +965,7 @@ public class UIEngine {
 					}
 					break;
 				case 7: // list view
-					W5ListViewResult listViewResult = metaDataDao.getListViewResult(scd, o.getObjectId(), requestParams,
+					W5ListViewResult listViewResult = metadataLoader.getListViewResult(scd, o.getObjectId(), requestParams,
 							objectCount != 0);
 					if (o.getObjectTip() < 0)
 						listViewResult.setListId(-listViewResult.getListId());
@@ -1003,6 +1004,7 @@ public class UIEngine {
 					obz = accessControl ? formResult : formResult.getForm().getDsc();
 					break;
 				case 4: // query
+				case	10:					
 					Map paramMap = new HashMap();
 					paramMap.putAll(requestParams);
 					if (!GenericUtil.isEmpty(o.getPostJsCode())) {
@@ -1019,22 +1021,23 @@ public class UIEngine {
 					obz = FrameworkCache.getComponent(scd, o.getObjectId());//metaDataDao.loadComponent(scd, o.getObjectId(), new HashMap());
 					break;
 				case 15: // Graph Query
-				case 10: // Badge
+//				case 10: // Badge
 				case 22: // Gauge
-					obz = metaDataDao.getQueryResult(scd, o.getObjectId());//queryEngine.executeQuery(scd, o.getObjectId(), new HashMap());
+					obz = metadataLoader.getQueryResult(scd, o.getObjectId());//queryEngine.executeQuery(scd, o.getObjectId(), new HashMap());
 					break;
 				case 5: // dbFunc
 					obz = scriptEngine.executeGlobalFunc(scd, o.getObjectId(), requestParams, (short) 1);
 					break;
 				case 11: // Mobile List
-					obz = metaDataDao.getMListResult(scd, o.getObjectId(), requestParams, false);
+					obz = metadataLoader.getMListResult(scd, o.getObjectId(), requestParams, false);
 					break;
 				case 31: // Page
-					obz = pr.getPage().getTemplateTip()==0? getPageResult(scd, o.getObjectId(), new HashMap()):metaDataDao.getPageResult(scd, o.getObjectId());
+//					obz = pr.getPage().getTemplateTip()==0? getPageResult(scd, o.getObjectId(), new HashMap()):metaDataDao.getPageResult(scd, o.getObjectId());
+					obz = getPageResult(scd, o.getObjectId(), new HashMap());
 					break;
 				case 9: // graph dashboard
-					W5BIGraphDashboard obz2 = (W5BIGraphDashboard) dao.getCustomizedObject(
-							"from W5BIGraphDashboard t where t.graphDashboardId=? AND t.projectUuid=?",
+					W5BIGraphDashboard obz2 = (W5BIGraphDashboard) metadataLoader.getMetadataObject(
+							"W5BIGraphDashboard","graphDashboardId",
 							o.getObjectId(), scd.get("projectId"), null);
 					if (accessControl) {
 						obz = obz2;
@@ -1076,12 +1079,10 @@ public class UIEngine {
 
 	public W5FormCellHelper reloadFormCell(Map<String, Object> scd, int fcId, String webPageId, String tabId) {
 		String projectId = FrameworkCache.getProjectId(scd, null);
-		int customizationId = (Integer) scd.get("customizationId");
-		// W5Customization cus =
-		// FrameworkCache.wCustomizationMap.get(customizationId);
+
 		int userId = (Integer) scd.get("userId");
-		W5FormCell c = (W5FormCell) dao.getCustomizedObject(
-				"from W5FormCell fc where fc.formCellId=? AND fc.projectUuid=?", fcId, projectId, null);
+		W5FormCell c = (W5FormCell) metadataLoader.getMetadataObject(
+				"W5FormCell","formCellId", fcId, projectId, null);
 		if (c == null)
 			return null;
 		W5FormCellHelper rc = new W5FormCellHelper(c);
@@ -1095,9 +1096,7 @@ public class UIEngine {
 			rc.setLocaleMsgFlag((short) 1);
 			requestParams = UserUtil.getTableGridFormCellReqParams(projectId, -c.getLookupQueryId(), userId,
 					(String) scd.get("sessionId"), webPageId, tabId, -fcId);
-			List<W5LookUpDetay> oldList = (List<W5LookUpDetay>) dao.find(
-					"from W5LookUpDetay t where t.projectUuid=? AND t.lookUpId=? order by t.tabOrder", projectId,
-					c.getLookupQueryId());
+			List<W5LookUpDetay> oldList = metadataLoader.findLookUpDetay( c.getLookupQueryId(), lookUp.getProjectUuid());
 
 			List<W5LookUpDetay> newList = null;
 			if (includedValues != null && includedValues.length() > 0) {
@@ -1159,7 +1158,8 @@ public class UIEngine {
 				}
 			}
 
-			W5QueryResult lookupQueryResult = metaDataDao.getQueryResult(scd, c.getLookupQueryId());
+			dao.checkTenant(scd);
+			W5QueryResult lookupQueryResult = metadataLoader.getQueryResult(scd, c.getLookupQueryId());
 			lookupQueryResult.setErrorMap(new HashMap());
 			lookupQueryResult.setRequestParams(requestParams);
 			lookupQueryResult.setOrderBy(lookupQueryResult.getQuery().getSqlOrderby());
@@ -1192,6 +1192,6 @@ public class UIEngine {
 	}
 	
 	public M5ListResult getMListResult(Map<String, Object> scd, int listId, Map<String, String> parameterMap) {
-		return metaDataDao.getMListResult(scd, listId, parameterMap, false);
+		return metadataLoader.getMListResult(scd, listId, parameterMap, false);
 	}
 }

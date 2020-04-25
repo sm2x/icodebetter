@@ -14,6 +14,10 @@ import iwb.util.GenericUtil;
 @Table(name="w5_vcs_commit", schema="iwb")
 public class W5VcsCommit  implements java.io.Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 5182849123837L;
 	private int vcsCommitId;
 	private String projectUuid;
 	private String oprojectUuid;
@@ -130,5 +134,15 @@ public class W5VcsCommit  implements java.io.Serializable {
 	public void setRunLocalFlag(short runLocalFlag) {
 		this.runLocalFlag = runLocalFlag;
 	}
+
 	
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5VcsCommit))return false;
+		W5VcsCommit c = (W5VcsCommit)o;
+		return c!=null && c.getVcsCommitId()==getVcsCommitId() && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getVcsCommitId();
+	}	
 }

@@ -382,7 +382,7 @@ iwb = {
                 .then(res => res.text())
                 .then(text => {
                     var result = new Function(text)();
-                    iwb.components = {...iwb.components, [url]: result };
+                    iwb.components = Object.assign({},iwb.components, {[url]: result});//{...iwb.components, [url]: result };
                     resolve(result);
                 });
         }).then(a => {
@@ -436,7 +436,7 @@ iwb = {
             render() {
                 const { error, ResultComponent } = this.state;
                 return ResultComponent ?
-                    _(ResultComponent, {...this.props }) :
+                    _(ResultComponent, Object.assign({},this.props)) :
                     error ?
                     _("span", { className: "alert alert-danger" }) :
                     _(XLoading, null);
@@ -719,7 +719,7 @@ iwb = {
                 case "framework":
                 case "cache":
                 case "vcs":
-                    if (obj.error) {
+                    if (obj.error || obj.objectType) {
                         iwb.showModal({
                             title: obj.objectType,
                             footer: false,
@@ -734,7 +734,7 @@ iwb = {
                                     Media, {
                                         heading: true
                                     },
-                                    obj.error
+                                    obj.error || obj.objectType
                                 ),
 
                                 _(
@@ -1207,18 +1207,17 @@ class GridCommon extends React.PureComponent {
                 return _(
                     _dxgrb.Table.Row,
                     openTab && crudFlags && crudFlags.edit && pk && crudFormId ?
-                    {
-                        ...tableRowData,
-                        ... {
+                    Object.assign({},tableRowData,
+                        {
                             onDoubleClick: event =>
                                 this.onEditClick({
                                     event,
                                     rowData: tableRowData.row,
                                     openEditable: !!this.props.openEditable
                                 }),
-                            style: {...tableRowData.style, cursor: "pointer" }
+                            style: Object.assign({},tableRowData.style, {cursor: "pointer" })
                         }
-                    } :
+                    ) :
                     tableRowData
                 );
             };
@@ -1280,7 +1279,8 @@ class GridCommon extends React.PureComponent {
              *            rowData } param0.rowData - Data of the row where the Edit
              *            button or double click clicked
              */
-            this.onEditClick = ({ event, rowData, openEditable, ...extraProps }) => {
+            this.onEditClick = ( extraProps ) => {
+            	var { event, rowData, openEditable} = extraProps;
                 var { props } = this;
                 var pkz = buildParams2(props.pk, rowData);
                 var url = "showForm?a=1&_fid=" + props.crudFormId + pkz;
@@ -1291,7 +1291,7 @@ class GridCommon extends React.PureComponent {
                 var modal = event.ctrlKey && !!event.ctrlKey;
                 props.openTab(
                     "1-" + pkz,
-                    url + (modal ? "&_modal=1" : ""), {}, { modal, openEditable, rowData, ...props, ...extraProps }
+                    url + (modal ? "&_modal=1" : ""), {}, Object.assign({},{ modal, openEditable, rowData}, props, extraProps )
                 );
             };
             /**
@@ -1393,8 +1393,18 @@ class GridCommon extends React.PureComponent {
              * @param {Array}
              *            selection - (selection: Array<number | string>) => void
              */
-            this.onSelectionChange = selection => {
+            this.onSelectionChange = (selection,aqq) => {
+
                 this.setState({ selection });
+            	if(this.props.onSelectionChange){
+            		var sels = this.state.rows.reduce((accumulator, row) => {
+            			selection.includes(row[this.props.keyField]) ?
+                            accumulator.push(row) :
+                            "";
+                        return accumulator;
+                    }, []);
+            		this.props.onSelectionChange(sels);
+            	}
             };
             /**
              * Used to delete from the frontend
@@ -1472,10 +1482,10 @@ class XMap extends React.PureComponent {
                 this.map = this.createMap(this.props.mapOpt || {});
                 this.marker = this.createMarker(this.props.markerOpt || {});
                 this.geocoder = this.createGeocoder(this.props.geocoderOpt || {});
-                this.infoWindow = this.createInfoWindow({
-                    maxWidth: 300,
-                    ...this.props.infoWindowOpt
-                });
+                this.infoWindow = this.createInfoWindow(Object.assign({},{
+                    maxWidth: 300},
+                    this.props.infoWindowOpt
+                ));
                 this.autoComplete = this.createAutocomplete(
                     this.props.autocompleteOpt || undefined
                 );
@@ -1512,10 +1522,7 @@ class XMap extends React.PureComponent {
                     center: this.defPosition,
                     zoom: 8
                 };
-                return new window.google.maps.Map(document.getElementById(this.id), {
-                    ...opt1,
-                    ...opt
-                });
+                return new window.google.maps.Map(document.getElementById(this.id), Object.assign({},opt1,opt));
             };
             /**
              * A function return GMarker
@@ -1527,7 +1534,7 @@ class XMap extends React.PureComponent {
                     map: this.map,
                     title: "default title"
                 };
-                return new window.google.maps.Marker({...opt1, ...opt });
+                return new window.google.maps.Marker(Object.assign({},opt1, opt ));
             };
             /**
              * a function used to init geolocation
@@ -1537,7 +1544,7 @@ class XMap extends React.PureComponent {
              */
             this.createGeocoder = opt => {
                 let opt1 = {};
-                return new window.google.maps.Geocoder({...opt1, ...opt });
+                return new window.google.maps.Geocoder(Object.assign({},opt1, opt ));
             };
             /**
              * a function to create InfoWindow
@@ -1550,7 +1557,7 @@ class XMap extends React.PureComponent {
                     content: `<div id="infoWindow" />`,
                     position: this.defPosition
                 };
-                return new window.google.maps.InfoWindow({...opt1, ...opt });
+                return new window.google.maps.InfoWindow(Object.assign({},opt1, opt ));
             };
             /**
              * A function return Autocomplete
@@ -1880,11 +1887,10 @@ class MapInput extends React.PureComponent {
                 this.toggle();
                 if (!event) return;
                 event.preventDefault();
-                event.target = {
-                    ...this.props,
-                    value: this.state,
-                    stringValue: JSON.stringify(this.state)
-                };
+                event.target = Object.assign({},this.props,
+                    {value: this.state,
+                    stringValue: JSON.stringify(this.state)}
+                );
                 this.props.onChange && this.props.onChange(event);
             };
         }
@@ -2049,23 +2055,23 @@ class XMasonry extends React.Component {
         render() {
             const masonryStyle = this.props;
             return _(
-                Row, {
-                    className: `xMasonryRoot overflowY-auto scrollY`, 
-                    ...this.props.root
-                },
+                Row, Object.assign({},{
+                    className: 'xMasonryRoot overflowY-auto scrollY'}, 
+                    this.props.root
+                ),
                 _(
-                    "div", {
+                    "div", Object.assign({},{
                         className: "d-flex flex-row justify-content-center align-content-stretch flex-fill m-auto w-100",
                         style: masonryStyle,
-                        ref: "Masonry",
-                        ...this.props.rootInner
-                    },
+                        ref: "Masonry"}
+                        ,this.props.rootInner
+                    ),
                     this.mapChildren().map((col, ci) => {
                         return _(
                             Col, { className: "pr-2 pl-2", style: this.props.columnStyle, key: ci },
                             col.map((child, i) => {
                                 return _(
-                                    Card, { key: i, className: "mt-2 mb-2", ...this.props.item },
+                                    Card, Object.assign({},{ key: i, className: "mt-2 mb-2"}, this.props.item ),
                                     child
                                 );
                             })
@@ -2518,7 +2524,7 @@ class XSingleUploadComponent extends React.Component {
                         onChange: this.onchange,
                         ref: input => (this.inpuRef = input)
                     }),
-                    this.props.extraButtons && this.props.extraButtons
+                    this.props.extraButtons
                 ),
                 _(
                     PopoverBody,
@@ -2535,13 +2541,12 @@ class XSingleUploadComponent extends React.Component {
                             }
                         },
                         _("div", {
-                            style: {
-                                ...defaultStyle,
-                                zIndex: "10",
+                            style: Object.assign({},defaultStyle,
+                                {zIndex: "10",
                                 background: "gray",
                                 cursor: "pointer",
                                 opacity: this.state.canUpload ? "0" : "0.5"
-                            },
+                            }),
                             className: "rounded",
                             onDrop: this.onDrop,
                             onDragEnter: this.dragenter,
@@ -2551,10 +2556,9 @@ class XSingleUploadComponent extends React.Component {
                         }),
                         _(
                             "div", {
-                                style: {
-                                    ...defaultStyle,
-                                    display: "flex"
-                                }
+                                style: Object.assign({},defaultStyle,
+                                    {display: "flex"
+                                })
                             },
                             _(XPreviewFile, {
                                 file: this.state.file
@@ -3006,15 +3010,15 @@ class XTabForm extends React.PureComponent {
                         extraButtons.map(extraProps => {
                             switch (extraProps.type) {
                                 case "button":
-                                    let cls = extraProps.icon.split("|");
+                                    let cls = extraProps.icon;
                                     return _(
                                         extraProps.$ || Button, {
                                             key: extraProps.text,
-                                            className: "btn-form-edit mx-1 btn-success " + cls[1],
+                                            className: "btn-form-edit mx-1 btn-success ",
                                             onClick: this.extrabuttonClicked(extraProps)
                                         },
-                                        _("span", {
-                                            className: "mr-1 " + cls[0]
+                                        cls && _("span", {
+                                            className: "mr-1 " + cls
                                         }),
                                         getLocMsg(extraProps.text || "")
                                     );
@@ -3295,7 +3299,7 @@ class XModal extends React.Component {
             return (
                 modal &&
                 _(
-                    Modal, {
+                    Modal, Object.assign({},{
                         keyboard: true,
                         onExit: () => {
                             iwb.loadingDeactive();
@@ -3304,9 +3308,9 @@ class XModal extends React.Component {
                         toggle: this.toggle,
                         isOpen: modal,
                         className: "modal-" + size + " primary",
-                        style,
-                        ...props
-                    },
+                        style},
+                        props
+                    ),
                     _(
                         ModalHeader, {
                             toggle: this.toggle,
@@ -3568,20 +3572,18 @@ class XGridRowAction extends React.PureComponent {
                 /** mail buttonst */
                 formSmsMailList &&
                 formSmsMailList.map(
-                    ({
-                        text = "ButtonTextWillBeHere",
-                        handler = (event, rowData, parentCt, rest) => {
-                            // iwb.openForm
-                            iwb.openTab(
-                                "1-" + Math.random(),
-                                "showForm?a=2&&_fid=5748", {}, {
-                                    modal: true
-                                }
-                            );
-                        },
-                        xid,
-                        ...rest
-                    }) => {
+                    (rest) => {
+                    	var text = rest.text || "ButtonTextWillBeHere";
+                        var handler = rest.handler || ((event, rowData, parentCt, rest) => {
+                                // iwb.openForm
+                                iwb.openTab(
+                                    "1-" + Math.random(),
+                                    "showForm?a=2&&_fid=5748", {}, {
+                                        modal: true
+                                    }
+                                );
+                            });
+                        var xid = rest.xid; 
                         return _(
                             DropdownItem, {
                                 key: xid,
@@ -3869,6 +3871,7 @@ class XGrid extends GridCommon {
     constructor(props) {
         super(props);
         if (iwb.debug) console.log("XGrid", props);
+        if(props.setCmp)props.setCmp(this);
         var columns = [];
         var columnExtensions = [];
         const canIOpenActions =
@@ -3918,14 +3921,14 @@ class XGrid extends GridCommon {
                 title: " ",
                 getCellValue: rowData => {
                     var { onEditClick, onDeleteClick } = this;
-                    return _(XGridRowAction2, {
-                        ... { rowData },
-                        ... { onEditClick, onDeleteClick },
-                        ... { crudFlags: props.crudFlags },
-                        ... { menuButtons: props.menuButtons },
-                        ... { formSmsMailList: props.formSmsMailList },
-                        ... { parentCt: this }
-                    });
+                    return _(XGridRowAction2, Object.assign({},
+                        { rowData },
+                        { onEditClick, onDeleteClick },
+                        { crudFlags: props.crudFlags },
+                        { menuButtons: props.menuButtons },
+                        { formSmsMailList: props.formSmsMailList },
+                        { parentCt: this }
+                    ));
                 }
             });
             columnExtensions.push({
@@ -3965,13 +3968,15 @@ class XGrid extends GridCommon {
             if (!force && queryString === this.lastQuery) {
                 return;
             }
-            this.setState({ rows: [], loading: true });
+            this.setState({ /*rows: [], */loading: true });
+            var params = this.props.searchForm && iwb.getFormValues(document.getElementById(this.props.searchForm.id));
+            if(this.props.beforeLoad && this.props.beforeLoad(this, params)===false)return;
             iwb.request({
                 url: queryString,
                 self: this,
-                params: this.props.searchForm &&
-                    iwb.getFormValues(document.getElementById(this.props.searchForm.id)),
+                params: params,
                 successCallback: (result, cfg) => {
+                	if(cfg.self.props.onLoad && cfg.self.props.onLoad(result, cfg)===false)return;
                     cfg.self.setState({
                         rows: result.data,
                         totalCount: result.total_count,
@@ -4004,7 +4009,7 @@ class XGrid extends GridCommon {
     render() {
         const {
             state: {
-                rows,
+                rows, loading,
                 order,
                 columns,
                 sorting,
@@ -4018,11 +4023,12 @@ class XGrid extends GridCommon {
             props: {
                 keyField,
                 showDetail,
-                multiselect,
+                multiselect, extraButtons,
+                groupColumn,
                 _disableSearchPanel,
                 _disableIntegratedSorting,
                 _disableIntegratedGrouping,
-                titleComponent
+                titleComponent, filterColumns
             },
             // methods
             rowComponent,
@@ -4033,9 +4039,9 @@ class XGrid extends GridCommon {
             onColumnWidthsChange
         } = this;
 
-        if (!rows || !rows.length) return null;
+        if (!this.props._showAlways && (!rows || !rows.length)) return null;
         return _(
-            _dxgrb.Grid, { rows, columns, getRowId: row => row[keyField] },
+            _dxgrb.Grid, { style:{opacity:loading?.5:1}, rows, columns, getRowId: row => row[keyField] },
             /** sorting */
             !_disableIntegratedSorting &&
             _(
@@ -4051,15 +4057,15 @@ class XGrid extends GridCommon {
             rows.length > 1 &&
             _(_dxrg.IntegratedFiltering, null),
             /** state grouping */
-            !_disableIntegratedGrouping &&
+            (groupColumn || (!_disableIntegratedGrouping &&
             !pageSize &&
-            rows.length > 1 &&
-            _(_dxrg.GroupingState, null),
+            rows.length > 1)) &&
+            _(_dxrg.GroupingState, groupColumn ? {defaultGrouping:[{ columnName: groupColumn }]}:{}),
             /** Enable UI grouping */
 
-            !_disableIntegratedGrouping &&
+            (groupColumn || (!_disableIntegratedGrouping &&
             !pageSize &&
-            rows.length > 1 &&
+            rows.length > 1)) &&
             _(_dxrg.IntegratedGrouping, null),
             /** state sorting */
             !_disableIntegratedSorting &&
@@ -4070,7 +4076,7 @@ class XGrid extends GridCommon {
             showDetail && _(_dxrg.RowDetailState, null),
             /** state paging */
 
-            rows.length > iwb.detailPageSize || pageSize > 1 ?
+            rows.length > iwb.detailPageSize && pageSize > 1 ?
             _(
                 _dxrg.PagingState,
                 pageSize > 1 ?
@@ -4081,16 +4087,16 @@ class XGrid extends GridCommon {
             /** UI paging */
 
             pageSize > 1 &&
-            rows.length > 1 &&
-            totalCount > iwb.detailPageSize &&
+            rows.length > iwb.detailPageSize &&
             _(_dxrg.CustomPaging, { totalCount }),
             /** multiselect */
-
             multiselect && _(_dxrg.IntegratedSelection, null),
             /** Enable Drag and Drop */
             _(_dxgrb.DragDropProvider, null),
+            
+//            filterColumns && _(_dxgrb.FilteringState, {defaultFilters:filterColumns),
             /** UI table */
-            _(_dxgrb.Table, {
+            _(this.props._virtual ? _dxgrb.VirtualTable : _dxgrb.Table, {
                 columnExtensions,
                 rowComponent,
                 messages: { noData: getLocMsg("no_data") }
@@ -4110,16 +4116,16 @@ class XGrid extends GridCommon {
             _(_dxgrb.TableRowDetail, { contentComponent: showDetail }) :
             null,
             /** Paging panel */
-            rows.length > iwb.detailPageSize &&
+            rows.length > iwb.detailPageSize && pageSize>1 &&
             _(_dxgrb.PagingPanel, { pageSizes: pageSizes || iwb.detailPageSize }),
             /** UI row Grouping */
             !_disableIntegratedGrouping &&
             !pageSize &&
-            rows.length > 1 &&
-            _(_dxgrb.TableGroupRow, null), !_disableIntegratedGrouping ||
-            !_disableIntegratedSorting ||
-            !_disableSearchPanel ||
-            (!pageSize && rows.length > 1 && _(_dxgrb.Toolbar, null)), !_disableSearchPanel &&
+            _(_dxgrb.TableGroupRow, null), (groupColumn || (!pageSize && !_disableIntegratedGrouping &&
+//            !_disableIntegratedSorting ||
+//            !_disableSearchPanel ||
+            rows.length > 0)) && _(_dxgrb.Toolbar, null), 
+            /*!_disableSearchPanel &&
             !pageSize &&
             rows.length > 1 &&
             _(_dxgrb.SearchPanel, {
@@ -4127,10 +4133,10 @@ class XGrid extends GridCommon {
                 changeSearchValue: ax => {
                     if (iwb.debug) console.log("onValueChange", ax);
                 }
-            }), // TODO
-            !_disableIntegratedGrouping &&
+            }), */// TODO
+            (groupColumn || (!_disableIntegratedGrouping &&
             !multiselect && !pageSize &&
-            rows.length > 1 &&
+            rows.length > 1)) &&
             _(_dxgrb.GroupingPanel, {
                 showSortingControls: true,
                 messages: { groupByColumn: getLocMsg("group_by_column") }
@@ -4358,7 +4364,7 @@ class XEditGridSF extends GridCommon {
                         row => row[this.props.keyField] === rowId
                     );
                     if (index > -1) {
-                        addedRowsTemp = [{...rows[index] }];
+                        addedRowsTemp = [Object.assign({},rows[index] )];
                     }
                 }
             });
@@ -4422,6 +4428,7 @@ class XEditGridSF extends GridCommon {
                 params: this.props.searchForm &&
                     iwb.getFormValues(document.getElementById("s-" + this.props.id)),
                 successCallback: (result, cfg) => {
+                	if(cfg.self.props.onLoad && cfg.self.props.onLoad(result, cfg)===false)return;
                     var state = {
                         loading: false,
                         rows: result.data,
@@ -4769,13 +4776,11 @@ const extendGrid = ({ name, children, predicate, position }) => {
  * @example yesNoDialog({ text:"Are you Sure!", callback:(success)=>{ logic here
  *          }});
  */
-yesNoDialog = ({
-    text = getLocMsg("are_you_sure"),
-    title = getLocMsg("confirmation"),
-    callback = alert("obj.callback is not a function"),
-    ...confg
-}) => {
-    iwb.showModal({
+yesNoDialog = (confg) => {
+	var text = confg.text || getLocMsg("are_you_sure");
+	var title = confg.title || getLocMsg("confirmation");
+	var callback = confg.callback || (()=>alert("obj.callback is not a function"));
+    iwb.showModal(Object.assign({},{
         body: text,
         size: "sm",
         title: title,
@@ -4808,8 +4813,8 @@ yesNoDialog = ({
                 getLocMsg("cancel")
             )
         ),
-        ...confg
-    });
+        
+    },confg));
 };
 /**
  * @description component for edit Detail Grid mostly used for form + grid mode
@@ -4953,6 +4958,7 @@ class XEditGrid extends GridCommon {
                 params: this.props.searchForm &&
                     iwb.getFormValues(document.getElementById("s-" + this.props.id)),
                 successCallback: (result, cfg) => {
+                	if(cfg.self.props.onLoad && cfg.self.props.onLoad(result, cfg)===false)return;
                     var state = {
                         loading: false,
                         rows: result.data,
@@ -5000,8 +5006,8 @@ class XEditGrid extends GridCommon {
             // merge new imported data
             let pkInsert = this.state.pkInsert;
             inserted.forEach(data => {
-                var merged = {...searchFormData, ...data };
-                merged = {...merged, ...merged._new };
+                var merged = Object.assign({}, searchFormData, data );
+                merged = Object.assign({}, merged, merged._new );
                 merged.tab_order = max;
                 merged.max = max;
                 --pkInsert;
@@ -5019,7 +5025,7 @@ class XEditGrid extends GridCommon {
         this.getAllData = () => {
             let tempRowData = [];
             this.state.rows.forEach(data => {
-                tempRowData.push({...data, ...data._new });
+                tempRowData.push(Object.assign({}, data, data._new ));
             });
             return tempRowData;
         };
@@ -5035,10 +5041,9 @@ class XEditGrid extends GridCommon {
                 this.props.isCellEditable &&
                 this.props.isCellEditable(xprops.row, xprops.column.name) === false
             )
-                return _(_dxgrb.TableEditRow.Cell, {
-                    ...xprops,
-                    ... { editingEnabled: false }
-                });
+                return _(_dxgrb.TableEditRow.Cell, Object.assign({}, xprops,
+                    { editingEnabled: false }
+                ));
             if (!editor) return _(_dxgrb.TableEditRow.Cell, xprops);
             editor = Object.assign({}, editor);
             if (!xprops.row._new) xprops.row._new = {}; // Object.assign({},xprops.row);
@@ -5325,7 +5330,7 @@ const XToolbarItem = props => {
     }
     props.autoComplete = "off";
     props.key = "Ikey" + props.index;
-    return _(props.$ || Input, {...props, $: undefined });
+    return _(props.$ || Input, Object.assign({}, props, {$: undefined }));
 };
 /**
  * a Component to render tabular detail grid
@@ -5365,7 +5370,7 @@ const XShowDetailTabs = ({
             _(
                 TabContent, { activeTab, className: "shadow-none" },
                 (currentDetailGrids || []).map(({ grid, pk, params, detailGrids }) => {
-                    var currentDetailGridProps = {... { pk: pk || {} }, ...grid };
+                    var currentDetailGridProps = Object.assign({},  { pk: pk || {} }, grid );
                     if (currentDetailGridProps._url) {
                         currentDetailGridProps._url += buildParams2(params, row);
                     } else {
@@ -5400,19 +5405,18 @@ const XShowDetailTabs = ({
                                         //_("i", { className: "icon-plus" }),
                                     ),
                                     (extraButtons || []).map((btn, index) =>
-                                        _(XToolbarItem, {
-                                            ...btn,
-                                            index,
+                                        _(XToolbarItem, Object.assign({}, btn,
+                                            {index,
                                             row,
                                             grid,
                                             parentGrid,
                                             parentCt: topParentGrid
-                                        })
+                                        }))
                                     )
                                 )
                             )
                         ),
-                        _(XGrid, {
+                        _(XGrid, Object.assign({
                             key: "XGrid" + grid.gridId,
                             responsive: true,
                             openTab: topParentGrid.props.openTab,
@@ -5427,8 +5431,8 @@ const XShowDetailTabs = ({
                                     currentDetailGridProps
                                 ) :
                                 false,
-                            ...currentDetailGridProps
-                        })
+                        },currentDetailGridProps
+                        ))
                     );
                 })
             )
@@ -5450,7 +5454,7 @@ const XShowDetailTimeline = ({
         (currentDetailGrids || []).map(
             ({ grid, pk, params, detailGrids }, index) => {
                 if (parentGrid.state !== undefined && parentGrid.state["dg-" + grid.gridId] === false) return;
-                var currentDetailGridProps = {... { pk: pk || {} }, ...grid };
+                var currentDetailGridProps = Object.assign({ pk: pk || {} }, grid );
                 if (currentDetailGridProps._url) {
                     currentDetailGridProps._url += buildParams2(params, row);
                 } else {
@@ -5484,12 +5488,12 @@ const XShowDetailTimeline = ({
                     ),
 
                     _(
-                        "div", {
-                            className: "timeline-panel",
-                            ...(!!currentDetailGridProps._hideTimelineBadgeBtn ?
+                        "div", Object.assign({
+                            className: "timeline-panel"},
+                            !!currentDetailGridProps._hideTimelineBadgeBtn ?
                                 { style: { left: "30px" } } :
-                                {})
-                        },
+                                {}
+                        ),
                         _(
                             "div", { className: "timeline-heading mb-1" },
                             _(
@@ -5498,17 +5502,16 @@ const XShowDetailTimeline = ({
                             ),
                             currentDetailGridProps.extraButtons &&
                             currentDetailGridProps.extraButtons.map((btn, index) =>
-                                _(XToolbarItem, {
-                                    ...btn,
-                                    index,
+                                _(XToolbarItem, Object.assign({}, btn,
+                                    {index,
                                     row,
                                     grid: currentDetailGridProps,
                                     parentGrid,
                                     parentCt: this
-                                })
+                                }))
                             )
                         ),
-                        _(XGrid, {
+                        _(XGrid, Object.assign({
                             key: "XGrid" + grid.gridId,
                             responsive: true,
                             openTab: topParentGrid.props.openTab,
@@ -5523,8 +5526,8 @@ const XShowDetailTimeline = ({
                                     currentDetailGridProps
                                 ) :
                                 false,
-                            ...currentDetailGridProps
-                        })
+                        },currentDetailGridProps
+                        ))
                     )
                 );
             }
@@ -5610,6 +5613,7 @@ class XMainGrid extends GridCommon {
         super(props);
         var oldGridState = iwb.grids[props.id];
         if (iwb.debug) console.log("XMainGrid", props);
+        if(props.setCmp)props.setCmp(this);
         if (oldGridState) {
             this.state = oldGridState;
             this.dontRefresh = true; // true-yuklemez, false-yukleme yapar
@@ -5671,14 +5675,12 @@ class XMainGrid extends GridCommon {
                     title: ".",
                     getCellValue: rowData => {
                         var { onEditClick, onDeleteClick } = this;
-                        return _(XGridRowAction2, {
-                            ... { rowData },
-                            ... { menuButtons: props.menuButtons },
-                            ... { formSmsMailList: props.formSmsMailList },
-                            ... { crudFlags: props.crudFlags },
-                            ... { onEditClick, onDeleteClick },
-                            ... { parentCt: this }
-                        });
+                        return _(XGridRowAction2, Object.assign(
+                        		{ rowData, menuButtons: props.menuButtons
+                        		,formSmsMailList: props.formSmsMailList, crudFlags: props.crudFlags
+                        		,onEditClick, onDeleteClick,
+                        		parentCt: this }
+                        ));
                     }
                 });
                 columnExtensions.push({
@@ -5726,7 +5728,7 @@ class XMainGrid extends GridCommon {
          *            event.target - target object from clicked place
          */
         this.toggleDetailGrid = ({ target }) => {
-            this.setState({...this.state, [target.name]: target.checked });
+            this.setState(Object.assign({}, this.state, {[target.name]: target.checked }));
         };
         let { searchForm, detailGrids } = this.props;
         if (searchForm || (detailGrids && detailGrids.length > 1)) {
@@ -5984,20 +5986,23 @@ class XMainGrid extends GridCommon {
             if (!force && queryString === this.lastQuery) {
                 return;
             }
-            var tempParams = {
-                ...(this.form ? this.form.getValues() : {}),
-                ...params
-            };
+            var tempParams = Object.assign({}, (this.form ? this.form.getValues() : {}),
+                params);
+            if(this.props.beforeLoad && this.props.beforeLoad(this, tempParams)===false)return;
+            
             this.setState({ loading: !0 });
+            var self = this;
             iwb.request({
                 url: queryString,
                 self: this,
                 params: tempParams,
                 successCallback: (result, cfg) => {
+                	if(cfg.self.props.onLoad && cfg.self.props.onLoad(result, cfg)===false)return;
                     cfg.self.setState({
                         rows: result.data,
                         loading: false,
                         totalCount: result.total_count
+                        , extraOutMap: result.extraOutMap||{}
                     });
 
                     if (cfg.self.props.summary) cfg.self.props.summary.map((ox) => {
@@ -6092,7 +6097,7 @@ class XMainGrid extends GridCommon {
                     cfg.self.setState({
                         rows: [],
                         totalCount: 0,
-                        loading: false
+                        loading: false, extraOutMap:{}
                     });
                 }
             });
@@ -6131,7 +6136,7 @@ class XMainGrid extends GridCommon {
                 pageSize,
                 selection,
                 pageSizes,
-                totalCount,
+                totalCount, extraOutMap,
                 currentPage,
                 columnWidths,
                 columnExtensions
@@ -6146,6 +6151,7 @@ class XMainGrid extends GridCommon {
                 treeParentKey,
                 titleComponent,
                 tableTreeColumn,
+                groupColumn, displayInfo, displayAgg,
                 _disableSearchPanel,
                 _disableIntegratedSorting,
                 _disableIntegratedGrouping
@@ -6197,15 +6203,15 @@ class XMainGrid extends GridCommon {
             rows.length > 1 &&
             _(_dxrg.IntegratedFiltering, null),
             /** state of the grouping */
-            !_disableIntegratedGrouping &&
+            (groupColumn || (!_disableIntegratedGrouping &&
             !pageSize &&
-            rows.length > 1 &&
-            _(_dxrg.GroupingState, null),
+            rows.length > 1)) &&
+            _(_dxrg.GroupingState, groupColumn ? {defaultGrouping:[{ columnName: groupColumn }]}:{}),
             /** ability to group like a tree */
 
-            !_disableIntegratedGrouping &&
+            (groupColumn || (!_disableIntegratedGrouping &&
             !pageSize &&
-            rows.length > 1 &&
+            rows.length > 1)) &&
             _(_dxrg.IntegratedGrouping, null),
             /** sorting wii be enabled when pageSize>0 and row has more than one data */
             !_disableIntegratedSorting &&
@@ -6267,11 +6273,11 @@ class XMainGrid extends GridCommon {
             :
             null,
             /** UI table Grouping */
-            !_disableIntegratedGrouping && !pageSize && rows.length > 1 ?
+            (groupColumn || (!_disableIntegratedGrouping && !pageSize && rows.length > 1)) ?
             _(_dxgrb.TableGroupRow, null) :
             null,
             /** top of grit do render some buttons */
-            !pageSize && rows.length > 1 && _(_dxgrb.Toolbar, null),
+            (groupColumn || (!pageSize && rows.length > 1)) && _(_dxgrb.Toolbar, null),
             /** ui search input */
             !pageSize &&
             rows.length > 1 &&
@@ -6283,9 +6289,9 @@ class XMainGrid extends GridCommon {
                 }
             }),
             /** UI grouping panel */
-            !_disableIntegratedGrouping &&
+            (groupColumn || (!_disableIntegratedGrouping &&
             !tree && !pageSize &&
-            rows.length > 1 &&
+            rows.length > 1)) &&
             _(_dxgrb.GroupingPanel, {
                 showSortingControls: true,
                 messages: { groupByColumn: getLocMsg("group_by_column") }
@@ -6328,6 +6334,11 @@ class XMainGrid extends GridCommon {
                         },
                         _("i", { className: "icon-refresh " + (this.state.loading ? " infinite-rotate" : "") })
                     ),
+                    displayInfo && this.state.totalCount>0 && _('div',{style:{padding:6}}, getLocMsg("total"),' ', _('span',{style:{borderRadius:100, background:'rgba(206, 243, 213, 0.8)', padding:'2px 5px'}},this.state.totalCount), ' ', getLocMsg("records")),
+                    displayAgg && this.state.totalCount>0 && _('div',{style:{display: 'inline-flex'}}, displayAgg.map(oo=> {
+                    	return _('div',{style:{padding:5, marginLeft:10, borderBottom: '1px solid #e8e8e8'}},oo.f(extraOutMap[oo.id]));
+                    	})),
+                    
                     !!iwb.newRecordPositionRight && _("div", { className: "fgrow" }),
 
                     crudFlags &&
@@ -6347,13 +6358,12 @@ class XMainGrid extends GridCommon {
                     !iwb.newRecordPositionRight && _("div", { className: "fgrow" }),
                     extraButtons &&
                     extraButtons.map((btn, index) =>
-                        _(XToolbarItem, {
-                            ...btn,
-                            index,
+                        _(XToolbarItem, Object.assign({}, btn,
+                            {index,
                             row: null,
                             grid: this,
                             parentCt: null
-                        })
+                        }))
                     ),
                     // _(Button,{className:'float-right btn-round-shadow
                     // hover-shake',color:'danger',
@@ -6391,6 +6401,7 @@ class XMainCard extends GridCommon {
     constructor(props) {
         if (iwb.debug) console.log("XMainCard", props);
         super(props);
+        if(props.setCmp)props.setCmp(this);
         this.state = {
             totalCount: 0,
             pageSize: props.pageSize,
@@ -6520,7 +6531,7 @@ class XMainCard extends GridCommon {
             iwb.request({
                 url: queryString,
                 self: this,
-                params: {...(this.form ? this.form.getValues() : {}) },
+                params: Object.assign({}, (this.form ? this.form.getValues() : {}) ),
                 successCallback: (result, cfg) => {
                     cfg.self.setState({
                         cards: result.data,
@@ -6553,7 +6564,7 @@ class XMainCard extends GridCommon {
             
         /**rightClick on the card */
         this.RightClickComponent = props => extraProps =>
-            _(XGridRowAction2, {...props, ...extraProps });
+            _(XGridRowAction2, Object.assign({}, props, extraProps ));
             
         this.openOrderBy = (e)=>{
             e.preventDefault();
@@ -6674,13 +6685,12 @@ class XMainCard extends GridCommon {
 	                    ),
 	                    extraButtons &&
 	                    extraButtons.map((btn, index) =>
-	                        _(XToolbarItem, {
-	                            ...btn,
-	                            index,
+	                        _(XToolbarItem, Object.assign({}, btn,
+	                            {index,
 	                            row: null,
 	                            grid: this,
 	                            parentCt: null
-	                        })
+	                        }))
 	                    ),
 	                    this.props.xsearch && _('input',{style:{float:'right'},onChange:(ev)=>{
 	                    	var xsearch = ev.target.value||'';
@@ -6748,9 +6758,8 @@ class XMainCard extends GridCommon {
                         }
                     },
                     cards.map((record, index) => {
-                        return this.props.render({
-                            ...record,
-                            parentCt: this,
+                        return this.props.render(Object.assign({}, record,
+                            {parentCt: this,
                             key: index,
                             index: index, addTag:addTag,
                             RightClickComponent: this.RightClickComponent({
@@ -6763,7 +6772,7 @@ class XMainCard extends GridCommon {
                                 crudFlags
                                 
                             })
-                        });
+                        }));
                     })
                 )
 
@@ -6771,13 +6780,9 @@ class XMainCard extends GridCommon {
         );
     }
 }
-const XPagination = ({
-    pageSize = 10,
-    currentPage,
-    totalCount,
-    onChange,
-    ...props
-}) => {
+const XPagination = (props) => {
+	var pageSize = props.pageSize || 10;
+    var {currentPage, totalCount, onChange} = props;
     var totalPages = Math.ceil(totalCount / pageSize);
     var startPage, endPage;
     if (totalPages <= 10) {
@@ -6806,7 +6811,7 @@ const XPagination = ({
         onChange(currentPage);
     };
     return _(
-        Pagination, { ...props, className:"p-0",listClassName: 'd-flex' },
+        Pagination, Object.assign({}, props, {className:"p-0",listClassName: 'd-flex' }),
         _(
             PaginationItem, { disabled: currentPage == 1 },
             _(PaginationLink, {
@@ -6838,18 +6843,19 @@ XPagination.propTypes = {
     totalCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     onChange: PropTypes.func.isRequired
 };
-const XItemPerPage = ({ pageSize, onChange, pageSizes, ...props }) => {
+const XItemPerPage = (props) => {
+	var { pageSize, onChange, pageSizes } = props;
     let hndlClick = number => event => {
         event.preventDefault();
         event.stopPropagation();
         number != pageSize && onChange && onChange(number);
     };
     return _(
-        Pagination, {
+        Pagination, Object.assign({
             "aria-label": getLocMsg("item_per_page"),
-            className: "m-0 p-0 p-sm-3",
-            ...props
-        },
+            className: "m-0 p-0 p-sm-3"},
+            props
+        ),
         pageSizes.map((number, index) => {
             return _(
                 PaginationItem, {
@@ -6976,7 +6982,7 @@ class XPage extends React.PureComponent {
                                     if (serverComponent) {
                                         if (callAttributes && callAttributes.modal) {
                                             // console.log(callAttributes);
-                                            iwb.showModal({
+                                            iwb.showModal(Object.assign({
                                                 body: serverComponent,
                                                 size: iwb.defaultModalSıze || "lg",
                                                 title: serverComponent.props && serverComponent.props.cfg ?
@@ -6985,8 +6991,8 @@ class XPage extends React.PureComponent {
                                                 color: callAttributes.modalColor ?
                                                     callAttributes.modalColor :
                                                     "primary",
-                                                ...callAttributes.modalProps
-                                            });
+                                            },callAttributes.modalProps
+                                            ));
                                         } else {
                                             var plus = action.substr(0, 1) == "2";
                                             if (this.isActionInTabList(action)) return;
@@ -7088,11 +7094,11 @@ class XPage extends React.PureComponent {
                             return _(
                                 TabPane, { key: "TabPane" + index, tabId: name },
                                 value.gridId ?
-                                _(XMainGrid, {
+                                _(XMainGrid, Object.assign({
                                     openTab: this.openTab,
                                     closeTab: this.closeTab,
-                                    ...value
-                                }) :
+                                },value
+                                )) :
                                 value
                             );
                         })
@@ -7193,7 +7199,7 @@ class XPage4Card extends React.PureComponent {
                                     if (serverComponent) {
                                         if (callAttributes && callAttributes.modal) {
                                             // console.log(callAttributes);
-                                            iwb.showModal({
+                                            iwb.showModal(Object.assign({
                                                 body: serverComponent,
                                                 size: iwb.defaultModalSize || "lg",
                                                 title: serverComponent.props && serverComponent.props.cfg ?
@@ -7202,8 +7208,8 @@ class XPage4Card extends React.PureComponent {
                                                 color: callAttributes.modalColor ?
                                                     callAttributes.modalColor :
                                                     "primary",
-                                                ...callAttributes.modalProps
-                                            });
+                                            }, callAttributes.modalProps
+                                            ));
                                         } else {
                                             var plus = action.substr(0, 1) == "2";
                                             if (this.isActionInTabList(action)) return;
@@ -7300,11 +7306,11 @@ class XPage4Card extends React.PureComponent {
                                 return _(
                                     TabPane, { key: "TabPane" + index, tabId: name },
                                     value.cardId ?
-                                    _(XMainCard, {
+                                    _(XMainCard, Object.assign({
                                         openTab: this.openTab,
                                         closeTab: this.closeTab,
-                                        ...value
-                                    }) :
+                                    },value
+                                    )) :
                                     value
                                 );
                             })
@@ -7624,15 +7630,29 @@ class XMainPanel extends React.PureComponent {
                                         iwb["t-" + templateID] = serverComponent;
                                         this.setState({ templateID });
                                         iwb.nav.visitItem(this.props.match.path);
+                                    } else {
+                                    	serverComponent = _(
+                                                React.Suspense, { fallback: _(XLoading, null) },
+                                                _(
+                                                    "div", { className: "animated fadeIn", id: "page" + templateID },
+                                                    'Error'
+                                                )
+                                            );
+                                            iwb["t-" + templateID] = 'Error';
+                                            this.setState({ templateID });
+                                            iwb.nav.visitItem(this.props.match.path);
                                     }
                                 } else {
-                                    toastr.error("Sonuc Gelmedi", " Error");
+                                    toastr.error("No Data", " Error");
                                 }
                             },
                             error => {
                                 toastr.error(error, "Connection Error");
                             }
-                        );
+                        ).catch( error=>{
+                            toastr.error(error, "Connection Error");
+                        	
+                        });
                 } else if (templateID != this.state.templateID)
                     this.setState({ templateID });
             };
@@ -7789,9 +7809,11 @@ class XForm extends React.Component {
             this.onChange = ({ target }) => {
                 var { values } = this.state;
                 if (target) {
+                	var oldVal = values[target.name];
                     values[target.name] =
                         target.type == "checkbox" ? target.checked : target.value;
                     this.setState({ values });
+                    if(target._onChange)target._onChange(values[target.name], oldVal, values);
                 }
             };
             /**
@@ -7842,6 +7864,8 @@ class XForm extends React.Component {
                     });
                 }
                 this.setState({ values });
+//                if(target._onChange)target._onChange(values[target.name], oldVal, values);
+
             };
 
             /**
@@ -7907,7 +7931,7 @@ class XForm extends React.Component {
              */
             this.submit = cfg => {
                 var baseValues = iwb.formBaseValues(cfg.id);
-                var values = {...baseValues, ...this.state.values };
+                var values = Object.assign({}, baseValues, this.state.values );
                 if (this.componentWillPost) {
                     /**
                      * componentWillPostResult = true || fase || {field_name : 'custom
@@ -7918,7 +7942,7 @@ class XForm extends React.Component {
                     	iwb.loadingDeactive();
                     	return false;
                     }
-                    values = {...values, ...componentWillPostResult };
+                    values = Object.assign({}, values, componentWillPostResult );
                 }
                 var requestConfig={
                     url: this.url +
@@ -8079,7 +8103,7 @@ class XForm extends React.Component {
             /**
              * returns form data from state
              */
-            this.getValues = () => ({...this.state.values });
+            this.getValues = () => Object.assign({}, this.state.values );
             /**
              * used for date inputs
              *
@@ -8126,7 +8150,7 @@ class XForm extends React.Component {
             }
         }
         componentWillUnmount() {
-            iwb.forms[this._id] = {...this.state };
+            iwb.forms[this._id] = Object.assign({}, this.state );
         }
     }
     /**
@@ -8318,13 +8342,12 @@ class FileInput extends React.Component {
                         }
                     },
                     _("div", {
-                        style: {
-                            ...defaultStyle,
-                            zIndex: "10",
+                        style: Object.assign({}, defaultStyle,
+                            {zIndex: "10",
                             background: "gray",
                             cursor: "pointer",
                             opacity: this.state.canUpload ? "0" : "0.5"
-                        },
+                        }),
                         className: "rounded",
                         onDrop: this.onDrop,
                         onDragEnter: this.dragenter,
@@ -8334,10 +8357,9 @@ class FileInput extends React.Component {
                     }),
                     _(
                         "div", {
-                            style: {
-                                ...defaultStyle,
-                                display: "flex"
-                            }
+                            style: Object.assign({}, defaultStyle,
+                                {display: "flex"
+                            })
                         },
                         _(XPreviewFile, {
                             file: this.state.file
@@ -8454,7 +8476,7 @@ iwb.graph = function(dg, gid, callback) {
                         chart: { id: 'apex-' + gid, type: 'donut', toolbar: { show: false } },
                         series: series,
                         labels: labels,
-                        legend: dg.legend ? { position: 'bottom' } : { show: false },
+                        legend: dg.legend ? { position: dg.legend===true?'bottom':dg.legend } : { show: false },
                         dataLabels: dg.legend ? {} : { formatter: function(val, opts) { return labels[opts.seriesIndex] + ' - ' + fmtDecimal(val); } }
                     }
 
@@ -8648,7 +8670,7 @@ iwb.graphQuery = function(dg, gid, params, callback) {
                         chart: { id: 'apex-' + gid, type: 'donut', toolbar: { show: false } },
                         series: series,
                         labels: labels,
-                        legend: dg.legend ? { position: 'bottom' } : { show: false },
+                        legend: dg.legend ? { position: dg.legend===true?'bottom':dg.legend } : { show: false },
                         dataLabels: dg.legend ? {} : { formatter: function(val, opts) { return labels[opts.seriesIndex] + ' - ' + fmtDecimal(val); } }
                     }
 
@@ -8716,6 +8738,7 @@ class XCardList  extends React.Component {
     constructor(props) {
         super(props);
         this.state = {rows: [], loading: false};
+        if(props.setCmp)props.setCmp(this);
         this.loadData = (force, params) => {
             if(force)this.setState({ rows: [], loading: true });
             iwb.request({
@@ -8723,6 +8746,7 @@ class XCardList  extends React.Component {
                 self: this,
                 params: params||{},
                 successCallback: (result, cfg) => {
+                	if(this.props.onLoad && this.props.onLoad(result, cfg)===false)return;
                     cfg.self.setState({
                         rows: result.data,
                         totalCount: result.total_count,
@@ -8768,7 +8792,7 @@ class XPortletItem extends React.PureComponent {
         	} else if(this.props.gquery){
                 var dg = this.props.gquery;
                 var gid = "idGQ" + dg.queryId;
-                iwb.graphQuery(dg, gid, params||{});
+                iwb.graphQuery(Object.assign({}, dg, this.props.props||{}), gid, params||{});
         	} else if(this.props.gauge){
                 var dg = this.props.gauge;
                 var gid = "idGA" + dg;
@@ -8845,7 +8869,7 @@ class XPortletItem extends React.PureComponent {
             o.grid.crudFlags = false;
             return _(
                 Card, {
-                    className: "card-portlet " + (o.props.color ? "bg-" + o.props.color : "")
+                    className: "xportlet-grid-"+o.grid.gridId+" card-portlet " + (o.props.color ? "bg-" + o.props.color : "")
                 },
                 _(
                     "h3", {
@@ -8857,11 +8881,14 @@ class XPortletItem extends React.PureComponent {
                         }
                     },
                     name,
-                    _("i", { className: "portlet-refresh float-right icon-refresh", onClick:this.reloadItem })
+                    _("i", { style:{cursor:'pointer'}, className: "portlet-refresh float-right icon-refresh", onClick:this.reloadItem }),
+	                (o.grid.extraButtons || []).map((btn, index) =>
+	                	_("i", { style:{cursor:'pointer', marginRight:5}, title:btn.text, className: "portlet-refresh float-right "+(btn.icon||'icon-heart'), onClick:btn.click })
+	                )
                 ),
-                _(XGrid, {...o.grid, registerLoad:(fx)=>{
+                _(XGrid, Object.assign({}, o.grid, {registerLoad:(fx)=>{
             		if(fx)this.reloadFnc=fx;
-            	}})
+            	}}))
             );
         } else if (o.gquery) {
         		return _(
@@ -8913,9 +8940,9 @@ class XPortletItem extends React.PureComponent {
                     		, style: {fontSize: 17, color: '#888', marginRight: 10, marginTop: 1, float: 'right'}},
                     		this.props.filter.items.map(oo=>_('option',{value:oo.id},oo.dsc)))
                 ),
-                _(XCardList, {...o.card, registerLoad:(fx)=>{
+                _(XCardList, Object.assign({}, o.card, {registerLoad:(fx)=>{
             		if(fx)this.reloadFnc=fx;
-               	}})
+               	}}))
             );
         
         } else if (o.page){ 
@@ -8967,7 +8994,7 @@ class XDashboard extends React.PureComponent {
 	            return _(Row, {
 	                key: "xp-"+rowIndex,
 	                children: rowItem.map((colItem, colIndex) =>
-	                    _(Col, colItem.props||{}, _(XPortletItem, {...colItem, registerLoad:(fx)=>{
+	                    _(Col, colItem.props||{}, _(XPortletItem, Object.assign({}, colItem, {registerLoad:(fx)=>{
 	                		if(fx){
 	                			var id = "xx-"+rowIndex;
 	                			if(colItem.graph)id="pgraph-"+colItem.graph.graphId;
@@ -8978,7 +9005,7 @@ class XDashboard extends React.PureComponent {
 	                			else if(colItem.gauge)id="pgauge-"+colItem.gauge;
 	                			this.reloadFncs[id]=fx;
 	                		}
-	                   	}})) //iwb.createPortlet(colItem
+	                   	}}))) //iwb.createPortlet(colItem
 	                )
 	            });
 	        }));
@@ -9172,6 +9199,17 @@ iwb.hideColumn= function(columns,name){
 	})
 }
 
+function extractSurveyJsResult(o){
+	if(o && Array.isArray(o)){
+		if(o.length && o[0].content){
+			return o[0].content.substr(o[0].content.lastIndexOf('=')+1);
+		} else 
+			return o.join(','); 
+			
+	} else 
+		return o;
+}
+
 iwb.postSurveyJs=(formId, action, params, surveyData, masterParams)=>{
 //	console.log(params)
 	var params2 = {_mask:!0}, fid = 0;
@@ -9187,10 +9225,10 @@ iwb.postSurveyJs=(formId, action, params, surveyData, masterParams)=>{
 					var cell = o[qi];
 					params2['a'+fid+'.'+(qi+1)] = 2;
 					for(var kk in cell){
-						params2[kk+fid+'.'+(qi+1)] = cell[kk];
+						params2[kk+fid+'.'+(qi+1)] = extractSurveyJsResult(cell[kk]);
 					}
 					if(masterParams)for(var kk in masterParams)
-						params2[kk.substr(1)+fid+'.'+(qi+1)] = masterParams[kk];
+						params2[kk.substr(1)+fid+'.'+(qi+1)] = extractSurveyJsResult(masterParams[kk]);
 				}			
 			} else {//update
 				var s = surveyData[k], cnt = 0, pkFieldName='';
@@ -9211,10 +9249,10 @@ iwb.postSurveyJs=(formId, action, params, surveyData, masterParams)=>{
 						params2['t'+pkFieldName+fid+'.'+cnt] = cell[kk];
 						delete sm[cell[kk]];
 					} else {
-						params2[kk+fid+'.'+(qi+1)] = cell[kk];
+						params2[kk+fid+'.'+(qi+1)] = extractSurveyJsResult(cell[kk]);
 					}
 					if(masterParams)for(var kk in masterParams)
-						params2[kk.substr(1)+fid+'.'+cnt] = masterParams[kk];
+						params2[kk.substr(1)+fid+'.'+cnt] = extractSurveyJsResult(masterParams[kk]);
 				}
 				for(var sk in sm){
 					cnt++;
@@ -9229,14 +9267,7 @@ iwb.postSurveyJs=(formId, action, params, surveyData, masterParams)=>{
 				}
 			}
 		} else {
-			if(o && Array.isArray(o)){
-				if(o.length && o[0].content){
-					params2[k] = o[0].content.substr(o[0].content.lastIndexOf('=')+1);
-				} else 
-					params2[k] = o.join(','); 
-					
-			} else 
-				params2[k] =  o;
+			params2[k] =  extractSurveyJsResult(o);
 		}
 	}
 	if(action==1)for(var k in surveyData)if(k.startsWith('_form_') && surveyData[k] && surveyData[k].length && 
@@ -9265,8 +9296,6 @@ iwb.postSurveyJs=(formId, action, params, surveyData, masterParams)=>{
 }
 
 iwb.fileUploadSurveyJs=(tableId, tablePk, survey, options)=>{
-	debugger
-	console.log(options)
 	var formData = new FormData();
     options
         .files

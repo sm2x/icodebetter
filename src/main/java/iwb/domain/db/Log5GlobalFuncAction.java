@@ -138,4 +138,15 @@ public class Log5GlobalFuncAction implements java.io.Serializable, Log5Base {
 		this.error = error;
 	}
 
+
+	@Column(name="project_uuid")
+	public String getProjectUuid() {
+		return projectUuid;
+	}
+
+
+	public void setProjectUuid(String projectUuid) {
+		this.projectUuid = projectUuid;
+	}
+
 }

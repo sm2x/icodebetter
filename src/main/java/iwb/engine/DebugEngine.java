@@ -11,8 +11,8 @@ import org.springframework.stereotype.Component;
 
 import iwb.cache.FrameworkCache;
 import iwb.cache.FrameworkSetting;
+import iwb.dao.metadata.MetadataLoader;
 import iwb.dao.rdbms_impl.ExternalDBSql;
-import iwb.dao.rdbms_impl.MetadataLoaderDAO;
 import iwb.dao.rdbms_impl.PostgreSQL;
 import iwb.domain.db.W5Query;
 import iwb.domain.db.W5Table;
@@ -30,7 +30,7 @@ public class DebugEngine {
 	
 	@Lazy
 	@Autowired
-	private MetadataLoaderDAO metaDataDao;
+	private MetadataLoader metadataLoader;
 
 
 	@Lazy
@@ -42,7 +42,7 @@ public class DebugEngine {
 	private ExternalDBSql externalDB;
 	
 	public Object executeQuery4Debug(Map<String, Object> scd, int queryId, Map<String, String> requestParams) {
-		W5QueryResult queryResult = queryId < 0 ? new W5QueryResult(queryId) : metaDataDao.getQueryResult(scd, queryId);
+		W5QueryResult queryResult = queryId < 0 ? new W5QueryResult(queryId) : metadataLoader.getQueryResult(scd, queryId);
 
 		queryResult.setErrorMap(new HashMap());
 		queryResult.setScd(scd);
@@ -111,16 +111,15 @@ public class DebugEngine {
 						&& !sqlFrom2.contains("(")) {
 					String[] ss = sqlFrom2.split(" ");
 					if (ss.length < 3) {
-						List l = dao.find("select t.tableId from W5Table t where t.projectUuid=? AND t.dsc=?",
-								scd.get("projectId"), ss[0]);
-						if (!l.isEmpty())
-							t = FrameworkCache.getTable(scd, (Integer) l.get(0));
+						Integer tableId = FrameworkCache.findTableIdByName( ss[0], (String)scd.get("projectId"));
+						if (tableId!=null)
+							t = FrameworkCache.getTable(scd, tableId);
 					}
 				}
 				if (FrameworkSetting.cloud && (Integer) scd.get("customizationId") > 0
 						&& DBUtil.checkTenantSQLSecurity(queryResult.getExecutedSql())) {
 					throw new IWBException("security", "SQL", 0, null,
-							"Forbidden Command. Please contact iCodeBetter team ;)", null);
+							"Forbidden Command. Please contact Code2 team ;)", null);
 				}
 
 				dao.checkTenant(scd);

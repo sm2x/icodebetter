@@ -15,6 +15,10 @@ import org.hibernate.annotations.Immutable;
 @Table(name="w5_component",schema="iwb")
 public class W5Component implements java.io.Serializable, W5Base{
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 66623434121L;
 	private int componentId;
 	private int parentComponentId;
 
@@ -162,5 +166,15 @@ public class W5Component implements java.io.Serializable, W5Base{
 
 	public void setProjectUuid(String projectUuid) {
 		this.projectUuid = projectUuid;
+	}
+	
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5Component))return false;
+		W5Component c = (W5Component)o;
+		return c!=null && c.getComponentId()==getComponentId() && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getComponentId();
 	}
 }

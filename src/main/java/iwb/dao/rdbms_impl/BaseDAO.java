@@ -39,15 +39,7 @@ public abstract class BaseDAO {
 	@Qualifier("entityManagerFactory")
 	private EntityManager entityManager;
 	
-	public Object getCustomizedObject(String hql, int objectId, Object tenantId, String onErrorMsg) {
-		List list = find(hql, objectId, tenantId);
-		if (list.size() == 0) {
-			if (onErrorMsg == null)
-				return null;
-			throw new IWBException("framework", onErrorMsg, objectId, null, "Wrong " + onErrorMsg + " ID: " + objectId, null);
-		} else
-			return list.get(0);
-	}
+
 
 	protected Session getCurrentSession() {
 		return entityManager.unwrap(Session.class);
@@ -142,7 +134,7 @@ public abstract class BaseDAO {
 		if (sqlParams == null) {
 			return query;
 		}
-		int i = 0;
+		int i = 1;
 		for (Object o : sqlParams) {
 			if (o instanceof Integer) {
 				query = query.setInteger(i, ((Integer) o).intValue());

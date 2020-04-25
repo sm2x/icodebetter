@@ -75,7 +75,7 @@ public class Log5Feed implements java.io.Serializable, Log5Base {
 	public void setFeedId(int feedId) {
 		this.feedId = feedId;
 	}
-	@Id
+
 	@Column(name="customization_id")
 	public int getCustomizationId() {
 		return customizationId;

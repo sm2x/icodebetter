@@ -15,6 +15,7 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -58,6 +59,7 @@ import iwb.domain.db.W5Param;
 import iwb.domain.db.W5Table;
 import iwb.domain.db.W5TableField;
 import iwb.domain.db.W5TableParam;
+import iwb.domain.db.W5WsMethodParam;
 import iwb.domain.helper.W5FormCellHelper;
 import iwb.domain.helper.W5ReportCellHelper;
 import iwb.engine.GlobalScriptEngine;
@@ -1032,7 +1034,7 @@ public class GenericUtil {
 		html.append("{");
 		for (Object q : s.keySet()) {
 			if (b)
-				html.append("\n,");
+				html.append(",");//\n
 			else
 				b = true;
 			Object o = s.get(q);
@@ -1077,7 +1079,7 @@ public class GenericUtil {
 		html.append("[");
 		for (Object o : s) {
 			if (b)
-				html.append("\n,");
+				html.append(",");//\n
 			else
 				b = true;
 			if (o == null)
@@ -1114,7 +1116,7 @@ public class GenericUtil {
 		html.append("{");
 		for (Object q : s.keySet()) {
 			if (b)
-				html.append("\n,");
+				html.append(",");//\n
 			else
 				b = true;
 			Object o = s.get(q);
@@ -1145,6 +1147,76 @@ public class GenericUtil {
 		return html.toString();
 	}
 
+	@SuppressWarnings("unchecked")
+	public static String fromMapToJsonString2Recursive(Map<String, Object> s, List<W5WsMethodParam> params, int parentId) {
+		if (s == null || s.isEmpty())
+			return "{}";
+		if(GenericUtil.isEmpty(params))return fromMapToJsonString2Recursive(s);
+		StringBuilder html = new StringBuilder();
+		boolean b = false;
+		html.append("{");
+		for (W5WsMethodParam p:params)if(p.getOutFlag()==0 && p.getParentId()==parentId && s.containsKey(p.getDsc()) && p.getCredentialsFlag()>=3) {
+			String q = p.getDsc();			
+			if (b)
+				html.append(",");//\n
+			else
+				b = true;
+			Object o = s.get(q);
+			
+			if (o == null)
+				html.append("\"").append(q).append("\":\"\"");
+			else if (o instanceof JSONObject) {
+				if(p.getParamTip()==8 || p.getParamTip()==9)
+					html.append("\"").append(q).append("\":").append(((JSONObject) o).toString());
+				else 
+					html.append("\"").append(q).append("\":null");
+			} else if (o instanceof JSONArray) {
+				if(p.getParamTip()==10)
+					html.append("\"").append(q).append("\":").append(((JSONArray) o).toString());
+				else 
+					html.append("\"").append(q).append("\":null");
+			} else if (o instanceof Map) {
+				if(p.getParamTip()==8 || p.getParamTip()==9)
+					html.append("\"").append(q).append("\":")
+						.append(fromMapToJsonString2Recursive((Map<String, Object>) o, params, p.getWsMethodParamId()));
+				else 
+					html.append("\"").append(q).append("\":null");
+			} else if (o instanceof List) {
+				if(p.getParamTip()==10)
+					html.append("\"").append(q).append("\":").append(fromListToJsonString2Recursive((List<Object>) o));
+				else 
+					html.append("\"").append(q).append("\":null");
+			} else {
+				html.append("\"").append(q).append("\":");
+				switch(p.getParamTip()) {
+				case	4://integer
+					html.append(GenericUtil.uInt(o));break;
+				case	3://float
+					if(o instanceof Float)html.append(o);
+					else if(o instanceof Double)html.append(o);
+					else if(o instanceof BigDecimal)html.append(o);
+					else html.append(GenericUtil.uFloat(o.toString()));
+					break;
+				case	5://boolean
+					if(o instanceof Boolean)html.append(o);
+					else html.append(GenericUtil.uInt(o)!=0 || o.toString().toLowerCase().equals("true"));
+					break;
+				default:
+					html.append("\"").append(stringToJS2(o.toString())).append("\"");
+					
+				}
+			}
+			/*else if (o instanceof NativeObject)
+				html.append("\"").append(q).append("\":")
+						.append(RhinoUtil.fromNativeObjectToJsonString2Recursive((NativeObject) o));
+			else if (o instanceof NativeArray) {
+				html.append("\"").append(q).append("\":")
+						.append(RhinoUtil.fromNativeArrayToJsonString2Recursive((NativeArray) o));
+			}*/
+		}
+		html.append("}");
+		return html.toString();
+	}
 	public static String uCepTel(String source) {
 		StringBuilder sb = new StringBuilder();
 		int n = source == null ? 0 : source.length();
@@ -1288,10 +1360,10 @@ public class GenericUtil {
 	}
 
 	public static int uIntNvl(Map<String, String> requestParams, String x, int y) {
-		x = requestParams.get(x);
-		if (x == null || x.length() == 0)
+		Object o = requestParams.get(x);
+		if (o == null || o.toString().length() == 0)
 			return y;
-		return uInt(x);
+		return uInt(o);
 	}
 
 	public static int uInt(Map<String, String> requestParams, String x) {
@@ -1465,18 +1537,10 @@ public class GenericUtil {
 		Map<String, String[]> m = request.getParameterMap();
 		Map<String, String> res = new HashMap<String, String>();
 		for (Map.Entry<String, String[]> e : m.entrySet()) {
-			/*
-			 * String paramName = e.getKey(); String[] paramValues =
-			 * e.getValue(); if (e.getValue() instanceof String)
-			 * res.put(e.getKey(),(String)e.getValue()); else if
-			 * (((String[])e.getValue()).length==1)
-			 * res.put(e.getKey(),((String[])e.getValue())[0]); else{
-			 */
 			String resx = "";
 			for (String s : (String[]) e.getValue())
 				resx += "," + s;
 			res.put(e.getKey(), resx.substring(1));
-			/* } */
 		}
 		res.put("_ServerURL_", request.getServerName());
 		res.put("_ClientURL_", request.getRemoteHost());
@@ -1486,8 +1550,14 @@ public class GenericUtil {
 		if (GenericUtil.safeEquals(request.getContentType(), "application/json")) {
 			try {
 				JSONObject jo = HttpUtil.getJson(request);
-				if (jo != null)
-					res.putAll(GenericUtil.fromJSONObjectToMap(jo));
+				if (jo != null) {
+					Map<String, Object> res2 = GenericUtil.fromJSONObjectToMap(jo);
+					if(!GenericUtil.isEmpty(res2)) for(String k:res2.keySet()){
+						Object v = res2.get(k);
+						res.put(k, v!=null ? v.toString():null);
+					}
+					
+				}
 			} catch (JSONException e) {
 				throw new RuntimeException(e);
 			}
@@ -1754,7 +1824,7 @@ public class GenericUtil {
 			} else if (subStr.startsWith("app.")) {
 				replaced = FrameworkCache.getAppSettingStringValue(scd.get("customizationId"), subStr.substring(4));
 			} else {
-				replaced = LocaleMsgCache.get2((Integer) scd.get("customizationId"), (String) scd.get("locale"),
+				replaced = LocaleMsgCache.get2(scd,
 						subStr); // getMsgHTML de olabilirdi
 			}
 			if (replaced != null)
@@ -1763,6 +1833,42 @@ public class GenericUtil {
 		return tmp;
 	}
 
+	public static StringBuilder filterURI(String code, Map<String, Object> scd, Map<String, String> requestParams,
+			Map<String, Object> obj) {
+		StringBuilder tmp = new StringBuilder();
+		if (code == null || code.length() == 0)
+			return tmp;
+		tmp.append(code);
+		for (int bas = tmp.indexOf("${"); bas > -1; bas = tmp.indexOf("${", bas + 2)) try{
+			int bit = tmp.indexOf("}", bas + 2);
+			String subStr = tmp.substring(bas + 2, bit);
+			String replaced = null;
+			if (subStr.startsWith("scd.")) {
+				replaced = scd != null && scd.get(subStr.substring(4)) != null ? scd.get(subStr.substring(4)).toString()
+						: "null"; // getMsgHTML de olabilirdi
+			} else if (subStr.startsWith("req.")) {
+				replaced = requestParams != null && requestParams.get(subStr.substring(4)) != null
+						? requestParams.get(subStr.substring(4)) : "null"; // getMsgHTML
+																			// de
+																			// olabilirdi
+			} else if (subStr.startsWith("obj.")) {
+				replaced = obj != null && obj.get(subStr.substring(4)) != null ? obj.get(subStr.substring(4)).toString()
+						: "null"; // getMsgHTML de olabilirdi
+			} else if (subStr.startsWith("app.")) {
+				replaced = FrameworkCache.getAppSettingStringValue(scd.get("customizationId"), subStr.substring(4));
+			} else {
+				replaced = replaced = requestParams != null && requestParams.get(subStr) != null
+						? requestParams.get(subStr) : "null"; // getMsgHTML de olabilirdi
+			}
+			if (replaced != null)
+				tmp.replace(bas, bit + 1, URLEncoder.encode(replaced, "UTF-8")); // getMsgHTML de olabilirdi
+		} catch (Exception ee) {
+			throw new IWBException("framework", "filterURI", 0,
+					"FilterURI Exception: " + ee.getMessage(), null, ee);
+		}
+		return tmp;
+	}
+	
 	public static StringBuilder filterExtWithPrefix(String code, String prefix) {
 		StringBuilder tmp = new StringBuilder();
 		if (code == null || code.length() == 0)
@@ -2105,67 +2211,7 @@ public class GenericUtil {
 		return true;
 	}
 
-	public static String PRMEncStr = "besiktascanimfedaolsunsana";
 
-	public static String PRMEncrypt(String s) {
-		if (s == null || s.length() == 0)
-			return "";
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < s.length(); i++) {
-			char ch = s.charAt(i);
-
-			int o = 0;
-			if (ch >= 'A' && ch <= 'Z') {
-				o = ch - 'A';
-			} else if (ch >= 'a' && ch <= 'z') {
-				o = ch - 'a';
-			} else if (ch >= '0' && ch <= '9') {
-				o = ch - '0';
-			}
-			o += (GenericUtil.PRMEncStr.charAt(i % (GenericUtil.PRMEncStr.length())) - 'a');
-
-			char ch2 = ch;
-			if (ch >= 'A' && ch <= 'Z') {
-				ch2 = (char) ((o % (1 + 'Z' - 'A')) + 'A');
-			} else if (ch >= 'a' && ch <= 'z') {
-				ch2 = (char) ((o % (1 + 'z' - 'a')) + 'a');
-			} else if (ch >= '0' && ch <= '9') {
-				ch2 = (char) ((o % 10) + '0');
-			}
-			sb.append(ch2);
-		}
-		return sb.toString();
-	}
-
-	public static String PRMDecrypt(String s) {
-		if (s == null || s.length() == 0)
-			return "";
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < s.length(); i++) {
-			char ch = s.charAt(i);
-
-			int o = 0;
-			if (ch >= 'A' && ch <= 'Z') {
-				o = ch - 'A';
-			} else if (ch >= 'a' && ch <= 'z') {
-				o = ch - 'a';
-			} else if (ch >= '0' && ch <= '9') {
-				o = ch - '0';
-			}
-			o -= (GenericUtil.PRMEncStr.charAt(i % (GenericUtil.PRMEncStr.length())) - 'a');
-
-			char ch2 = ch;
-			if (ch >= 'A' && ch <= 'Z') {
-				ch2 = (char) (((1 + 'Z' - 'A' + o) % (1 + 'Z' - 'A')) + 'A');
-			} else if (ch >= 'a' && ch <= 'z') {
-				ch2 = (char) (((1 + 'z' - 'a' + o) % (1 + 'z' - 'a')) + 'a');
-			} else if (ch >= '0' && ch <= '9') {
-				ch2 = (char) (((100 + o) % 10) + '0');
-			}
-			sb.append(ch2);
-		}
-		return sb.toString();
-	}
 
 	public static class ResultMessage {
 
@@ -2466,6 +2512,8 @@ public class GenericUtil {
 				no.put(key, fromJSONObjectToMap((JSONObject) val));
 			} else if (val instanceof JSONArray) {
 				no.put(key, fromJSONArrayToList((JSONArray) val));
+			} else if(val instanceof Integer || val instanceof Float || val instanceof Double) {
+				no.put(key, val);
 			} else
 				no.put(key, val.toString());
 		}
@@ -2584,7 +2632,7 @@ public class GenericUtil {
 			return "";
 		StringBuilder html = new StringBuilder();
 		boolean b = false;
-		for (Object q : s.keySet()) {
+		for (Object q : s.keySet()) try{
 			if (b)
 				html.append("&");
 			else
@@ -2595,9 +2643,9 @@ public class GenericUtil {
 					String ss =o.toString(); 
 					o = ss.substring(1,ss.length()-1);
 				}
-				html.append(q).append("=").append(o);
+				html.append(q).append("=").append(URLEncoder.encode(o.toString(),"UTF-8"));
 			}
-		}
+		} catch(Exception ee) {}
 		return html.toString();
 	}
 

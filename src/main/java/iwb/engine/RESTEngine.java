@@ -1,6 +1,7 @@
 package iwb.engine;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,7 +16,7 @@ import org.springframework.stereotype.Component;
 
 import iwb.cache.FrameworkCache;
 import iwb.cache.FrameworkSetting;
-import iwb.dao.rdbms_impl.MetadataLoaderDAO;
+import iwb.dao.metadata.MetadataLoader;
 import iwb.dao.rdbms_impl.PostgreSQL;
 import iwb.domain.db.Log5WsMethodAction;
 import iwb.domain.db.W5Param;
@@ -30,7 +31,7 @@ import iwb.util.FtpUtil;
 import iwb.util.GenericUtil;
 import iwb.util.HttpUtil;
 import iwb.util.LogUtil;
-import iwb.util.ScriptUtil;
+import iwb.util.NashornUtil;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 
 
@@ -43,7 +44,7 @@ public class RESTEngine {
 
 	@Lazy
 	@Autowired
-	private MetadataLoaderDAO metaDataDao;
+	private MetadataLoader metadataLoader;
 	
 	public Map<String, Object> getWsServerMethodObjects(W5WsServer wss) {
 		Map<String, Object> wsmoMap = new HashMap();
@@ -56,14 +57,14 @@ public class RESTEngine {
 				case 1:
 				case 2:
 				case 3: // form
-					wsmoMap.put(wsm.getDsc(), metaDataDao.getFormResult(scd, wsm.getObjectId(),
+					wsmoMap.put(wsm.getDsc(), metadataLoader.getFormResult(scd, wsm.getObjectId(),
 							wsm.getObjectTip() == 0 ? 1 : wsm.getObjectTip(), new HashMap()));
 					break;
 				case 4:
-					wsmoMap.put(wsm.getDsc(), metaDataDao.getGlobalFuncResult(scd, wsm.getObjectId()));
+					wsmoMap.put(wsm.getDsc(), metadataLoader.getGlobalFuncResult(scd, wsm.getObjectId()));
 					break;
 				case 19:
-					wsmoMap.put(wsm.getDsc(), metaDataDao.getQueryResult(scd, wsm.getObjectId()));
+					wsmoMap.put(wsm.getDsc(), metadataLoader.getQueryResult(scd, wsm.getObjectId()));
 					break;
 				case 31:
 				case 32:
@@ -89,7 +90,7 @@ public class RESTEngine {
 			requestList = (List) reqL;
 		else if (reqL instanceof ScriptObjectMirror)
 			try {
-				requestList = ScriptUtil.fromScriptObject2List(reqL);
+				requestList = NashornUtil.fromScriptObject2List(reqL);
 			} catch (Exception ee) {
 			}
 		else if (reqL instanceof JSONArray)
@@ -117,7 +118,7 @@ public class RESTEngine {
 		Map requestParams = null;
 		if (reqP instanceof ScriptObjectMirror)
 			try {// TODO
-				requestParams = ScriptUtil.fromScriptObject2Map(reqP);
+				requestParams = NashornUtil.fromScriptObject2Map(reqP);
 			} catch (Exception ee) {
 				return null;
 			}
@@ -148,7 +149,7 @@ public class RESTEngine {
 							oo = requestParams.get(p.getDsc());
 							if (oo instanceof ScriptObjectMirror)
 								try {// TODO
-									oo = ScriptUtil.fromScriptObject2Map(oo);
+									oo = NashornUtil.fromScriptObject2Map(oo);
 								} catch (Exception ee) {
 //									return null;
 								}
@@ -179,7 +180,7 @@ public class RESTEngine {
 							else {
 								try {
 									if(res instanceof ScriptObjectMirror)
-										m.put(p.getDsc(), ScriptUtil.fromScriptObject2List(res));
+										m.put(p.getDsc(), NashornUtil.fromScriptObject2List(res));
 									else
 										m.put(p.getDsc(), GenericUtil.fromJSONArrayToList(new JSONArray(res.toString())));
 								} catch (Exception ee) {
@@ -191,13 +192,15 @@ public class RESTEngine {
 				} else {
 					Object o = GenericUtil.prepareParam((W5Param) p, scd, requestParams, p.getSourceTip(), null,
 							p.getNotNullFlag(), null, null, errorMap, dao);
-					if(p.getParamTip()==5) {//checkbox
-						m.put(p.getDsc(), GenericUtil.uInt(o)!=0);
-					} else if (o != null && o.toString().length() > 0) {
-						if (p.getCredentialsFlag() == 1)//header
-							reqPropMap.put(p.getDsc(), o.toString());
-						else if (p.getCredentialsFlag() == 0){//request
-							m.put(p.getDsc(), o);
+					if(errorMap.isEmpty()) {
+						if(p.getParamTip()==5) {//checkbox
+							m.put(p.getDsc(), GenericUtil.uInt(o)!=0);
+						} else if (o != null && o.toString().length() > 0) {
+	/*						if (p.getCredentialsFlag() == 1)//header
+								reqPropMap.put(p.getDsc(), o.toString());
+							else if (p.getCredentialsFlag() == 0){//request*/
+								m.put(p.getDsc(), o);
+	//						}
 						}
 					}
 				}
@@ -218,8 +221,18 @@ public class RESTEngine {
 			scd.put("projectId", "067e6162-3b6f-4ae2-a221-2470b63dff00");			
 		}
 		W5Ws ws = FrameworkCache.getWsClient(scd, u[0]);
-		if (ws == null)
-			throw new IWBException("ws", "Wrong ServiceName", 0, null, "Could find [" + u[0] + "]", null);
+		if (ws == null) {
+			if(!GenericUtil.safeEquals(scd.get("projectId"),"067e6162-3b6f-4ae2-a221-2470b63dff00")) {
+				Map newScd = new HashMap();
+				newScd.putAll(scd);
+				newScd.put("projectId", "067e6162-3b6f-4ae2-a221-2470b63dff00");
+				newScd.put("customizationId", 0);
+				ws = FrameworkCache.getWsClient(newScd, u[0]);
+				
+			}
+			if(ws ==null)
+				throw new IWBException("ws", "Wrong ServiceName", 0, null, "Could find [" + u[0] + "]", null);
+		}
 		W5WsMethod wsm = null;
 		for (W5WsMethod twm : ws.get_methods())
 			if (twm.getDsc().equals(u[1])) {
@@ -239,8 +252,7 @@ public class RESTEngine {
 			String projectId = (String) scd.get("projectId");
 			if (wsm.get_params() == null) {
 				wsm.set_params(
-						dao.find("from W5WsMethodParam t where t.wsMethodId=? AND t.projectUuid=? order by t.tabOrder",
-								wsm.getWsMethodId(), projectId));
+						metadataLoader.findWsMethodParams(wsm.getWsMethodId(), wsm.getProjectUuid()));
 				wsm.set_paramMap(new HashMap());
 				for (W5WsMethodParam wsmp : wsm.get_params())
 					wsm.get_paramMap().put(wsmp.getWsMethodParamId(), wsmp);
@@ -248,172 +260,154 @@ public class RESTEngine {
 			String tokenKey = null;
 			Map m = new HashMap();
 			Map errorMap = new HashMap();
-			if (ws.getWssTip() == 2) { // token ise ve token yok ise
-				if (ws.getWssLoginMethodId() == null || ws.getWssLoginMethodParamId() == null
-						|| ws.getWssLoginTimeout() == null)
-					throw new IWBException("security", "WS Method Call", wsm.getWsMethodId(), null,
-							"WSS: Token Properties Not Defined", null);
-				if (ws.getWssLoginMethodId() != wsm.getWsMethodId() && ws.getWssLoginMethodParamId() != null
-						&& (ws.getWssLogoutMethodId() == null || ws.getWssLogoutMethodId() == wsm.getWsMethodId())) {
-					tokenKey = (String) ws.loadValue("tokenKey");
-					Long tokenTimeout = (Long) ws.loadValue("tokenKey.timeOut");
-					W5WsMethod loginMethod = FrameworkCache.getWsMethod(scd, ws.getWssLoginMethodId());
-					if (loginMethod.get_params() == null) {
-						loginMethod.set_params(dao.find(
-								"from W5WsMethodParam t where t.wsMethodId=? AND t.projectUuid=? order by t.tabOrder",
-								loginMethod.getWsMethodId(), projectId));
-						loginMethod.set_paramMap(new HashMap());
-						for (W5WsMethodParam wsmp : loginMethod.get_params())
-							loginMethod.get_paramMap().put(wsmp.getWsMethodParamId(), wsmp);
-					}
-					W5WsMethodParam tokenParam = loginMethod.get_paramMap().get(ws.getWssLoginMethodParamId());
-					if (tokenKey == null || tokenTimeout == null || tokenTimeout <= System.currentTimeMillis()) { // yeni
-																													// bir
-																													// token
-																													// alinacak
-						if (tokenParam != null) {
-							Map tokenResult = REST(scd, ws.getDsc() + "." + loginMethod.getDsc(), new HashMap());
-							Object o = tokenResult.get(tokenParam.getDsc());
-							if (o == null)
-								throw new IWBException("security", "WS Method Call", wsm.getWsMethodId(), null,
-										"WSS: Auto-Login Failed", null);
-							tokenKey = o.toString();
-							ws.storeValue("tokenKey", tokenKey);
-							ws.storeValue("tokenKey.timeOut",
-									System.currentTimeMillis() + ws.getWssLoginTimeout().longValue());
-						}
-					}
-					requestParams.put(tokenParam.getDsc(), tokenKey);
-				}
-			}
 
 			Map<String, Object> result = new HashMap();
-			switch (ws.getWsTip()) {
-			case 1: // soap
-				break;
-			case 2: // rest
-				String url = ws.getWsUrl();
-				if (url.indexOf("${") > -1) {// has special char
-					url = GenericUtil.filterExt(url, scd, requestParams, null).toString();
-				}
+
+			String url = ws.getWsUrl();
+			if (url.indexOf("${") > -1) {// has special char
+				url = GenericUtil.filterExt(url, scd, requestParams, null).toString();
+			}
+			if(!GenericUtil.safeEquals(wsm.getRealDsc(),".")) {//if . dont add it
 				String methodUrl = GenericUtil.isEmpty(wsm.getRealDsc()) ? wsm.getDsc() : wsm.getRealDsc();
 				if (!url.endsWith("/") && !methodUrl.startsWith("/"))
 					url += "/";
 				url += methodUrl;
-				if (url.indexOf("{") > -1 && url.indexOf("${") == -1) {
-					url = url.replace("{","${req.");					
+			}
+			if (url.indexOf("{") > -1 && url.indexOf("${") == -1) {
+				url = url.replace("{","${req.");					
+			}
+			if (url.indexOf("${") > -1) {// has special char
+				url = GenericUtil.filterURI(url, scd, requestParams, null).toString();
+			}
+			String params = null;
+			Map<String, String> reqPropMap = new HashMap();
+			reqPropMap.put("Content-Language", FrameworkCache.getAppSettingStringValue(scd, "rest_content_language", "tr-TR"));
+			if (wsm.getHeaderAcceptTip() != null) {
+				reqPropMap.put("Accept", new String[] { "text/plain", "application/json", "application/xml", "application/octet-stream" }[wsm
+						.getHeaderAcceptTip()]);
+			}
+			if (ws.getWssTip() == 1 && !GenericUtil.isEmpty(ws.getWssCredentials())) { // credentials
+				String cr = ws.getWssCredentials();
+				if (cr.indexOf("${") > -1) {// has special char
+					cr = GenericUtil.filterExt(cr, scd, requestParams, null).toString();
 				}
-				if (url.indexOf("${") > -1) {// has special char
-					url = GenericUtil.filterExt(url, scd, requestParams, null).toString();
-				}
-				String params = null;
-				Map<String, String> reqPropMap = new HashMap();
-				reqPropMap.put("Content-Language", FrameworkCache.getAppSettingStringValue(scd, "rest_content_language", "tr-TR"));
-				if (wsm.getHeaderAcceptTip() != null) {
-					reqPropMap.put("Accept", new String[] { "text/plain", "application/json", "application/xml", "application/octet-stream" }[wsm
-							.getHeaderAcceptTip()]);
-				}
-				if (ws.getWssTip() == 1 && !GenericUtil.isEmpty(ws.getWssCredentials())) { // credentials
-					String cr = ws.getWssCredentials();
-					if (cr.indexOf("${") > -1) {// has special char
-						cr = GenericUtil.filterExt(cr, scd, requestParams, null).toString();
+				String[] lines = cr.split("\n");
+				for (int qi = 0; qi < lines.length; qi++) {
+					int ii = lines[qi].indexOf(':');
+					if (ii > 0) {
+						reqPropMap.put(lines[qi].substring(0, ii).trim(), lines[qi].substring(ii + 1).trim());
 					}
-					String[] lines = cr.split("\n");
-					for (int qi = 0; qi < lines.length; qi++) {
-						int ii = lines[qi].indexOf(':');
-						if (ii > 0) {
-							reqPropMap.put(lines[qi].substring(0, ii).trim(), lines[qi].substring(ii + 1).trim());
-						}
-					}
 				}
-				if (wsm.getPostUrlFlag() != 0) { // post_url_flag
-					String postUrl = (String) requestParams.get("_post_url");
-					if (!GenericUtil.isEmpty(postUrl))
-						url += postUrl;
+			}
+			if (wsm.getPostUrlFlag() != 0) { // post_url_flag
+				String postUrl = (String) requestParams.get("_post_url");
+				if (!GenericUtil.isEmpty(postUrl))
+					url += postUrl;
+			}
+			
+			if (!GenericUtil.isEmpty(wsm.get_params())/* && wsm.getParamSendTip() > 0*/) {
+				m = recursiveParams2Map(scd, 0, requestParams, wsm.get_params(), errorMap, reqPropMap);
+				if (!errorMap.isEmpty()) {
+					throw new IWBException("validation", "WS Method Call", wsm.getWsId(), null,
+							"Wrong Parameters: + " + GenericUtil.fromMapToJsonString2(errorMap), null);
+				}
+				for(W5WsMethodParam px:wsm.get_params()) if(px.getOutFlag()==0 && px.getParentWsMethodParamId()==0 && m.containsKey(px.getDsc()))switch(px.getCredentialsFlag()){// clean
+				case	0://query
+					if(!GenericUtil.isEmpty(m.get(px.getDsc()))) {
+						if(!url.contains("?"))url+="?";
+						else url+="&";
+						url+=px.getDsc()+"=" + URLEncoder.encode(m.get(px.getDsc()).toString(), "UTF-8");
+					}
+					m.remove(px.getDsc());
+					break;
+				case	1://header
+					if(!GenericUtil.isEmpty(m.get(px.getDsc())))reqPropMap.put(px.getDsc(), m.get(px.getDsc()).toString());
+					m.remove(px.getDsc());
+					break;
+				case	2://path
+					m.remove(px.getDsc());
+					break;
+					
+					
 				}
 				
-				if (!GenericUtil.isEmpty(wsm.get_params()) && wsm.getParamSendTip() > 0) {
-					m = recursiveParams2Map(scd, 0, requestParams, wsm.get_params(), errorMap, reqPropMap);
-					if (!errorMap.isEmpty()) {
-						throw new IWBException("validation", "WS Method Call", wsm.getWsId(), null,
-								"Wrong Parameters: + " + GenericUtil.fromMapToJsonString2(errorMap), null);
+				switch (wsm.getParamSendTip()) {
+				case 3: // form as post_url : deprecated, use form(1) instead
+					params = GenericUtil.fromMapToURI(m);
+					if (!GenericUtil.isEmpty(params)) {
+						if (url.indexOf('?') == -1)
+							url += "?";
+						url += params;
 					}
-					switch (wsm.getParamSendTip()) {
-					case 1: // form
-					case 3: // form as post_url
-						params = GenericUtil.fromMapToURI(m);
-						if (wsm.getParamSendTip() == 3) {
-							if (!GenericUtil.isEmpty(params)) {
-								if (url.indexOf('?') == -1)
-									url += "?";
-								url += params;
-							}
-							params = null;
-						}
-						reqPropMap.put("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
-						break;
-					case 2: // json
-						params = GenericUtil.fromMapToJsonString2Recursive(m);
-						reqPropMap.put("Content-Type", "application/json;charset=UTF-8");
-						break;
-					case 6:// yaml
-						params = GenericUtil.fromMapToYamlString2Recursive(m, 0);
-						reqPropMap.put("Content-Type", "application/yaml;charset=UTF-8");
-						break;
-					}
-				}
+					params = null;
+					if(!reqPropMap.containsKey("Content-Type"))reqPropMap.put("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
+					break;
+				case 1: // form
+					params = GenericUtil.fromMapToURI(m);
 
-				Log5WsMethodAction log = new Log5WsMethodAction(scd, wsm.getWsMethodId(), url, params, (String)requestParams.get("_trid_"));
-				if (wsm.getHeaderAcceptTip() != null && wsm.getHeaderAcceptTip()==3) { //binary
-					byte[] x = url.startsWith("ftp")?
-							FtpUtil.send4bin(url):
-								HttpUtil.send4bin(url, params,
-							new String[] { "GET", "POST", "PUT", "PATCH", "DELETE" }[wsm.getCallMethodTip()], reqPropMap);
-					result.put("data", x);
-
-				} else {				
-					String x = url.startsWith("ftp")?
-							FtpUtil.send(url):
-							HttpUtil.send(url, params,
-							new String[] { "GET", "POST", "PUT", "PATCH", "DELETE" }[wsm.getCallMethodTip()], reqPropMap);
-					if (!GenericUtil.isEmpty(x))
-						try {// System.out.println(x);
-							if(wsm.getLogLevelTip()>0) {
-								if(wsm.getLogLevelTip()==2)log.setResponse(x);
-								else {
-									int maxLength = FrameworkCache.getAppSettingIntValue(0, "log_rest_response_max_length", 1000);
-									log.setResponse(x.length()>maxLength ? x.substring(0, maxLength)+"...": x);
-								}
-							}
-							String xx = x.trim();
-							if (xx.length() > 0)
-								switch (xx.charAt(0)) {
-								case '{':
-									JSONObject jo = new JSONObject(x);
-									result.putAll(GenericUtil.fromJSONObjectToMap(jo));
-									break;
-								case '[':
-									JSONArray ja = new JSONArray(x);
-									result.put("data", GenericUtil.fromJSONArrayToList(ja));
-									break;
-								default:
-									if (x.indexOf('\r') > -1)
-										x = x.replace('\r', '\n');
-									result.put("data", x);
-								}
-							if (GenericUtil.uInt(requestParams.get("_iwb_cfg")) != 0) {
-								result.put("_iwb_cfg_rest_method", wsm);
-							}
-						} catch (JSONException e) {
-							throw new RuntimeException(e);
-						}
+					if(!reqPropMap.containsKey("Content-Type"))reqPropMap.put("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
+					break;
+				case 2: // json
+					params = GenericUtil.fromMapToJsonString2Recursive(m, wsm.get_params(), 0);
+					if(!reqPropMap.containsKey("Content-Type"))reqPropMap.put("Content-Type", "application/json;charset=UTF-8");
+					break;
+				case 6:// yaml
+					params = GenericUtil.fromMapToYamlString2Recursive(m, 0);
+					if(!reqPropMap.containsKey("Content-Type"))reqPropMap.put("Content-Type", "application/yaml;charset=UTF-8");
+					break;
 				}
-				if (FrameworkSetting.log2tsdb) {
-					log.calcProcessTime();
-					LogUtil.logObject(log, false);
-				}
-				break;
 			}
+
+			Log5WsMethodAction log = new Log5WsMethodAction(scd, wsm.getWsMethodId(), url, params, (String)requestParams.get("_trid_"));
+			if (wsm.getHeaderAcceptTip() != null && wsm.getHeaderAcceptTip()==3) { //binary
+				byte[] x = url.startsWith("ftp")?
+						FtpUtil.send4bin(url):
+							HttpUtil.send4bin(url, params,
+						new String[] { "GET", "POST", "PUT", "PATCH", "DELETE" }[wsm.getCallMethodTip()], reqPropMap);
+				result.put("data", x);
+
+			} else {				
+				String x = url.startsWith("ftp")?
+						FtpUtil.send(url):
+						HttpUtil.send(url, params,
+						new String[] { "GET", "POST", "PUT", "PATCH", "DELETE" }[wsm.getCallMethodTip()], reqPropMap);
+				if (!GenericUtil.isEmpty(x))
+					try {// System.out.println(x);
+						if(wsm.getLogLevelTip()>0) {
+							if(wsm.getLogLevelTip()==2)log.setResponse(x);
+							else {
+								int maxLength = FrameworkCache.getAppSettingIntValue(0, "log_rest_response_max_length", 1000);
+								log.setResponse(x.length()>maxLength ? x.substring(0, maxLength)+"...": x);
+							}
+						}
+						String xx = x.trim();
+						if (xx.length() > 0)
+							switch (xx.charAt(0)) {
+							case '{':
+								JSONObject jo = new JSONObject(x);
+								result.putAll(GenericUtil.fromJSONObjectToMap(jo));
+								break;
+							case '[':
+								JSONArray ja = new JSONArray(x);
+								result.put("data", GenericUtil.fromJSONArrayToList(ja));
+								break;
+							default:
+								if (x.indexOf('\r') > -1)
+									x = x.replace('\r', '\n');
+								result.put("data", x);
+							}
+						if (GenericUtil.uInt(requestParams.get("_iwb_cfg")) != 0) {
+							result.put("_iwb_cfg_rest_method", wsm);
+						}
+					} catch (JSONException e) {
+						throw new RuntimeException(e);
+					}
+			}
+			if (FrameworkSetting.log2tsdb) {
+				log.calcProcessTime();
+				LogUtil.logObject(log, false);
+			}
+
 
 			return result;
 		} catch (Exception e) {

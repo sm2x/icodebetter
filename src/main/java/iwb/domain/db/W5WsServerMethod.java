@@ -36,6 +36,7 @@ public class W5WsServerMethod  implements java.io.Serializable {
 		this.dsc = dsc;
 		this.objectTip = objectTip;
 		this.objectId = objectId;
+		this.dataAcceptTip = (short)1;
 	}
 	public W5WsServerMethod() {
 		super();
@@ -165,5 +166,14 @@ public class W5WsServerMethod  implements java.io.Serializable {
 	public void setAccessSourceTypes(String accessSourceTypes) {
 		this.accessSourceTypes = accessSourceTypes;
 	}
+
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5WsServerMethod))return false;
+		W5WsServerMethod c = (W5WsServerMethod)o;
+		return c!=null && c.getWsServerMethodId()==getWsServerMethodId() && c.getProjectUuid().equals(projectUuid);
+	}
 	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getWsServerMethodId();
+	}
 }

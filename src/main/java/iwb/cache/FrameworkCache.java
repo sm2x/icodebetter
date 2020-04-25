@@ -32,7 +32,6 @@ import iwb.domain.db.W5Project;
 import iwb.domain.db.W5Query;
 import iwb.domain.db.W5QueryField;
 import iwb.domain.db.W5Table;
-import iwb.domain.db.W5TableAccessConditionSql;
 import iwb.domain.db.W5TableEvent;
 import iwb.domain.db.W5Workflow;
 import iwb.domain.db.W5Ws;
@@ -92,7 +91,6 @@ public class FrameworkCache {
 	final private static Set<String> wDevEntityKeys = new HashSet<String>();
 
 	public static List<W5QueryField> cachedOnlineQueryFields = null;
-	public static Map<String, Map<Integer,W5TableAccessConditionSql>> wAccessConditionSqlMap = new HashMap<String, Map<Integer,W5TableAccessConditionSql>>();
 	
 	
 	final public static Map<String, Date> wRequestUrls= new HashMap<String, Date>();
@@ -713,6 +711,13 @@ public class FrameworkCache {
 	public static W5Mq getMq(Object o, int mqId) {
 		String projectId = getProjectId(o, null);
 		return FrameworkCache.wMqs.get(projectId).get(mqId);
+	}
+
+	public static Integer findTableIdByName(String tableName, String projectId) {
+		Map<Integer, W5Table> tableMap = wTables.get(projectId);
+		if(tableMap==null)return null;
+		for(W5Table t:tableMap.values())if(t.getDsc().equals(tableName))return t.getTableId();
+		return null;
 	}
 	
 	

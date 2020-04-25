@@ -16,6 +16,7 @@ import javax.persistence.Table;
 @Table(name="w5_form_sms_mail_alarm",schema="iwb")
 public class W5FormSmsMailAlarm implements java.io.Serializable, W5Base {
 
+	private static final long serialVersionUID = 1619154109176375L;
 	private int formSmsMailAlarmId;
 	private int formSmsMailId;
 
@@ -127,6 +128,14 @@ public class W5FormSmsMailAlarm implements java.io.Serializable, W5Base {
 		this.projectUuid = projectUuid;
 	}
 
-
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5FormSmsMailAlarm))return false;
+		W5FormSmsMailAlarm c = (W5FormSmsMailAlarm)o;
+		return c!=null && c.getFormSmsMailAlarmId()==getFormSmsMailAlarmId() && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getFormSmsMailAlarmId();
+	}	
 	
 }

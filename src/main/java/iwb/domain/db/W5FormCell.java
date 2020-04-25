@@ -50,7 +50,6 @@ public class W5FormCell implements java.io.Serializable, W5Base, W5Param {
 	private short activeFlag;
 
 	private Object _sourceObjectDetail;
-	private List<W5FormCellCodeDetail> _formCellCodeDetailList;
 	private List<W5FormCellProperty> _formCellPropertyList;
 
 	@Id
@@ -271,15 +270,6 @@ public class W5FormCell implements java.io.Serializable, W5Base, W5Param {
 		this.dialogGridId = dialogGridId;
 	}
 
-	@Transient
-	public List<W5FormCellCodeDetail> get_formCellCodeDetailList() {
-		return _formCellCodeDetailList;
-	}
-
-	public void set_formCellCodeDetailList(
-			List<W5FormCellCodeDetail> formCellCodeDetailList) {
-		_formCellCodeDetailList = formCellCodeDetailList;
-	}
 
 	@Column(name = "X_ORDER")
 	public short getxOrder() {
@@ -420,4 +410,19 @@ public class W5FormCell implements java.io.Serializable, W5Base, W5Param {
 		this._formCellPropertyList = _formCellPropertyList;
 	}
 
+
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5FormCell))return false;
+		W5FormCell c = (W5FormCell)o;
+		return c!=null && c.getFormCellId()==formCellId && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*formCellId;
+	}
+	
+	@Transient
+	public int getParentId() {
+		return 0;
+	}
 }

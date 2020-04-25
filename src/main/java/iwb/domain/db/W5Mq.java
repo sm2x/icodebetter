@@ -17,9 +17,14 @@ import org.hibernate.annotations.Immutable;
 @Table(name = "w5_mq", schema = "iwb")
 public class W5Mq implements java.io.Serializable, W5Base {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 77336434351L;
+
 	private int mqId;
 
-	private short lkpMqType;// //oracle, postgre, mssql
+	private short lkpMqType;// amqp, mqtt
 
 	private String mqUrl;
 
@@ -124,6 +129,14 @@ public class W5Mq implements java.io.Serializable, W5Base {
 		this._callbacks = _callbacks;
 	}
 
-
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5Mq))return false;
+		W5Mq c = (W5Mq)o;
+		return c!=null && c.getMqId()==getMqId() && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getMqId();
+	}	
 
 }

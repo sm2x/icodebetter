@@ -42,10 +42,10 @@ import iwb.domain.db.W5WsServerMethodParam;
 import iwb.domain.result.W5QueryResult;
 import iwb.exception.IWBException;
 import iwb.service.FrameworkService;
+import iwb.util.EncryptionUtil;
 import iwb.util.GenericUtil;
 import iwb.util.HttpUtil;
 import iwb.util.LogUtil;
-import iwb.util.UserUtil;
 
 @Controller
 @RequestMapping("/graphql")
@@ -93,7 +93,7 @@ public class GraphQLController implements InitializingBean {
     		for(W5WsServerMethodParam wsmp:wsm.get_params()) if(wsmp.getOutFlag()!=0 && wsmp.getParentWsMethodParamId()!=0){
     			helper.append(" ").append(wsmp.getDsc()).append(": ");
     			switch(wsmp.getParamTip()) {
-    			case	5:params.append("Boolean");break;
+    			case	5:helper.append("Boolean");break;
     			case	4:helper.append("Int");break;
     			case	3:helper.append("Float");break;
     			default:helper.append("String");break;
@@ -180,13 +180,13 @@ public class GraphQLController implements InitializingBean {
 	}
 
     private RuntimeWiring buildWiring(final W5WsServer wss) {
-  	return null;
-	/*	return newRuntimeWiring().type("Query", builder -> {
+//  	return null;
+		return RuntimeWiring.newRuntimeWiring().type("Query", builder -> {
 	    	for(W5WsServerMethod wsm:wss.get_methods()) if(wsm.getObjectTip()==19){//query
 	    		builder = builder.dataFetcher(wsm.getDsc(), query(wsm));
 	    	}
 			return builder;
-		}).build(); */
+		}).build(); 
     } 
 
 
@@ -246,7 +246,7 @@ public class GraphQLController implements InitializingBean {
 			}
 			
 			Map<String, Object> scd = null;
-			scd = GenericUtil.isEmpty(token) ? null : UserUtil.getScdFromToken(token, "");
+			scd = GenericUtil.isEmpty(token) ? null : GenericUtil.fromJSONObjectToMap(new JSONObject(EncryptionUtil.decryptAES(token)));
 			
 			if(scd==null){
 				scd = new HashMap();
@@ -271,6 +271,7 @@ public class GraphQLController implements InitializingBean {
 			
 			response.getWriter().close();
 		} catch (Exception e) {
+			if(FrameworkSetting.debug)e.printStackTrace();
 			response.getWriter().write(new IWBException("framework","GraphQL Def",0,null, "Error", e).toJsonString(request.getRequestURI()));
 		}
 	}

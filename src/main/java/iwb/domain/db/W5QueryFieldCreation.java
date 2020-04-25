@@ -139,6 +139,8 @@ public class W5QueryFieldCreation implements java.io.Serializable {
 	public void setMainTableFieldId(int mainTableFieldId) {
 		this.mainTableFieldId = mainTableFieldId;
 	}
+	
+	@Id
 	@Column(name="project_uuid")
 	public String getProjectUuid() {
 		return projectUuid;

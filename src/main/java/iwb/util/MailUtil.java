@@ -81,7 +81,7 @@ public class MailUtil {
 			//txt = (PromisUtil.uInt(email.getMailKeepBodyOriginal()) != 0) ? email.getMailBody() : email.getMailBody();
 			txt = new HtmlFilter().filter(email.getMailBody());
 			SMTPMessage  message = new SMTPMessage(session);
-			message.setHeader("X-Mailer", MimeUtility.encodeText("iCodeBetter LCP Mailer, version 0.2b"));
+			message.setHeader("X-Mailer", MimeUtility.encodeText("Code2 LCP Mailer, version 0.3b"));
 			message.setSentDate(Calendar.getInstance().getTime());
 			if(oms.getOutboxRequestReadFlag()!=0){  
 				message.setHeader("Disposition-Notification-To", MimeUtility.encodeText(oms.getEmailAddress().indexOf(">")>-1 ? oms.getEmailAddress():"\""+oms.getDsc()+"\" <"+oms.getEmailAddress()+">"));
@@ -99,8 +99,6 @@ public class MailUtil {
 			if(addressBCC != null){message.setRecipients(Message.RecipientType.BCC, addressBCC);}
 			
 			MimeBodyPart messagePart = new MimeBodyPart();
-			
-			if(FrameworkCache.getAppSettingIntValue(scd, "mail_send_bmp_advertisement_flag") != 0) txt+="<br>"+getMailAd(scd);
 			
 			message.setSubject(email.getMailSubject(), "utf-8");
 			messagePart.setContent(txt, "text/html; charset=utf-8");
@@ -171,8 +169,4 @@ public class MailUtil {
 		}
 		return newEmailAddress.length()>1 ? newEmailAddress.substring(1): "";     
 	}
-	public static String getMailAd(Map<String, Object> scd )
-	{
-		return"<br><br><hr><br><div style='text-align:center;font-family:Verdana, Tahoma;font-size:12px;color:#444;'>This e-mail was sent by using <a href='http://www.icodebetter.com/' target='_blank' style='color:rgb(8,158,210);text-decoration: none;border-bottom: 1px dotted;'>iCodeBetter Low Code Platform</a>.</div>" ;
-	}	
 }

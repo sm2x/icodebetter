@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import iwb.cache.FrameworkCache;
 import iwb.cache.FrameworkSetting;
 import iwb.cache.LocaleMsgCache;
+import iwb.dao.metadata.MetadataLoader;
 import iwb.dao.rdbms_impl.PostgreSQL;
 import iwb.domain.db.Log5Feed;
 import iwb.domain.db.W5Email;
@@ -40,6 +41,11 @@ public class NotificationEngine {
 	@Autowired
 	private PostgreSQL dao;
 
+
+	@Lazy
+	@Autowired
+	private MetadataLoader metadataLoader;
+	
 	public void sendSms(int customizationId, int userId, String phoneNumber, String message, int tableId, int tablePk) {
 		Map<String, String> smsMap = new HashMap<String, String>();
 		smsMap.put("customizationId", customizationId + "");
@@ -68,7 +74,7 @@ public class NotificationEngine {
 			if (alarm) {
 				alMap = new HashMap();
 				List<W5FormSmsMailAlarm> l = (List<W5FormSmsMailAlarm>) dao.find(
-						"from W5FormSmsMailAlarm a where a.projectUuid=? AND a.insertUserId=? AND a.tableId=? AND a.tablePk=? ",
+						"from W5FormSmsMailAlarm a where a.projectUuid=?0 AND a.insertUserId=?1 AND a.tableId=?2 AND a.tablePk=?3 ",
 						scd.get("projectId"), scd.get("userId"), formResult.getForm().getObjectId(),
 						GenericUtil.uInt(ptablePk));
 				for (W5FormSmsMailAlarm a : l) {
@@ -417,16 +423,19 @@ public class NotificationEngine {
 
 	public Map sendFormSmsMail(Map<String, Object> scd, int formSmsMailId, Map<String, String> requestParams) {
 		String projectId = FrameworkCache.getProjectId(scd, null);
-		W5FormSmsMail fsm = (W5FormSmsMail) dao.getCustomizedObject(
-				"from W5FormSmsMail t where t.formSmsMailId=? AND t.projectUuid=?", formSmsMailId, projectId,
+		W5FormSmsMail fsm = (W5FormSmsMail) metadataLoader.getMetadataObject(
+				"W5FormSmsMail","formSmsMailId", formSmsMailId, projectId,
 				"FormSmsMail");
-		W5Form f = (W5Form) dao.getCustomizedObject("from W5Form t where t.formId=? AND t.projectUuid=?",
-				fsm.getFormId(), projectId, "Form");
-		int tableId = f.getObjectId();
-		W5Table t = FrameworkCache.getTable(scd, tableId);
-		if (!FrameworkCache.roleAccessControl(scd, 0)) {
-			throw new IWBException("security", "Module", 0, null,
-					"No Authorization for SMS/Email. Please contact Administrator", null);
+		int tableId = 0;
+		if(fsm.getFormId()> 0) {
+			W5Form f = (W5Form) metadataLoader.getMetadataObject("W5Form","formId",
+					fsm.getFormId(), projectId, "Form");
+			tableId = f.getObjectId();
+			W5Table t = FrameworkCache.getTable(scd, tableId);
+			if (!FrameworkCache.roleAccessControl(scd, 0)) {
+				throw new IWBException("security", "Module", 0, null,
+						"No Authorization for SMS/Email. Please contact Administrator", null);
+			}
 		}
 
 		Map r = new HashMap();
@@ -451,22 +460,7 @@ public class NotificationEngine {
 	}
 	
 	public W5ObjectMailSetting findObjectMailSetting(Map<String, Object> scd, int mailSettingId) {
-		int ms = mailSettingId != 0 ? mailSettingId
-				: GenericUtil.uInt(scd.get("mailSettingId"));
-		if (ms == 0)
-			ms = 1;
-		int cusId = ms != 1 ? (Integer) scd.get("customizationId") : 0;
-		W5ObjectMailSetting oms = (W5ObjectMailSetting) dao.getCustomizedObject(
-				"from W5ObjectMailSetting w where w.mailSettingId=? AND w.customizationId=?",
-				mailSettingId != 0 ? mailSettingId
-						: GenericUtil.uInt(scd.get("mailSettingId")),
-				cusId, ms != 1 ? "MailSetting" : null);
-		if (oms == null) {
-			oms = (W5ObjectMailSetting) dao.getCustomizedObject(
-					"from W5ObjectMailSetting w where w.mailSettingId=? AND w.customizationId=?", 1,
-					0, "SystemMailSetting");
-		}
-		return oms;
+		return metadataLoader.findObjectMailSetting(scd, mailSettingId);
 	}
 	
 	public String sendMail(Map<String, Object> scd, W5Email email){

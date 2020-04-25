@@ -135,4 +135,13 @@ public class W5TableFieldCalculated implements java.io.Serializable, W5Base {
 		this.projectUuid = projectUuid;
 	}
 
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5TableFieldCalculated))return false;
+		W5TableFieldCalculated c = (W5TableFieldCalculated)o;
+		return c!=null && c.getTableFieldCalculatedId()==tableFieldCalculatedId && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*tableFieldCalculatedId;
+	}	
 }

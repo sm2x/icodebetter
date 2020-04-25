@@ -18,6 +18,12 @@ import org.hibernate.annotations.Immutable;
 @Table(name="w5_list_column",schema="iwb")
 public class W5ListColumn implements java.io.Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 133823734743L;
+
+
 	private int listColumnId;
 
 
@@ -211,4 +217,14 @@ public class W5ListColumn implements java.io.Serializable {
 	public void setProjectUuid(String projectUuid) {
 		this.projectUuid = projectUuid;
 	}
+	
+	public boolean equals(Object o) {
+		if(o==null || !(o instanceof W5ListColumn))return false;
+		W5ListColumn c = (W5ListColumn)o;
+		return c!=null && c.getListColumnId()==getListColumnId() && c.getProjectUuid().equals(projectUuid);
+	}
+	
+	public int hashCode() {
+		return projectUuid.hashCode() + 100*getListColumnId();
+	}	
 }

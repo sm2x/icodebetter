@@ -146,19 +146,6 @@ public class PreviewController implements InitializingBean {
 		
 	}
 
-	@RequestMapping("/*/ajaxFormCellCode")
-	public void hndAjaxFormCellCode(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		int formCellId = GenericUtil.uInt(request, "_formCellId");
-		logger.info("hndAjaxFormCellCode(" + formCellId + ")");
-		Map<String, Object> scd = UserUtil.getScd4Preview(request, "scd-dev", true);
-		Map m = service.getFormCellCode(scd, GenericUtil.getParameterMap(request), formCellId, 1);
-		// m.put("success", true);
-		response.setContentType("application/json");
-		response.getWriter().write(GenericUtil.fromMapToJsonString2(m));
-		response.getWriter().close();
-	}
-
 	@RequestMapping("/*/ajaxChangeChatStatus")
 	public void hndAjaxChangeChatStatus(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -677,20 +664,6 @@ public class PreviewController implements InitializingBean {
 		response.getWriter().close();
 	}
 
-	@RequestMapping("/*/ajaxGetFormCellCodeDetail")
-	public void hndAjaxGetFormCellCodeDetail(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		logger.info("hndAjaxGetFormCellCodeDetail");
-
-		Map<String, Object> scd = UserUtil.getScd4Preview(request, "scd-dev", true);
-		int fccdId = GenericUtil.uInt(request, "_fccdid");
-		String result = service.getFormCellCodeDetail(scd, GenericUtil.getParameterMap(request), fccdId);
-		response.setContentType("application/json");
-		response.getWriter().write("{\"success\":true,\"result\":\"" + result + "\"}");
-		response.getWriter().close();
-
-	}
-
 	@RequestMapping("/*/ajaxFeed")
 	public void hndAjaxFeed(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1063,7 +1036,7 @@ public class PreviewController implements InitializingBean {
 			if (request.getRequestURI().indexOf(".xls") != -1 || "xls".equals(request.getParameter("_fmt")))
 				result = new ModelAndView(new RptExcelRenderer(), m);
 			else if (request.getRequestURI().indexOf(".pdf") != -1)
-				result = new ModelAndView(new RptPdfRenderer(service.getCustomizationLogoFilePath(scd)), m);
+				result = new ModelAndView(new RptPdfRenderer(null), m);
 			else if (request.getRequestURI().indexOf(".csv") != -1) {
 				response.setContentType("application/octet-stream");
 				response.getWriter().print(GenericUtil.report2csv(list));
@@ -1104,7 +1077,11 @@ public class PreviewController implements InitializingBean {
 						"Invalid Id: " + fileAttachmentId, null);
 			}
 			ServletOutputStream out = response.getOutputStream();
-			file_path = local_path + "/" + customizationId + "/attachment/" + fa.getSystemFileName();
+			file_path = fa.getSystemFileName();
+			if(!file_path.contains(File.separator))
+				file_path = FrameworkCache.getAppSettingStringValue(0, "file_local_path") + File.separator + customizationId 
+				+ File.separator + "attachment" + File.separator + file_path;
+			
 			if(FrameworkSetting.argMap.get("multipart_location")!=null) {
 				file_path = FrameworkSetting.argMap.get("multipart_location") + "/"+ file_path;
 			}
@@ -1187,10 +1164,16 @@ public class PreviewController implements InitializingBean {
 			filePath = fa.getFileAttachmentId() == 2 ? AppController.womanPicPath : AppController.manPicPath;
 		} else {
 			if (scd == null)scd = UserUtil.getScd4Preview(request, "scd-dev", true);
-			String customizationId = String
-					.valueOf((scd.get("customizationId") == null) ? 0 : scd.get("customizationId"));
-			String file_path = FrameworkCache.getAppSettingStringValue(0, "file_local_path");
-			filePath = file_path + "/" + customizationId + "/attachment/" + fa.getSystemFileName();
+			
+			
+			String customizationId = String.valueOf((scd.get("customizationId") == null) ? 0 : scd.get("customizationId"));
+
+			if(!fa.getSystemFileName().contains(File.separator))
+				filePath = FrameworkCache.getAppSettingStringValue(0, "file_local_path") + File.separator + customizationId 
+				+ File.separator + "attachment" + File.separator + fa.getSystemFileName();
+			else 
+				filePath = fa.getSystemFileName();
+			
 		}
 		if (request.getParameter("_ct") == null)
 			response.setContentType("image/jpeg");
@@ -1263,39 +1246,6 @@ public class PreviewController implements InitializingBean {
 		response.getWriter().close();
 	}
 	
-	@RequestMapping("/*/getGraphDashboards")
-	public void hndGetGraphDashboards(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		logger.info("hndGetGraphDashboards");
-		Map<String, Object> scd = UserUtil.getScd4Preview(request, "scd-dev", true);
-
-		List<W5BIGraphDashboard> l = null;
-		try{
-			l = service.getGraphDashboards(scd);
-		} catch (Exception e) {
-		}
-		
-		if(GenericUtil.isEmpty(l)){
-			response.getWriter().write("{\"success\":true,\"data\":[]}");
-		} else {
-			StringBuilder s = new StringBuilder();
-			s.append("{\"success\":true,\"data\":[");
-			boolean b = false;
-			for(W5BIGraphDashboard gd:l){
-				if(b)s.append(","); else b=true;
-				s.append(f7.serializeGraphDashboard(gd, scd));
-			}
-			s.append("]}");
-
-			response.getWriter().write(s.toString());
-			
-		}
-		response.getWriter().close();
-	}
-
-
-
-
 	@RequestMapping(value = "/multiupload.form", method = RequestMethod.POST)
 	@ResponseBody
 	public String multiFileUpload(@RequestParam("files") MultipartFile[] files,
@@ -1389,8 +1339,9 @@ public class PreviewController implements InitializingBean {
 		Map<String, Object> scd = UserUtil.getScd4Preview(request, "scd-dev", true);
 		Map<String, String> requestParams = GenericUtil.getParameterMap(request);
 
-		String path = FrameworkCache.getAppSettingStringValue(0, "file_local_path")
-				+ File.separator + scd.get("customizationId") + File.separator + "attachment";
+		String path = FrameworkCache.getAppSettingStringValue(0, "file_local_path");
+		if(scd.containsKey("ulpath"))path+=File.separator + scd.get("ulpath");
+		else path += File.separator + scd.get("customizationId") + File.separator + "attachment";
 
 		File dirPath = new File(path);
 		if (!dirPath.exists()) {
@@ -1418,7 +1369,7 @@ public class PreviewController implements InitializingBean {
 							+ Math.round(maxFileSize / 1024) + " KB\"}";
 				fa.setFileTypeId(-998);// company picture upload etti
 			}
-			fa.setSystemFileName(fileId + "." + GenericUtil.strUTF2En(file.getOriginalFilename()));
+			fa.setSystemFileName((scd.containsKey("ulpath")? path + File.separator:"")+fileId + "." + GenericUtil.strUTF2En(file.getOriginalFilename()));
 			file.transferTo(new File(path + File.separator + fa.getSystemFileName()));
 			fa.setOrijinalFileName(file.getOriginalFilename());
 			fa.setTableId(table_id);
@@ -1456,14 +1407,7 @@ public class PreviewController implements InitializingBean {
 			if (true || FrameworkSetting.debug)
 				e.printStackTrace();
 			return "{ \"success\": false }";
-		} /*
-			 * finally { // transferTo yüzünden zaten hep exceptiona düşüyor.
-			 * try {
-			 * if(file.getInputStream()!=null)file.getInputStream().close(); }
-			 * catch (Exception e2) {
-			 * if(PromisSetting.debug)e2.printStackTrace(); } //
-			 * response.getWriter().close(); }
-			 */
+		} 
 
 	}
 
@@ -1589,6 +1533,9 @@ public class PreviewController implements InitializingBean {
 	    
 		Map m =service.REST(scd, request.getParameter("serviceName"), GenericUtil.getParameterMap(request));
 		if(m!=null) {
+			if(m.containsKey("_code_") && GenericUtil.uInt(m.get("_code_"))>200) {
+				throw new IWBException("framework","REST",0,null, m.containsKey("error") ? m.get("error").toString():m.toString(), null);
+			}
 			if(m.get("data")!=null && m.get("data") instanceof byte[]) {
 				response.setContentType("application/octet-stream");
 				byte[] r = (byte[])m.get("data");
