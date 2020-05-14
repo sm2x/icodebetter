@@ -22,7 +22,7 @@ public class W5FormResult implements W5MetaResult{
 	private	int	formId;
     private int action;
     private int	versionNo = 0;
-    private short objectTip;
+    private short objectType;
     
 	private	W5Form form;
 	private	List<W5FormCellHelper>	formCellResults;	
@@ -130,11 +130,11 @@ public class W5FormResult implements W5MetaResult{
 	public void setPkFields(Map<String, Object> pkFields) {
 		this.pkFields = pkFields;
 	}
-	public short getObjectTip() {
-		return objectTip;
+	public short getObjectType() {
+		return objectType;
 	}
-	public void setObjectTip(short objectTip) {
-		this.objectTip = objectTip;
+	public void setObjectType(short objectType) {
+		this.objectType = objectType;
 	}
 	public List<String> getOutputMessages() {
 		return outputMessages;

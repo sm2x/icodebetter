@@ -21,27 +21,27 @@ import iwb.util.GenericUtil;
 @Immutable
 @Table(name="w5_template",schema="iwb")
 public class W5Page implements java.io.Serializable, W5Base {
-
-	/**
-	 * 
-	 */
+/*TABLE_ID: 63*/
+	
 	private static final long serialVersionUID = 223312314121L;
 
-	private int templateId;
+	private int pageId;
 	
-	private short templateTip;
+	private short pageType;
 
 	private String dsc;
 
 	private int objectId;
 
-	private short objectTip;
+	private short objectType;
 
 	private short localeMsgFlag;
 
 	private String code;
 	private String cssCode;
 	private int versionNo;
+	private String tag;
+	
 
 	private List<W5PageObject> _pageObjectList;
 	
@@ -50,21 +50,21 @@ public class W5Page implements java.io.Serializable, W5Base {
 
 	@Id
 	@Column(name="template_id")
-	public int getTemplateId() {
-		return this.templateId;
+	public int getPageId() {
+		return this.pageId;
 	}
 
-	public void setTemplateId(int templateId) {
-		this.templateId = templateId;
+	public void setPageId(int pageId) {
+		this.pageId = pageId;
 	}
 
 	@Column(name="template_tip")
-	public short getTemplateTip() {
-		return this.templateTip;
+	public short getPageType() {
+		return this.pageType;
 	}
 
-	public void setTemplateTip(short templateTip) {
-		this.templateTip = templateTip;
+	public void setPageType(short pageType) {
+		this.pageType = pageType;
 	}
 
 	@Column(name="dsc")
@@ -86,12 +86,12 @@ public class W5Page implements java.io.Serializable, W5Base {
 	}
 
 	@Column(name="object_tip")
-	public short getObjectTip() {
-		return this.objectTip;
+	public short getObjectType() {
+		return this.objectType;
 	}
 
-	public void setObjectTip(short objectTip) {
-		this.objectTip = objectTip;
+	public void setObjectType(short objectType) {
+		this.objectType = objectType;
 	}
 
 
@@ -109,8 +109,8 @@ public class W5Page implements java.io.Serializable, W5Base {
 		return _pageObjectList;
 	}
 
-	public void set_pageObjectList(List<W5PageObject> templateObjectList) {
-		_pageObjectList = templateObjectList;
+	public void set_pageObjectList(List<W5PageObject> _pageObjectList) {
+		this._pageObjectList = _pageObjectList;
 	}
 	
 	@Column(name="locale_msg_flag")
@@ -128,11 +128,11 @@ public class W5Page implements java.io.Serializable, W5Base {
 		if(q==null)return false;
 		W5Page t = (W5Page)q;
 		boolean b =  
-			this.templateId == t.getTemplateId() &&
-			this.templateTip == t.getTemplateTip() &&
+			this.pageId == t.getPageId() &&
+			this.pageType == t.getPageType() &&
 			GenericUtil.safeEquals(this.dsc, t.getDsc()) &&
 			this.objectId == t.getObjectId() &&
-			this.objectTip == t.getObjectTip() &&
+			this.objectType == t.getObjectType() &&
 			this.localeMsgFlag == t.getLocaleMsgFlag() &&
 			GenericUtil.safeEquals(this.code, t.getCode());
 		
@@ -174,6 +174,15 @@ public class W5Page implements java.io.Serializable, W5Base {
 	public int getVersionNo() {
 		return versionNo;
 	}
+	
+	@Column(name="tag")
+	public String getTag() {
+		return tag;
+	}
+
+	public void setTag(String tag) {
+		this.tag = tag;
+	}
 
 	public void setVersionNo(int versionNo) {
 		this.versionNo = versionNo;
@@ -182,10 +191,10 @@ public class W5Page implements java.io.Serializable, W5Base {
 	public boolean equals(Object o) {
 		if(o==null || !(o instanceof W5Page))return false;
 		W5Page c = (W5Page)o;
-		return c!=null && c.getTemplateId()==getTemplateId() && c.getProjectUuid().equals(projectUuid);
+		return c!=null && c.getPageId()==getPageId() && c.getProjectUuid().equals(projectUuid);
 	}
 	
 	public int hashCode() {
-		return projectUuid.hashCode() + 100*getTemplateId();
+		return projectUuid.hashCode() + 100*getPageId();
 	}	
 }

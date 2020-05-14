@@ -13,8 +13,9 @@ import org.hibernate.annotations.Immutable;
 @Entity
 @Immutable
 @Table(name="w5_query_field",schema="iwb")
-public class W5QueryField implements java.io.Serializable, W5Param {
-
+public class W5QueryField implements java.io.Serializable, W5Param, W5Base {
+/*TABLE_ID: 9*/
+	
 	private static final long serialVersionUID = 14216341231L;
 
 	private int queryFieldId;
@@ -23,11 +24,11 @@ public class W5QueryField implements java.io.Serializable, W5Param {
 
 	private String dsc;
 
-	private short fieldTip;
+	private short fieldType;
 
 	private short tabOrder;
 
-	private short postProcessTip;
+	private short postProcessType;
 	private int lookupQueryId;
 	
 	private int mainTableFieldId;
@@ -53,8 +54,8 @@ public class W5QueryField implements java.io.Serializable, W5Param {
 	}
 
 	@Column(name="field_tip")
-	public short getFieldTip() {
-		return fieldTip;
+	public short getFieldType() {
+		return fieldType;
 	}
 
 	@Column(name="tab_order")
@@ -77,8 +78,8 @@ public class W5QueryField implements java.io.Serializable, W5Param {
 		this.dsc = dsc;
 	}
 
-	public void setFieldTip(short fieldTip) {
-		this.fieldTip = fieldTip;
+	public void setFieldType(short fieldType) {
+		this.fieldType = fieldType;
 	}
 
 	public void setTabOrder(short tabOrder) {
@@ -87,12 +88,12 @@ public class W5QueryField implements java.io.Serializable, W5Param {
 
 
 	@Column(name="post_process_tip")
-	public short getPostProcessTip() {
-		return postProcessTip;
+	public short getPostProcessType() {
+		return postProcessType;
 	}
 
-	public void setPostProcessTip(short postProcessTip) {
-		this.postProcessTip = postProcessTip;
+	public void setPostProcessType(short postProcessType) {
+		this.postProcessType = postProcessType;
 	}
 
 	@Column(name="lookup_query_id")
@@ -114,8 +115,8 @@ public class W5QueryField implements java.io.Serializable, W5Param {
 	}
 	
 	@Transient
-	public short getParamTip(){
-		return fieldTip;
+	public short getParamType(){
+		return fieldType;
 	}
 	
 	@Transient
@@ -125,7 +126,7 @@ public class W5QueryField implements java.io.Serializable, W5Param {
 
 	
 	@Transient
-	public short getSourceTip(){
+	public short getSourceType(){
 		return 0;
 	}
 
@@ -156,7 +157,7 @@ public class W5QueryField implements java.io.Serializable, W5Param {
 
 
 	@Transient
-	public Short getMaxLength(){
+	public Integer getMaxLength(){
 		return 0;
 	}
 	private String projectUuid;
@@ -184,5 +185,11 @@ public class W5QueryField implements java.io.Serializable, W5Param {
 	@Transient
 	public int getParentId() {
 		return 0;
+	}
+
+	@Transient
+	public boolean safeEquals(W5Base q) {
+
+			return false;
 	}
 }

@@ -1,0 +1,39 @@
+version: "3.4"
+services:
+  db:
+    image: icodebetter/db_package
+    container_name: db
+    ports:
+      - "6666:5432"
+    restart: on-failure
+    volumes:
+      - "dbdata:/var/lib/postgresql/data"
+    networks:
+      - icb
+  influxdb:
+    image: influxdb:1.7-alpine
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    networks:
+      - icb
+  web:
+    image: icodebetter/app_image
+    container_name: web
+    environment:
+      - INFLUXDB=1
+      - PROJECT=1
+    ports:
+      - "8080:8080"
+    restart: on-failure
+    depends_on:
+      - db
+      - influxdb
+    networks:
+      - icb
+networks:
+  icb:
+volumes:
+  dbdata:
+    name: dbdata
+

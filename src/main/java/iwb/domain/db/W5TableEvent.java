@@ -4,6 +4,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import org.hibernate.annotations.Immutable;
 
@@ -16,8 +17,10 @@ import org.hibernate.annotations.Immutable;
 @Entity
 @Immutable
 @Table(name="w5_table_trigger",schema="iwb")
-public class W5TableEvent implements java.io.Serializable {
+public class W5TableEvent implements java.io.Serializable, W5Base {
+/*TABLE_ID: 1209*/
 
+	
 	private static final long serialVersionUID = 1444443444L;
 	private int tableTriggerId;
 	private int tableId;
@@ -116,5 +119,12 @@ public class W5TableEvent implements java.io.Serializable {
 	
 	public int hashCode() {
 		return projectUuid.hashCode() + 100*tableTriggerId;
-	}	
+	}
+	
+
+	@Transient
+	public boolean safeEquals(W5Base q) {
+
+			return false;
+	}
 }

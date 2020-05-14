@@ -19,10 +19,8 @@ import iwb.util.GenericUtil;
 @Immutable
 @Table(name="w5_grid_column",schema="iwb")
 public class W5GridColumn implements java.io.Serializable, W5Base {
+/*TABLE_ID: 4*/
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 9876543215671L;
 
 	private int gridColumnId;
@@ -43,7 +41,7 @@ public class W5GridColumn implements java.io.Serializable, W5Base {
 	
 	private	short sortableFlag;
 	
-	private	short alignTip;
+	private	short alignType;
 	
 	private	short filterFlag;
 	
@@ -71,7 +69,7 @@ public class W5GridColumn implements java.io.Serializable, W5Base {
 
 	public W5GridColumn(int gridColumnId, int queryFieldId, int gridId, String projectUuid,
 			String localeMsgKey, short tabOrder, short visibleFlag,
-			short width, String renderer, short sortableFlag, short alignTip,
+			short width, String renderer, short sortableFlag, short alignType,
 			short filterFlag, String extraDefinition, int gridModuleId,
 			int formCellId) {
 		this.gridColumnId = gridColumnId;
@@ -84,7 +82,7 @@ public class W5GridColumn implements java.io.Serializable, W5Base {
 		this.width = width;
 		this.renderer = renderer;
 		this.sortableFlag = sortableFlag;
-		this.alignTip = alignTip;
+		this.alignType = alignType;
 		this.filterFlag = filterFlag;
 		this.extraDefinition = extraDefinition;
 		this.gridModuleId = gridModuleId;
@@ -167,12 +165,12 @@ public class W5GridColumn implements java.io.Serializable, W5Base {
 	}
 
 	@Column(name="align_tip")
-	public short getAlignTip() {
-		return alignTip;
+	public short getAlignType() {
+		return alignType;
 	}
 
-	public void setAlignTip(short alignTip) {
-		this.alignTip = alignTip;
+	public void setAlignType(short alignType) {
+		this.alignType = alignType;
 	}	
 /*
 	@Column(name="control_tip")
@@ -279,7 +277,7 @@ public class W5GridColumn implements java.io.Serializable, W5Base {
 			
 			this.sortableFlag==g.getSortableFlag() &&
 			
-			this.alignTip==g.getAlignTip() &&
+			this.alignType==g.getAlignType() &&
 			
 			this.filterFlag==g.getFilterFlag() &&
 			
@@ -309,7 +307,7 @@ public class W5GridColumn implements java.io.Serializable, W5Base {
 		
 		r.setLocaleMsgKey(localeMsgKey);
 		r.setWidth(width);
-		r.setAlignTip(alignTip);		
+		r.setAlignType(alignType);		
 		return r;
 	}
 

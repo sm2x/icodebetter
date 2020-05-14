@@ -6,7 +6,7 @@ public class FieldDefinitions {
 	public static String queryFieldName_FileAttachment="pkpkpk_faf";
 	public static String queryFieldName_Mail="pkpkpk_ms";
 	public static String queryFieldName_RowBasedSecurity="pkpkpk_acf";
-	public static String queryFieldName_Approval="pkpkpk_arf";
+	public static String queryFieldName_Workflow="pkpkpk_arf";
 	public static String queryFieldName_Picture="pkpkpk_apf";
 	public static String queryFieldName_Revision="pkpkpk_rev";
 	public static String queryFieldName_HierarchicalData="_record";

@@ -13,7 +13,7 @@ import org.hibernate.annotations.Immutable;
 @Entity
 @Immutable
 @Table(name="w5_custom_grid_column_renderer", schema="iwb")
-public class W5CustomGridColumnRenderer implements java.io.Serializable {
+public class W5CustomGridColumnRenderer implements java.io.Serializable, W5Base {
 
 	/**
 	 * 
@@ -24,6 +24,7 @@ public class W5CustomGridColumnRenderer implements java.io.Serializable {
 	private int queryFieldId;
 	private String lookupDetayVal;
 	private String cssVal;
+
 	
 	@Id
 	@Column(name="custom_grid_column_renderer_id")
@@ -83,4 +84,10 @@ public class W5CustomGridColumnRenderer implements java.io.Serializable {
 	public int hashCode() {
 		return projectUuid.hashCode() + 100*getCustomGridColumnRendererId();
 	}
+	
+
+	public boolean safeEquals(W5Base q) {
+		return true;
+	}
+	
 }

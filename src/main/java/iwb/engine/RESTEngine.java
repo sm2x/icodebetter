@@ -52,13 +52,13 @@ public class RESTEngine {
 		scd.put("projectId", wss.getProjectUuid());
 		for (W5WsServerMethod wsm : wss.get_methods())
 			try {
-				switch (wsm.getObjectTip()) {
+				switch (wsm.getObjectType()) {
 				case 0:
 				case 1:
 				case 2:
 				case 3: // form
 					wsmoMap.put(wsm.getDsc(), metadataLoader.getFormResult(scd, wsm.getObjectId(),
-							wsm.getObjectTip() == 0 ? 1 : wsm.getObjectTip(), new HashMap()));
+							wsm.getObjectType() == 0 ? 1 : wsm.getObjectType(), new HashMap()));
 					break;
 				case 4:
 					wsmoMap.put(wsm.getDsc(), metadataLoader.getGlobalFuncResult(scd, wsm.getObjectId()));
@@ -136,10 +136,10 @@ public class RESTEngine {
 		
 		for (W5WsMethodParam p : params)
 			if (p.getOutFlag() == 0 && p.getParentWsMethodParamId() == paramId) {
-				if (p.getParamTip() == 9 || p.getParamTip() == 8) { // object/json
+				if (p.getParamType() == 9 || p.getParamType() == 8) { // object/json
 					Object oo = recursiveParams2Map(scd, p.getWsMethodParamId(), requestParams.get(p.getDsc()),
 							params, errorMap, reqPropMap);
-					if(GenericUtil.isEmpty(oo) && p.getParamTip() == 8){
+					if(GenericUtil.isEmpty(oo) && p.getParamType() == 8){
 						boolean bx = true;
 						for (W5WsMethodParam p2 : params)if (p2.getOutFlag() == 0 && p2.getParentWsMethodParamId() == p.getWsMethodParamId()){
 							bx = false;
@@ -162,8 +162,8 @@ public class RESTEngine {
 						}
 					}
 					m.put(p.getDsc(), oo);
-				} else if (p.getParamTip() == 10) {// array
-					if (p.getSourceTip() == 0) { // constant ise altini da
+				} else if (p.getParamType() == 10) {// array
+					if (p.getSourceType() == 0) { // constant ise altini da
 													// doldur
 						m.put(p.getDsc(),
 								recursiveParams2List(scd, p.getWsMethodParamId(), requestParams.get(p.getDsc()), params,
@@ -190,10 +190,10 @@ public class RESTEngine {
 						}
 					}
 				} else {
-					Object o = GenericUtil.prepareParam((W5Param) p, scd, requestParams, p.getSourceTip(), null,
+					Object o = GenericUtil.prepareParam((W5Param) p, scd, requestParams, p.getSourceType(), null,
 							p.getNotNullFlag(), null, null, errorMap, dao);
 					if(errorMap.isEmpty()) {
-						if(p.getParamTip()==5) {//checkbox
+						if(p.getParamType()==5) {//checkbox
 							m.put(p.getDsc(), GenericUtil.uInt(o)!=0);
 						} else if (o != null && o.toString().length() > 0) {
 	/*						if (p.getCredentialsFlag() == 1)//header
@@ -218,14 +218,14 @@ public class RESTEngine {
 			scd.put("customizationId", 0);
 			scd.put("userId", 10);
 			scd.put("roleId", 0);
-			scd.put("projectId", "067e6162-3b6f-4ae2-a221-2470b63dff00");			
+			scd.put("projectId", FrameworkSetting.devUuid);			
 		}
 		W5Ws ws = FrameworkCache.getWsClient(scd, u[0]);
 		if (ws == null) {
-			if(!GenericUtil.safeEquals(scd.get("projectId"),"067e6162-3b6f-4ae2-a221-2470b63dff00")) {
+			if(!GenericUtil.safeEquals(scd.get("projectId"),FrameworkSetting.devUuid)) {
 				Map newScd = new HashMap();
 				newScd.putAll(scd);
-				newScd.put("projectId", "067e6162-3b6f-4ae2-a221-2470b63dff00");
+				newScd.put("projectId", FrameworkSetting.devUuid);
 				newScd.put("customizationId", 0);
 				ws = FrameworkCache.getWsClient(newScd, u[0]);
 				
@@ -250,13 +250,7 @@ public class RESTEngine {
 		}
 		try {
 			String projectId = (String) scd.get("projectId");
-			if (wsm.get_params() == null) {
-				wsm.set_params(
-						metadataLoader.findWsMethodParams(wsm.getWsMethodId(), wsm.getProjectUuid()));
-				wsm.set_paramMap(new HashMap());
-				for (W5WsMethodParam wsmp : wsm.get_params())
-					wsm.get_paramMap().put(wsmp.getWsMethodParamId(), wsmp);
-			}
+
 			String tokenKey = null;
 			Map m = new HashMap();
 			Map errorMap = new HashMap();
@@ -267,8 +261,8 @@ public class RESTEngine {
 			if (url.indexOf("${") > -1) {// has special char
 				url = GenericUtil.filterExt(url, scd, requestParams, null).toString();
 			}
-			if(!GenericUtil.safeEquals(wsm.getRealDsc(),".")) {//if . dont add it
-				String methodUrl = GenericUtil.isEmpty(wsm.getRealDsc()) ? wsm.getDsc() : wsm.getRealDsc();
+			if(!GenericUtil.safeEquals(wsm.getPath(),".")) {//if . dont add it
+				String methodUrl = GenericUtil.isEmpty(wsm.getPath()) ? wsm.getDsc() : wsm.getPath();
 				if (!url.endsWith("/") && !methodUrl.startsWith("/"))
 					url += "/";
 				url += methodUrl;
@@ -286,7 +280,7 @@ public class RESTEngine {
 				reqPropMap.put("Accept", new String[] { "text/plain", "application/json", "application/xml", "application/octet-stream" }[wsm
 						.getHeaderAcceptTip()]);
 			}
-			if (ws.getWssTip() == 1 && !GenericUtil.isEmpty(ws.getWssCredentials())) { // credentials
+			if (ws.getWsSecurityType() == 1 && !GenericUtil.isEmpty(ws.getWssCredentials())) { // credentials
 				String cr = ws.getWssCredentials();
 				if (cr.indexOf("${") > -1) {// has special char
 					cr = GenericUtil.filterExt(cr, scd, requestParams, null).toString();
@@ -311,7 +305,7 @@ public class RESTEngine {
 					throw new IWBException("validation", "WS Method Call", wsm.getWsId(), null,
 							"Wrong Parameters: + " + GenericUtil.fromMapToJsonString2(errorMap), null);
 				}
-				for(W5WsMethodParam px:wsm.get_params()) if(px.getOutFlag()==0 && px.getParentWsMethodParamId()==0 && m.containsKey(px.getDsc()))switch(px.getCredentialsFlag()){// clean
+				for(W5WsMethodParam px:wsm.get_params()) if(px.getOutFlag()==0 && px.getParentWsMethodParamId()==0 && m.containsKey(px.getDsc()))switch(px.getParamSendType()){// clean
 				case	0://query
 					if(!GenericUtil.isEmpty(m.get(px.getDsc()))) {
 						if(!url.contains("?"))url+="?";
@@ -331,7 +325,7 @@ public class RESTEngine {
 					
 				}
 				
-				switch (wsm.getParamSendTip()) {
+				switch (wsm.getContentType()) {
 				case 3: // form as post_url : deprecated, use form(1) instead
 					params = GenericUtil.fromMapToURI(m);
 					if (!GenericUtil.isEmpty(params)) {
@@ -363,14 +357,14 @@ public class RESTEngine {
 				byte[] x = url.startsWith("ftp")?
 						FtpUtil.send4bin(url):
 							HttpUtil.send4bin(url, params,
-						new String[] { "GET", "POST", "PUT", "PATCH", "DELETE" }[wsm.getCallMethodTip()], reqPropMap);
+						new String[] { "GET", "POST", "PUT", "PATCH", "DELETE" }[wsm.getCallMethodType()], reqPropMap);
 				result.put("data", x);
 
 			} else {				
 				String x = url.startsWith("ftp")?
 						FtpUtil.send(url):
 						HttpUtil.send(url, params,
-						new String[] { "GET", "POST", "PUT", "PATCH", "DELETE" }[wsm.getCallMethodTip()], reqPropMap);
+						new String[] { "GET", "POST", "PUT", "PATCH", "DELETE" }[wsm.getCallMethodType()], reqPropMap);
 				if (!GenericUtil.isEmpty(x))
 					try {// System.out.println(x);
 						if(wsm.getLogLevelTip()>0) {
@@ -450,7 +444,7 @@ public class RESTEngine {
 						p.setDsc("data");
 						p.setOutFlag((short) 1);
 						p.setProjectUuid(scd.get("projectId").toString());
-						p.setParamTip((short) 10);
+						p.setParamType((short) 10);
 						p.setTabOrder((short) 100);
 						dao.saveObject(p);
 						dao.saveObject(new W5VcsObject(scd, 1377, p.getWsMethodParamId()));
@@ -472,7 +466,7 @@ public class RESTEngine {
 							p.setDsc(key);
 							p.setOutFlag((short) 1);
 							p.setProjectUuid(scd.get("projectId").toString());
-							p.setParamTip((short) 10);
+							p.setParamType((short) 10);
 							p.setTabOrder((short) 100);
 							dao.saveObject(p);
 							dao.saveObject(new W5VcsObject(scd, 1377, p.getWsMethodParamId()));
@@ -495,11 +489,11 @@ public class RESTEngine {
 									p2.setDsc(key);
 									p2.setOutFlag((short) 1);
 									p2.setProjectUuid(scd.get("projectId").toString());
-									p2.setParamTip((short) 1);
+									p2.setParamType((short) 1);
 									if (om.get(key) != null && om.get(key) instanceof List)
-										p2.setParamTip((short) 10);
+										p2.setParamType((short) 10);
 									if (om.get(key) != null && om.get(key) instanceof Map)
-										p2.setParamTip((short) 9);
+										p2.setParamType((short) 9);
 									p2.setTabOrder(tabOrder);
 									tabOrder += 10;
 									dao.saveObject(p2);
@@ -520,9 +514,9 @@ public class RESTEngine {
 												p22.setDsc(key2);
 												p22.setOutFlag((short) 1);
 												p22.setProjectUuid(scd.get("projectId").toString());
-												p22.setParamTip((short) 1);
+												p22.setParamType((short) 1);
 												if (om2.get(key2) != null && om2.get(key2) instanceof List)
-													p22.setParamTip((short) 10);
+													p22.setParamType((short) 10);
 												p22.setTabOrder(tabOrder2);
 												tabOrder2 += 10;
 												dao.saveObject(p22);

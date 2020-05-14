@@ -43,6 +43,7 @@ public class M5List implements java.io.Serializable, W5Base, W5ListBase {
 	private	String htmlPageCode;	
 	private	String htmlDataCode;	
 	private	String jsCode;	
+	private String orderQueryFieldIds;
 
 	private W5QueryField	_pkQueryField;
 	private	W5Table _mainTable;
@@ -56,7 +57,6 @@ public class M5List implements java.io.Serializable, W5Base, W5ListBase {
 	private List<W5QueryField> _postProcessQueryFields;
 	private W5Workflow _approval;
 
-	private String orderQueryFieldIds;
 	
 	@Id
 	@Column(name="list_id")
@@ -299,4 +299,7 @@ public class M5List implements java.io.Serializable, W5Base, W5ListBase {
 	public int hashCode() {
 		return projectUuid.hashCode() + 100*getListId();
 	}
+	
+
+	
 }

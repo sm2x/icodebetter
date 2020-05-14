@@ -13,30 +13,29 @@ import org.hibernate.annotations.Immutable;
 @Entity
 @Immutable
 @Table(name="w5_ws_method_param",schema="iwb")
-public class W5WsMethodParam  implements java.io.Serializable, W5Param {
+public class W5WsMethodParam  implements java.io.Serializable, W5Param, W5Base {
+/*TABLE_ID: 1377*/
 
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = 18172625342L;
+	
 	private int wsMethodParamId;
 	private int wsMethodId;
 	private int parentWsMethodParamId;
 	private String dsc;
-	private short paramTip;
-	private String uid;
+	private short paramType;//integer, string etc
 	private short outFlag;
-	private short credentialsFlag;
+	private short paramSendType;
 	private short notNullFlag;
 	private short tabOrder;
-	private short sourceTip;
+	private short sourceType;
 
 	private String defaultValue;
 	private	BigDecimal	minValue;
 	private	BigDecimal	maxValue;
 	
 	private	Short	minLength;
-	private	Short	maxLength;
+	private	Integer	maxLength;
 
 	@Id
 	@Column(name="ws_method_param_id")
@@ -47,11 +46,11 @@ public class W5WsMethodParam  implements java.io.Serializable, W5Param {
 		this.wsMethodParamId = wsMethodParamId;
 	}
 	@Column(name="param_tip")
-	public short getParamTip() {
-		return paramTip;
+	public short getParamType() {
+		return paramType;
 	}
-	public void setParamTip(short paramTip) {
-		this.paramTip = paramTip;
+	public void setParamType(short paramType) {
+		this.paramType = paramType;
 	}
 	@Column(name="ws_method_id")
 	public int getWsMethodId() {
@@ -67,14 +66,6 @@ public class W5WsMethodParam  implements java.io.Serializable, W5Param {
 	}
 	public void setDsc(String dsc) {
 		this.dsc = dsc;
-	}
-	
-	@Column(name="uid")
-	public String getUid() {
-		return uid;
-	}
-	public void setUid(String uid) {
-		this.uid = uid;
 	}
 	
 	@Column(name="out_flag")
@@ -129,21 +120,21 @@ public class W5WsMethodParam  implements java.io.Serializable, W5Param {
 	}
 
 	@Column(name="max_length")
-	public Short getMaxLength() {
+	public Integer getMaxLength() {
 		return maxLength;
 	}
 
 
-	public void setMaxLength(Short maxLength) {
+	public void setMaxLength(Integer maxLength) {
 		this.maxLength = maxLength;
 	}
 	@Column(name="source_tip")
-	public short getSourceTip() {
-		return sourceTip;
+	public short getSourceType() {
+		return sourceType;
 	}
 
-	public void setSourceTip(short sourceTip) {
-		this.sourceTip = sourceTip;
+	public void setSourceType(short sourceType) {
+		this.sourceType = sourceType;
 	}
 
 	
@@ -174,11 +165,11 @@ public class W5WsMethodParam  implements java.io.Serializable, W5Param {
 		this.projectUuid = projectUuid;
 	}
 	@Column(name="credentials_flag")
-	public short getCredentialsFlag() {
-		return credentialsFlag;
+	public short getParamSendType() {
+		return paramSendType;
 	}
-	public void setCredentialsFlag(short credentialsFlag) {
-		this.credentialsFlag = credentialsFlag;
+	public void setParamSendType(short paramSendType) {
+		this.paramSendType = paramSendType;
 	}
 
 	
@@ -197,5 +188,11 @@ public class W5WsMethodParam  implements java.io.Serializable, W5Param {
 	public int getParentId() {
 		return parentWsMethodParamId;
 	}	
-	
+
+
+	@Transient
+	public boolean safeEquals(W5Base q) {
+
+			return false;
+	}
 }

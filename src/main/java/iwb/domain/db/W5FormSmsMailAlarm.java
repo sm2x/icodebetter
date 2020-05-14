@@ -14,7 +14,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="w5_form_sms_mail_alarm",schema="iwb")
-public class W5FormSmsMailAlarm implements java.io.Serializable, W5Base {
+public class W5FormSmsMailAlarm implements java.io.Serializable {
 
 	private static final long serialVersionUID = 1619154109176375L;
 	private int formSmsMailAlarmId;
@@ -64,11 +64,6 @@ public class W5FormSmsMailAlarm implements java.io.Serializable, W5Base {
 		this.formSmsMailId = formSmsMailId;
 	}
 
-	@Override
-	public boolean safeEquals(W5Base q) {
-		// TODO Auto-generated method stub
-		return false;
-	}
 	@Column(name="table_id")
 	public int getTableId() {
 		return tableId;

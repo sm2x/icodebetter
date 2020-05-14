@@ -9,12 +9,10 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="iwb.w5_excel_import_sheet_data",schema="iwb")
+@Table(name="w5_excel_import_sheet_data",schema="iwb")
 public class W5ExcelImportSheetData implements java.io.Serializable {
+/*TABLE_ID: 669*/
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 76762342342341L;
 	private int excelImportSheetDataId;
 	private int excelImportSheetId;

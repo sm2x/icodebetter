@@ -1,10 +1,14 @@
 package iwb.controller;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.zip.GZIPOutputStream;
 
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -17,9 +21,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import iwb.adapter.metadata.MetadataExport;
 import iwb.adapter.ui.ViewAdapter;
 import iwb.adapter.ui.extjs.ExtJs3_4;
 import iwb.cache.FrameworkCache;
+import iwb.cache.FrameworkSetting;
 import iwb.domain.result.W5QueryResult;
 import iwb.exception.IWBException;
 import iwb.service.VcsService;
@@ -141,7 +147,8 @@ public class VcsController implements InitializingBean {
 		logger.info("hndAjaxVCSObjectPullMulti(1)"); 
 		
     	Map<String, Object> scd = UserUtil.getScd(request, "scd-dev", true);
-    	Map m = vcsEngine.vcsClientObjectPullMulti(scd, request.getParameter("k"), GenericUtil.uInt(request, "f")!=0);
+    	Map m = GenericUtil.uInt(request, "f")==0 ? vcsEngine.vcsClientObjectPullMulti(scd, request.getParameter("k"), false):
+    		vcsEngine.vcsClientObjectPullMultiNT(scd, request.getParameter("k"));
     	response.getWriter().write(GenericUtil.fromMapToJsonString2Recursive(m));
 		response.getWriter().close();
 	}
@@ -209,7 +216,7 @@ public class VcsController implements InitializingBean {
 		logger.info("hndAjaxVCSObjectsAll"); 
 		
     	Map<String, Object> scd = UserUtil.getScd(request, "scd-dev", true);
-    	W5QueryResult qr= vcsEngine.vcsClientObjectsAll(scd);
+    	W5QueryResult qr= vcsEngine.vcsClientObjectsAll(scd, false);
     	response.getWriter().write(getViewAdapter(scd, request).serializeQueryData(qr).toString());
 		response.getWriter().close();
 	}
@@ -287,7 +294,7 @@ public class VcsController implements InitializingBean {
 		logger.info("ajaxVCSObjectPush("+tableId+")"); 
 		
     	Map<String, Object> scd = UserUtil.getScd(request, "scd-dev", true);
-    	int commitId = vcsEngine.vcsClientObjectPush(scd, tableId, tablePk, GenericUtil.uInt(request, "f")!=0, false);
+    	int commitId = vcsEngine.vcsClientObjectPush(scd, tableId, tablePk, GenericUtil.uInt(request, "f")!=0, request.getParameter("comment"));
     	response.getWriter().write("{\"success\":true, \"commit_id\":"+commitId+"}");
 		response.getWriter().close();
 	}
@@ -317,8 +324,15 @@ public class VcsController implements InitializingBean {
 		logger.info("ajaxVCSObjectPushMulti("+tableId+")"); 
 		
     	Map<String, Object> scd = UserUtil.getScd(request, "scd-dev", true);
-    	int commitId = vcsEngine.vcsClientObjectPushMulti(scd, tableId, tablePks, GenericUtil.uInt(request, "f")!=0, false, true);
-    	response.getWriter().write("{\"success\":true, \"commit_id\":"+commitId+"}");
+    	int commitCount = vcsEngine.vcsClientObjectPushMulti(scd, tableId, tablePks, GenericUtil.uInt(request, "f")!=0, request.getParameter("comment"));
+    	switch(commitCount) {
+    	case	-1://onSynchErrorThrow
+        	response.getWriter().write("{\"success\":true, \"error\":\"force\"}");
+        	break;
+    	default:
+        	response.getWriter().write("{\"success\":true, \"commitCount\":"+commitCount+"}");
+
+    	}
 		response.getWriter().close();
 	}
 	
@@ -331,9 +345,16 @@ public class VcsController implements InitializingBean {
 		logger.info("hndAjaxVCSObjectPushAll("+tableKeys+")"); 
 		
     	Map<String, Object> scd = UserUtil.getScd(request, "scd-dev", true);
-    	int commitId = vcsEngine.vcsClientObjectPushAll(scd,  tableKeys, GenericUtil.uInt(request, "f")!=0, false, true);
-    	response.getWriter().write("{\"success\":true, \"commit_id\":"+commitId+"}");
-		response.getWriter().close();
+    	int commitCount = vcsEngine.vcsClientObjectPushAll(scd,  tableKeys, GenericUtil.uInt(request, "f")!=0, request.getParameter("comment"));
+    	switch(commitCount) {
+    	case	-1://onSynchErrorThrow
+        	response.getWriter().write("{\"success\":true, \"error\":\"force\"}");
+        	break;
+    	default:
+        	response.getWriter().write("{\"success\":true, \"commitCount\":"+commitCount+"}");
+
+    	}
+    	response.getWriter().close();
 	}
 	
 	@RequestMapping("/serverVCSObjectPull")
@@ -392,7 +413,7 @@ public class VcsController implements InitializingBean {
 			   , passWord = jo.getString("p")
 			   , projectId = jo.getString("r");
 		
-		if(projectId.equals("067e6162-3b6f-4ae2-a221-2470b63dff00") && !GenericUtil.hasPartInside(FrameworkCache.getAppSettingStringValue(0, "vcs_allowed_ips"), request.getRemoteAddr()))
+		if(projectId.equals(FrameworkSetting.devUuid) && !GenericUtil.hasPartInside(FrameworkCache.getAppSettingStringValue(0, "vcs_allowed_ips"), request.getRemoteAddr()))
 			throw new IWBException("vcs","Code2 Server Error", 0, null, "Empty Project Name", null);
 
 		
@@ -465,7 +486,7 @@ public class VcsController implements InitializingBean {
 			, customizationId = jo.getInt("c");
 		String comment = GenericUtil.uStr(jo, "comment");
 		
-		if(projectId.equals("067e6162-3b6f-4ae2-a221-2470b63dff00") && !GenericUtil.hasPartInside(FrameworkCache.getAppSettingStringValue(0, "vcs_allowed_ips"), request.getRemoteAddr()))
+		if(projectId.equals(FrameworkSetting.devUuid) && !GenericUtil.hasPartInside(FrameworkCache.getAppSettingStringValue(0, "vcs_allowed_ips"), request.getRemoteAddr()))
 			throw new IWBException("vcs","Code2 Server Error", 0, null, "Empty Project Name", null);
 
 		
@@ -492,7 +513,7 @@ public class VcsController implements InitializingBean {
 			   , projectId = jo.getString("r");
 		int customizationId = jo.getInt("c");
 
-		if(projectId.equals("067e6162-3b6f-4ae2-a221-2470b63dff00") && !GenericUtil.hasPartInside(FrameworkCache.getAppSettingStringValue(0, "vcs_allowed_ips"), request.getRemoteAddr()))
+		if(projectId.equals(FrameworkSetting.devUuid) && !GenericUtil.hasPartInside(FrameworkCache.getAppSettingStringValue(0, "vcs_allowed_ips"), request.getRemoteAddr()))
 			throw new IWBException("vcs","Code2 Server Error", 0, null, "Empty Project Name", null);
 
 		
@@ -571,7 +592,7 @@ public class VcsController implements InitializingBean {
 		int customizationId = GenericUtil.uInt(request, "c");
 		String projectId = request.getParameter("r");
 		logger.info("hndServerSQLCommit("+projectId+")"); 
-		if(projectId.equals("067e6162-3b6f-4ae2-a221-2470b63dff00") && !GenericUtil.hasPartInside(FrameworkCache.getAppSettingStringValue(0, "vcs_allowed_ips"), request.getRemoteAddr()))
+		if(projectId.equals(FrameworkSetting.devUuid) && !GenericUtil.hasPartInside(FrameworkCache.getAppSettingStringValue(0, "vcs_allowed_ips"), request.getRemoteAddr()))
 			throw new IWBException("vcs","Code2 Server Error", 0, null, "Empty Project Name", null);
 
     	Map m = vcsEngine.vcsServerSQLCommit(userName, passWord, customizationId, projectId, request.getParameter("s"),request.getParameter("comment"));
@@ -589,7 +610,9 @@ public class VcsController implements InitializingBean {
     
 		logger.info("hndAjaxVVCSClientSQLCommitsFetchAndRun"); 
 		int maxCount = GenericUtil.uInt(request, "maxCount");
-    	int cnt = vcsEngine.vcsClientSqlCommitsFetchAndRun(scd, maxCount);
+    	int cnt = maxCount==-1?
+    			vcsEngine.vcsClientSqlCommitsFetchAndRunUntilError(scd):
+    			vcsEngine.vcsClientSqlCommitsFetchAndRun(scd, maxCount);
 
     	response.getWriter().write("{\"success\":true, \"cnt\":"+cnt+"}");
 		response.getWriter().close();	
@@ -673,7 +696,7 @@ public class VcsController implements InitializingBean {
 				   , projectId = jo.getString("r");
 			int customizationId = jo.getInt("c");
 		
-		if(projectId.equals("067e6162-3b6f-4ae2-a221-2470b63dff00") && !GenericUtil.hasPartInside(FrameworkCache.getAppSettingStringValue(0, "vcs_allowed_ips"), request.getRemoteAddr()))
+		if(projectId.equals(FrameworkSetting.devUuid) && !GenericUtil.hasPartInside(FrameworkCache.getAppSettingStringValue(0, "vcs_allowed_ips"), request.getRemoteAddr()))
 			throw new IWBException("vcs","Code2 Server Error", 0, null, "Empty Project Name", null);
 
 		String sql = jo.getString("s");
@@ -773,7 +796,7 @@ public class VcsController implements InitializingBean {
 			   , projectId = jo.getString("r");
 		int customizationId = jo.getInt("c");
 
-		if(projectId.equals("067e6162-3b6f-4ae2-a221-2470b63dff00") && !GenericUtil.hasPartInside(FrameworkCache.getAppSettingStringValue(0, "vcs_allowed_ips"), request.getRemoteAddr()))
+		if(projectId.equals(FrameworkSetting.devUuid) && !GenericUtil.hasPartInside(FrameworkCache.getAppSettingStringValue(0, "vcs_allowed_ips"), request.getRemoteAddr()))
 			throw new IWBException("vcs","Code2 Server Error", 0, null, "Empty Project Name", null);
 
 		
@@ -982,7 +1005,7 @@ public class VcsController implements InitializingBean {
 		String projectId = request.getParameter("r");
 		String dsc = request.getParameter("dsc");
 		
-		if(projectId.equals("067e6162-3b6f-4ae2-a221-2470b63dff00") && !GenericUtil.hasPartInside(FrameworkCache.getAppSettingStringValue(0, "vcs_allowed_ips"), request.getRemoteAddr()))
+		if(projectId.equals(FrameworkSetting.devUuid) && !GenericUtil.hasPartInside(FrameworkCache.getAppSettingStringValue(0, "vcs_allowed_ips"), request.getRemoteAddr()))
 			throw new IWBException("vcs","Code2 Server Error", 0, null, "Empty Project Name", null);
 
 		
@@ -993,5 +1016,57 @@ public class VcsController implements InitializingBean {
 		response.setContentType("application/json");
 		response.getWriter().write("{\"success\":true, \"savePointId\":"+savePoint+"}");
 		response.getWriter().close();
+	}
+	
+
+	@RequestMapping("/export/*")
+	public void hndExportProject(
+			HttpServletRequest request,
+			HttpServletResponse response)
+			throws ServletException, IOException {
+		String uri = request.getRequestURI();
+		String prefix = "export/";
+		int ix = uri.indexOf(prefix);
+		String fileName = null;
+		if(ix>-1){
+			fileName = uri.substring(ix+prefix.length());
+		}
+		String projectId = fileName;
+		if(fileName.indexOf('.')>-1) {
+			projectId = projectId.substring(0,fileName.indexOf('.'));
+		}
+		
+		String str = new MetadataExport().toJson(vcsEngine.getProjectMetadata(projectId));
+
+		if(fileName.toLowerCase(FrameworkSetting.appLocale).endsWith("zip")) {
+			response.setContentType("application/octet-stream");
+			ServletOutputStream out = response.getOutputStream();
+			try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+	            try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOutputStream)) {
+	                gzipOutputStream.write(str.getBytes(StandardCharsets.UTF_8));
+	            }
+	            out.write(byteArrayOutputStream.toByteArray());
+	        } catch(IOException e) {
+	            throw new RuntimeException("Failed to zip content", e);
+	        } finally {
+	        	out.close();
+	        }
+		} else {
+			response.setContentType("application/json");
+			response.getWriter().write(str);
+			response.getWriter().close();		
+		}
+	}
+	
+	@RequestMapping("/importProject")
+	public void hndImportProject(
+			HttpServletRequest request,
+			HttpServletResponse response)
+			throws ServletException, IOException {
+		response.setContentType("application/json");
+		vcsEngine.importProjectMetadata("http://localhost:8080/app/exportProject?.p="+request.getParameter(".p"));
+		response.getWriter().write("{success:true}");
+		
+		response.getWriter().close();		
 	}
 }

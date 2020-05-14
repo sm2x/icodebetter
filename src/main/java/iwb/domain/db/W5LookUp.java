@@ -19,10 +19,8 @@ import iwb.util.GenericUtil;
 @Immutable
 @Table(name="w5_look_up", schema="iwb")
 public class W5LookUp implements java.io.Serializable, W5Base {
-
-	/**
-	 * 
-	 */
+/*TABLE_ID: 13*/
+	
 	private static final long serialVersionUID = 1131313332L;
 
 	private int lookUpId;

@@ -17,15 +17,14 @@ import iwb.util.GenericUtil;
 @Immutable
 @Table(name = "w5_approval_step", schema = "iwb")
 public class W5WorkflowStep implements java.io.Serializable, W5Base {
+/*TABLE_ID: 390*/
 
-  /**
-	 * 
-	 */
+	
 	private static final long serialVersionUID = 22993388447511L;
 	
 	private int approvalStepSeqId;
 	private int approvalStepId;
-	private int approvalId;
+	private int workflowId;
 	  private String dsc;
 	  private String approvalRoles;
 	  private String approvalUsers;
@@ -76,12 +75,12 @@ public class W5WorkflowStep implements java.io.Serializable, W5Base {
 
 
   @Column(name = "approval_id")
-  public int getApprovalId() {
-    return approvalId;
+  public int getWorkflowId() {
+    return workflowId;
   }
 
-  public void setApprovalId(int approvalId) {
-    this.approvalId = approvalId;
+  public void setWorkflowId(int workflowId) {
+    this.workflowId = workflowId;
   }
 
   @Id
@@ -318,7 +317,7 @@ public class W5WorkflowStep implements java.io.Serializable, W5Base {
     W5WorkflowStep a = new W5WorkflowStep();
     a.approvalStepId = this.approvalStepId;
     a.approvalStepSeqId = this.approvalStepSeqId;
-    a.approvalId = this.approvalId;
+    a.workflowId = this.workflowId;
     a.dsc = this.dsc;
     a.approvalRoles = this.approvalRoles;
     a.approvalUsers = this.approvalUsers;
@@ -370,7 +369,7 @@ public class W5WorkflowStep implements java.io.Serializable, W5Base {
     W5WorkflowStep a = (W5WorkflowStep) q;
     return this.approvalStepId == a.approvalStepId
         && this.approvalStepSeqId == a.approvalStepSeqId
-        && this.approvalId == a.approvalId
+        && this.workflowId == a.workflowId
         && GenericUtil.safeEquals(this.dsc, a.dsc)
         && GenericUtil.safeEquals(this.approvalRoles, a.approvalRoles)
         && GenericUtil.safeEquals(this.approvalUsers, a.approvalUsers)

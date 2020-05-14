@@ -81,55 +81,57 @@ var defineJSCompletionItemProvider = {
           label: '$.getTableJSON',
           kind: monaco.languages.CompletionItemKind.Function,
           documentation: "Load Table Record as JSON",
-          detail: 'JSON',insertText:'$.getTableJSON("table_name",pk)'
+          detail: 'Get Record from Table as JSON',insertText:'$.getTableJSON("table_name",pk)'
         },
         {
           label: '$.postForm',
           kind: monaco.languages.CompletionItemKind.Function,
           documentation: "Post Form",
-          detail: 'W5FormResult',insertText:'$.postForm(formId,action,{params})'
-        },
-        {
+          detail: 'Post to Form',insertText:'$.postForm(formId,action,{params})'
+        },{
+            label: '$.query',
+            kind: monaco.languages.CompletionItemKind.Function,
+            documentation: "Run Code2 Query",
+            detail: 'Execute Code2 Query',insertText:'$.query(queryId, {params})'
+        },{
           label: '$.sqlQuery',
           kind: monaco.languages.CompletionItemKind.Function,
           documentation: "Run SELECT SQL",
-          detail: 'Array',insertText:'$.sqlQuery("SELECT * FROM x WHERE y", {params})'
-        },
-        {
-          label: '$.query',
-          kind: monaco.languages.CompletionItemKind.Function,
-          documentation: "Run Code2 Query",
-          detail: 'Array',insertText:'$.query(queryId, {params})'
+          detail: 'Execute RAW SQL for Listig',insertText:'$.sqlQuery("SELECT * FROM x WHERE y", {params})'
         },
         {
           label: '$.sqlExecute',
           kind: monaco.languages.CompletionItemKind.Function,
-          documentation: "Execute INSERT/UPDATE/DELETE SQL",
-          detail: 'int',insertText:'$.sqlExecute("UPDATE x set y WHERE z", {params})'
+          documentation: "INSERT/UPDATE/DELETE SQLs",
+          detail: 'Execute RAW SQL for Update',insertText:'$.sqlExecute("UPDATE x set y WHERE z", {params})'
         },
         {
           label: '$.execFunc',
           kind: monaco.languages.CompletionItemKind.Function,
           documentation: "Execute Code2 Global Funcction",
-          detail: 'W5GlobalFuncResult',insertText:'$.execFunc(globalFuncId, {params})'
+          detail: 'Execute GlobalFunction',insertText:'$.execFunc(globalFuncId, {params})'
         },
         {
           label: '$.REST',
           kind: monaco.languages.CompletionItemKind.Function,
           documentation: "Call REST Method",
           detail: 'Map',insertText:'$.REST("serviceName.methodName", {params})'
-        },
-        {
+        },{
             label: '$.console',
             kind: monaco.languages.CompletionItemKind.Function,
             documentation: "Console",
-            detail: 'null',insertText:'$.console("Hello")'
+            detail: 'Write to the Backend Console',insertText:'$.console("Hello")'
+        },{
+            label: '$.sendFormSmsMail',
+            kind: monaco.languages.CompletionItemKind.Function,
+            documentation: "Notification",
+            detail: 'Send Notification',insertText:'$.sendFormSmsMail(NOTIFICATION_ID,{PK_FIELD_NAME:PK_VALUE})'
         },{
             label: '$.influxQuery',
             kind: monaco.languages.CompletionItemKind.Function,
             documentation: "Influx Query",
             detail: 'null',insertText:'$.influxQuery(externalDbId, \'select X from Y where Z=1\')'
-        },
+        }/*,
         {
         	label: '$.influxWrite',
             kind: monaco.languages.CompletionItemKind.Function,

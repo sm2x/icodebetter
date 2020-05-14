@@ -68,19 +68,19 @@ public class GraphQLController implements InitializingBean {
 		StringBuilder sdl = new StringBuilder(), helper = new StringBuilder();
 		
 		sdl.append("type Query {\n"); 
-    	for(W5WsServerMethod wsm:wss.get_methods()) if(wsm.getObjectTip()==19){//query
+    	for(W5WsServerMethod wsm:wss.get_methods()) if(wsm.getObjectType()==19){//query
     		sdl.append(" ").append(wsm.getDsc());
   //  		W5QueryResult r = (W5QueryResult)wsmoMap.get(wsm.getDsc());
     		StringBuilder params=new StringBuilder();
     		for(W5WsServerMethodParam wsmp:wsm.get_params()) if(wsmp.getOutFlag()==0){
     			params.append(wsmp.getDsc()).append(": ");
-    			switch(wsmp.getParamTip()) {
+    			switch(wsmp.getParamType()) {
 //    			case	5:params.append("Boolean");break;
     			case	4:params.append("Int");break;
     			case	3:params.append("Float");break;
     			default:params.append("String");break;
     			}
-    			if(wsmp.getNotNullFlag()!=0 && wsmp.getParamTip()!=5)params.append("!");
+    			if(wsmp.getNotNullFlag()!=0 && wsmp.getParamType()!=5)params.append("!");
     			params.append(" ");
     		}
     		if(params.length()>0) {
@@ -92,7 +92,7 @@ public class GraphQLController implements InitializingBean {
     		helper.append("type ").append(wsm.getDsc()).append("Result{\n");
     		for(W5WsServerMethodParam wsmp:wsm.get_params()) if(wsmp.getOutFlag()!=0 && wsmp.getParentWsMethodParamId()!=0){
     			helper.append(" ").append(wsmp.getDsc()).append(": ");
-    			switch(wsmp.getParamTip()) {
+    			switch(wsmp.getParamType()) {
     			case	5:helper.append("Boolean");break;
     			case	4:helper.append("Int");break;
     			case	3:helper.append("Float");break;
@@ -138,7 +138,7 @@ public class GraphQLController implements InitializingBean {
 						for(W5QueryField qf:qr.getQuery().get_queryFields()){
 							qfm.put(qf.getDsc(), qf);
 						}
-						for(W5WsServerMethodParam wsmp:wsm.get_params())if(wsmp.getOutFlag()!=0 && wsmp.getParamTip()!=10){
+						for(W5WsServerMethodParam wsmp:wsm.get_params())if(wsmp.getOutFlag()!=0 && wsmp.getParamType()!=10){
 							lqf.add(qfm.get(wsmp.getDsc()));
 						}
 						qr.setNewQueryFields(lqf);								
@@ -153,11 +153,11 @@ public class GraphQLController implements InitializingBean {
 								Object obj = isMap ? ((Map)o).get(f.getDsc()) : ((Object[])o)[f.getTabOrder() - 1];
 								if(obj==null)continue;
 								String fdsc = f.getDsc();
-								switch(f.getPostProcessTip()) {
+								switch(f.getPostProcessType()) {
 								case	9: fdsc = "_" + fdsc;break;
 								case	6: fdsc = fdsc.substring(1);break;
 								}
-								switch(f.getFieldTip()) {
+								switch(f.getFieldType()) {
 								case	5://boolean
 									mo.put(fdsc, GenericUtil.uInt(obj) != 0);break;
 								case	8://object/json
@@ -182,7 +182,7 @@ public class GraphQLController implements InitializingBean {
     private RuntimeWiring buildWiring(final W5WsServer wss) {
 //  	return null;
 		return RuntimeWiring.newRuntimeWiring().type("Query", builder -> {
-	    	for(W5WsServerMethod wsm:wss.get_methods()) if(wsm.getObjectTip()==19){//query
+	    	for(W5WsServerMethod wsm:wss.get_methods()) if(wsm.getObjectType()==19){//query
 	    		builder = builder.dataFetcher(wsm.getDsc(), query(wsm));
 	    	}
 			return builder;
@@ -198,6 +198,7 @@ public class GraphQLController implements InitializingBean {
 			throws ServletException, IOException{
 		request.setCharacterEncoding( "UTF-8" );
 		response.setCharacterEncoding( "UTF-8" );
+		Map<String, Object> scd = null;
 		try {
 			Map requestParams = GenericUtil.getParameterMap(request);
 			String[] u = request.getRequestURI().replace('/', ',').split(",");
@@ -245,7 +246,6 @@ public class GraphQLController implements InitializingBean {
 				return;
 			}
 			
-			Map<String, Object> scd = null;
 			scd = GenericUtil.isEmpty(token) ? null : GenericUtil.fromJSONObjectToMap(new JSONObject(EncryptionUtil.decryptAES(token)));
 			
 			if(scd==null){
@@ -272,7 +272,7 @@ public class GraphQLController implements InitializingBean {
 			response.getWriter().close();
 		} catch (Exception e) {
 			if(FrameworkSetting.debug)e.printStackTrace();
-			response.getWriter().write(new IWBException("framework","GraphQL Def",0,null, "Error", e).toJsonString(request.getRequestURI()));
+			response.getWriter().write(new IWBException("framework","GraphQL Def",0,null, "Error", e).toJsonString(request.getRequestURI(), scd));
 		}
 	}
 

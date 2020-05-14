@@ -390,10 +390,10 @@ public class NashornScript {
 				
 				for (W5QueryField f : qr.getNewQueryFields()) {
 					Object obj = ((Object[])o)[f.getTabOrder() - 1];
-					if (f.getFieldTip() == 5)
+					if (f.getFieldType() == 5)
 						obj=GenericUtil.uInt(obj) != 0;
 					if(obj==null)continue;
-					switch(f.getPostProcessTip()) {
+					switch(f.getPostProcessType()) {
 					case  9:
 						row.put("_"+f.getDsc(), obj);
 						break;
@@ -405,8 +405,8 @@ public class NashornScript {
 						if(obj==null)obj="";
 					case	4://data masking
 						int maskType = f.getLookupQueryId();
-						if(f.getMainTableFieldId()>0 && qr.getQuery().getMainTableId()>0 && qr.getQuery().getQuerySourceTip()==15) {
-							if(t == null) t = FrameworkCache.getTable(qr.getScd(), qr.getQuery().getMainTableId());
+						if(f.getMainTableFieldId()>0 && qr.getQuery().getSourceObjectId()>0 && qr.getQuery().getQuerySourceType()==15) {
+							if(t == null) t = FrameworkCache.getTable(qr.getScd(), qr.getQuery().getSourceObjectId());
 							W5TableField tf = t.get_tableFieldMap().get(f.getMainTableFieldId());
 							if(tf!=null && tf.getAccessMaskTip()>0 && GenericUtil.isEmpty(tf.getAccessMaskUserFields()) 
 									&& GenericUtil.accessControl(qr.getScd(), tf.getAccessMaskTip(), tf.getAccessMaskRoles(), tf.getAccessMaskUsers())) {
@@ -414,7 +414,7 @@ public class NashornScript {
 										.toString()));
 								break;
 							}
-							if(tf!=null && f.getPostProcessTip()==14)maskType = tf.getAccessMaskTip();
+							if(tf!=null && f.getPostProcessType()==14)maskType = tf.getAccessMaskTip();
 						}
 						String strMask = FrameworkCache.getAppSettingStringValue(0, "data_mask", "**********");
 						String sobj = obj.toString();
@@ -480,7 +480,7 @@ public class NashornScript {
 						if (lookUp == null)
 							break;
 						buf.setLength(0);
-						String[] objs = f.getPostProcessTip() == 11 ? ((String) obj)
+						String[] objs = f.getPostProcessType() == 11 ? ((String) obj)
 								.split(",") : new String[] { obj
 								.toString() };
 						boolean bz = false;
@@ -593,8 +593,8 @@ public class NashornScript {
 		if(FrameworkSetting.log2tsdb)LogUtil.logObject(new Log5Console(scd, s, level, (String)requestParams.get("_trid_")), true);
 	}
 
-	public Object execFunc(int dbFuncId, ScriptObjectMirror jsRequestParams) {
-		return execFunc(dbFuncId, jsRequestParams, true, null);
+	public Object execFunc(int globalFuncId, ScriptObjectMirror jsRequestParams) {
+		return execFunc(globalFuncId, jsRequestParams, true, null);
 	}
 
 	public int getAppSettingInt(String key) {
@@ -609,10 +609,10 @@ public class NashornScript {
 		return FrameworkCache.getAppSettingStringValue(scd, key);
 	}
 
-	public Object execFunc(int dbFuncId, ScriptObjectMirror jsRequestParams, boolean throwOnError, String throwMessage) {
-		W5GlobalFuncResult result = scriptEngine.executeGlobalFunc(scd, dbFuncId, fromScriptObject2Map(jsRequestParams), (short) 5);
+	public Object execFunc(int globalFuncId, ScriptObjectMirror jsRequestParams, boolean throwOnError, String throwMessage) {
+		W5GlobalFuncResult result = scriptEngine.executeGlobalFunc(scd, globalFuncId, fromScriptObject2Map(jsRequestParams), (short) 5);
 		if (throwOnError && !result.getErrorMap().isEmpty()) {
-			throw new IWBException("rhino", "GlobalFunc", dbFuncId, null,
+			throw new IWBException("rhino", "GlobalFunc", globalFuncId, null,
 					throwMessage != null ? LocaleMsgCache.get2(scd, throwMessage)
 							: "Validation Error: " + GenericUtil.fromMapToJsonString2(result.getErrorMap()),
 					null);
@@ -746,24 +746,24 @@ public class NashornScript {
 			if (t.getAccessViewTip() == 0 && (!FrameworkCache.roleAccessControl(scd, 0)
 					|| !FrameworkCache.roleAccessControl(scd, forAction))) {
 				throw new IWBException("security", "Module", 0, null,
-						LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_guvenlik_modul_kontrol"), null);
+						LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_security_module_control"), null);
 			}
 			if (t.getAccessViewUserFields() == null && !GenericUtil.accessControl(scd, t.getAccessViewTip(),
 					t.getAccessViewRoles(), t.getAccessViewUsers())) {
 				throw new IWBException("security", "Table", tableId, null,
-						LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_guvenlik_tablo_kontrol_goruntuleme"),
+						LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_security_table_control_view"),
 						null);
 			}
 			if (forAction == 1 && t.getAccessUpdateUserFields() == null && !GenericUtil.accessControl(scd,
 					t.getAccessUpdateTip(), t.getAccessUpdateRoles(), t.getAccessUpdateUsers())) {
 				throw new IWBException("security", "Table", tableId, null,
-						LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_guvenlik_tablo_kontrol_guncelleme"),
+						LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_security_table_control_update"),
 						null);
 			}
 			if (forAction == 3 && t.getAccessDeleteUserFields() == null && !GenericUtil.accessControl(scd,
 					t.getAccessDeleteTip(), t.getAccessDeleteRoles(), t.getAccessDeleteUsers())) {
 				throw new IWBException("security", "Table", tableId, null,
-						LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_guvenlik_tablo_kontrol_silme"), null);
+						LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_security_table_control_delete"), null);
 			}
 		}
 
@@ -774,7 +774,7 @@ public class NashornScript {
 			s.append(DBUtil.includeTenantProjectPostSQL(scd, t, "x"));
 		}
 		List p = new ArrayList();
-		p.add(t.get_tableParamList().get(0).getParamTip() == 1 ? tablePk : GenericUtil.uInt(tablePk));
+		p.add(t.get_tableParamList().get(0).getParamType() == 1 ? tablePk : GenericUtil.uInt(tablePk));
 		scriptEngine.getDao().checkTenant(scd);
 		List l = scriptEngine.getDao().executeSQLQuery2Map(s.toString(), p);
 		if (GenericUtil.isEmpty(l)) {
@@ -837,8 +837,10 @@ public class NashornScript {
 			}
 			
 		}
+		Map<String, String> reqPropMap = new HashMap();
+		reqPropMap.put("Content-Language", "en-EN");
 		String result = HttpUtil.send(url, params,
-				"GET", null);
+				"GET", reqPropMap);
 		return result;
 	}
 

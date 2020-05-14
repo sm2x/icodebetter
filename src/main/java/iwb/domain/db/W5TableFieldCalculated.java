@@ -30,7 +30,7 @@ public class W5TableFieldCalculated implements java.io.Serializable, W5Base {
 	private String sqlCode;
 	
 	private short tabOrder;
-	private short fieldTip;
+	private short fieldType;
 	public W5TableFieldCalculated() {
 	}
 	
@@ -102,12 +102,12 @@ public class W5TableFieldCalculated implements java.io.Serializable, W5Base {
 	}
 	
 	@Column(name="field_tip")
-	public short getFieldTip() {
-		return fieldTip;
+	public short getFieldType() {
+		return fieldType;
 	}
 
-	public void setFieldTip(short fieldTip) {
-		this.fieldTip = fieldTip;
+	public void setFieldType(short fieldType) {
+		this.fieldType = fieldType;
 	}
 
 	@Transient
@@ -117,7 +117,7 @@ public class W5TableFieldCalculated implements java.io.Serializable, W5Base {
 		return 	
 			this.tableFieldCalculatedId==t.tableFieldCalculatedId &&
 			this.tableFieldId==t.tableFieldId &&
-			this.fieldTip==t.fieldTip &&
+			this.fieldType==t.fieldType &&
 			this.tableId==t.tableId &&
 			this.relatedTableId==t.relatedTableId &&
 			GenericUtil.safeEquals(this.dsc, t.dsc) &&

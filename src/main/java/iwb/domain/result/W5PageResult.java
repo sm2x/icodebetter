@@ -10,7 +10,7 @@ import iwb.domain.helper.W5TableRecordHelper;
 
 public class W5PageResult implements W5MetaResult{
 	
-	private	int	templateId;
+	private	int	pageId;
 	private W5Page page;
 	private	List<Object> pageObjectList;
 	
@@ -19,14 +19,14 @@ public class W5PageResult implements W5MetaResult{
 	private Map<String,String>	requestParams;
 	private List<W5TableRecordHelper> masterRecordList;
 
-	public W5PageResult(int templateId) {
-		this.templateId = templateId;
+	public W5PageResult(int pageId) {
+		this.pageId = pageId;
 	}
-	public int getTemplateId() {
-		return templateId;
+	public int getPageId() {
+		return pageId;
 	}
-	public void setTemplateId(int templateId) {
-		this.templateId = templateId;
+	public void setPageId(int pageId) {
+		this.pageId = pageId;
 	}
 	public W5Page getPage() {
 		return page;

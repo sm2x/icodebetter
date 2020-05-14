@@ -28,7 +28,7 @@ public class Log5GlobalFuncAction implements java.io.Serializable, Log5Base {
 
 	private int userId;
 	
-	private int dbFuncId;
+	private int globalFuncId;
 
 	private String dsc;
 	private String projectUuid;  
@@ -40,7 +40,7 @@ public class Log5GlobalFuncAction implements java.io.Serializable, Log5Base {
 
 	public String toInfluxDB() {
 		StringBuilder s=new StringBuilder();
-		s.append("func_action,func_id=").append(getDbFuncId());
+		s.append("func_action,func_id=").append(getGlobalFuncId());
 		if(projectUuid!=null)s.append(",project_uuid=").append(projectUuid);
 		s.append(" user_id=").append(getUserId()).append("i,duration=").append(getProcessTime()).append("i,code=\"").append(GenericUtil.stringToJS2(getDsc())).append("\"");
 		if(!GenericUtil.isEmpty(transactionId))s.append(",trid=\"").append(transactionId).append("\"");
@@ -65,7 +65,7 @@ public class Log5GlobalFuncAction implements java.io.Serializable, Log5Base {
 	}
 
 	public Log5GlobalFuncAction(W5GlobalFuncResult r) {
-		this.dbFuncId = r.getGlobalFuncId();
+		this.globalFuncId = r.getGlobalFuncId();
 		if(r.getScd()!=null) {
 			if(r.getScd().get("userId")!=null)this.userId = (Integer)r.getScd().get("userId");
 			if(r.getScd().get("projectId")!=null)this.projectUuid = (String)r.getScd().get("projectId");
@@ -84,12 +84,12 @@ public class Log5GlobalFuncAction implements java.io.Serializable, Log5Base {
 	}
 
 	@Column(name="db_func_id")
-	public int getDbFuncId() {
-		return dbFuncId;
+	public int getGlobalFuncId() {
+		return globalFuncId;
 	}
 
-	public void setDbFuncId(int dbFuncId) {
-		this.dbFuncId = dbFuncId;
+	public void setGlobalFuncId(int globalFuncId) {
+		this.globalFuncId = globalFuncId;
 	}
 
 	public void setLogId(int logId) {

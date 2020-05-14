@@ -175,7 +175,7 @@ public class RestController implements InitializingBean {
 				JSONObject jo = HttpUtil.getJson(request);
 				if(jo==null)jo = new JSONObject("{}");
 				requestParams = new HashMap();
-				if(wsm.getObjectTip()==4)
+				if(wsm.getObjectType()==4)
 					requestParams.put("_json", jo);
 				else
 					requestParams.putAll(GenericUtil.fromJSONObjectToMap(jo));
@@ -186,7 +186,7 @@ public class RestController implements InitializingBean {
 			if(FrameworkSetting.logType>0)LogUtil.logObject(new Log5Transaction(po.getProjectUuid(), "rest", transactionId), true);
 
 			W5FormResult fr=null; 
-			switch(wsm.getObjectTip()){
+			switch(wsm.getObjectType()){
 			case	0://show Record
 				fr = service.getFormResult(scd, wsm.getObjectId(), 1, requestParams);
 				response.getWriter().write(ext3_4.serializeGetFormSimple(fr).toString());
@@ -196,7 +196,7 @@ public class RestController implements InitializingBean {
 			case	2://insert Record by Form
 			case	3://delete Record by Form
 				if(FrameworkSetting.liveSyncRecord4WS)requestParams.put(".w","ws-server");
-				fr = service.postForm4Table(scd, wsm.getObjectId(), wsm.getObjectTip(), requestParams, "");
+				fr = service.postForm4Table(scd, wsm.getObjectId(), wsm.getObjectType(), requestParams, "");
 				response.getWriter().write(ext3_4.serializePostForm(fr).toString());
 				response.getWriter().close();		
 				if (FrameworkSetting.liveSyncRecord4WS && fr.getErrorMap().isEmpty()){
@@ -217,7 +217,7 @@ public class RestController implements InitializingBean {
 					for(W5QueryField qf:qr.getQuery().get_queryFields()){
 						qfm.put(qf.getDsc(), qf);
 					}
-					for(W5WsServerMethodParam wsmp:wsm.get_params())if(wsmp.getOutFlag()!=0 && wsmp.getParamTip()!=10){
+					for(W5WsServerMethodParam wsmp:wsm.get_params())if(wsmp.getOutFlag()!=0 && wsmp.getParamType()!=10){
 						lqf.add(qfm.get(wsmp.getDsc()));
 					}
 					qr.setNewQueryFields(lqf);								
@@ -240,7 +240,7 @@ public class RestController implements InitializingBean {
 			HttpServletRequest request,
 			HttpServletResponse response)
 			throws ServletException, IOException {
-		logger.info("hndRESTWadl:"+request.getRequestURI());
+		logger.info("hndRESTRoot:"+request.getRequestURI());
 		request.setCharacterEncoding( "UTF-8" );
 		response.setCharacterEncoding( "UTF-8" );
 		try {
@@ -268,7 +268,7 @@ public class RestController implements InitializingBean {
 			}
 			response.getWriter().write("{\"success\":false,\"error\":\"Wrong Request\"}");
 		} catch (Exception e) {
-			response.getWriter().write(new IWBException("framework","WADL Def",0,null, "Error", e).toJsonString(request.getRequestURI()));
+			response.getWriter().write(new IWBException("framework","WADL Def",0,null, "Error", e).toJsonString(request.getRequestURI(), null));
 		}
 	}
 
@@ -283,11 +283,11 @@ public class RestController implements InitializingBean {
 		boolean b = false;
 		for(W5WsServerMethod wsm:ws.get_methods()){
 			List<W5WsServerMethodParam> lwsmp = new ArrayList();
-			if(wsm.getObjectTip()!=4 || wsm.getObjectId()!=3){
+			if(wsm.getObjectType()!=4 || wsm.getObjectId()!=3){
 			}
 			if(b)buf.append(","); else b = true;
 			String methodType = "get";
-			switch(wsm.getObjectTip()){
+			switch(wsm.getObjectType()){
 			case	1:methodType = "put";break;//update
 			case	2:case 4:methodType = "post";break;//insert, globalFunc
 			case	3:methodType = "delete";break;//update
@@ -310,14 +310,14 @@ public class RestController implements InitializingBean {
 			} else if(o instanceof String ){//TODO ne yapilabilir?
 				buf.append("]}}");
 				continue;
-			}else switch(wsm.getObjectTip()){
+			}else switch(wsm.getObjectType()){
 			case	0:case 1:case 2:case 3://TODO
 				W5FormResult fr=(W5FormResult)o;
 				lwsmp.add(new W5WsServerMethodParam(-999, "result", (short)9));
 				t = FrameworkCache.getTable(ws.getProjectUuid(), fr.getForm().getObjectId());
-				if(wsm.getObjectTip()!=2)for(W5TableParam tp:t.get_tableParamList())if(tp.getSourceTip()==1)lwsmp.add(new W5WsServerMethodParam(tp, (short)(wsm.getObjectTip()==2 ? 1:0),wsm.getObjectTip()==2?-999:0));
-				if(wsm.getObjectTip()!=3)for(W5FormCell fc:fr.getForm().get_formCells())if(fc.getActiveFlag()!=0 && fc.get_sourceObjectDetail()!=null){
-					lwsmp.add(new W5WsServerMethodParam(fc, (short)(wsm.getObjectTip()==0 ? 1:0), wsm.getObjectTip()==0 ? -999:0));
+				if(wsm.getObjectType()!=2)for(W5TableParam tp:t.get_tableParamList())if(tp.getSourceType()==1)lwsmp.add(new W5WsServerMethodParam(tp, (short)(wsm.getObjectType()==2 ? 1:0),wsm.getObjectType()==2?-999:0));
+				if(wsm.getObjectType()!=3)for(W5FormCell fc:fr.getForm().get_formCells())if(fc.getActiveFlag()!=0 && fc.get_sourceObjectDetail()!=null){
+					lwsmp.add(new W5WsServerMethodParam(fc, (short)(wsm.getObjectType()==0 ? 1:0), wsm.getObjectType()==0 ? -999:0));
 				}
 				W5WsServerMethodParam outMsg =new W5WsServerMethodParam(-999, "outMsg", (short)1);outMsg.setParentWsMethodParamId(-999);
 				lwsmp.add(outMsg);
@@ -330,7 +330,7 @@ public class RestController implements InitializingBean {
 					definitions.append("\"").append(wsm.getDsc()).append("Result\":{\"type\":\"object\",\"properties\":{");
 					for(W5GlobalFuncParam dfp2:dfr.getGlobalFunc().get_dbFuncParamList())if(dfp2.getOutFlag()!=0){
 							definitions.append("\"").append(dfp2.getDsc()).append("\":{\"type\":\"")
-								.append(elementTypes[dfp2.getParamTip()]).append("\"},");
+								.append(elementTypes[dfp2.getParamType()]).append("\"},");
 					}
 					if(definitions.charAt(definitions.length()-1)==',')
 						definitions.setLength(definitions.length()-1);
@@ -338,20 +338,20 @@ public class RestController implements InitializingBean {
 					
 					break;
 				}
-				for(W5GlobalFuncParam dfp:dfr.getGlobalFunc().get_dbFuncParamList())if(dfp.getSourceTip()==1 && dfp.getOutFlag()==0){
+				for(W5GlobalFuncParam dfp:dfr.getGlobalFunc().get_dbFuncParamList())if(dfp.getSourceType()==1 && dfp.getOutFlag()==0){
 					lwsmp.add(new W5WsServerMethodParam(dfp, dfp.getOutFlag(), dfp.getOutFlag()==0 ? 0:-999));
 				}
 				break;
 			case	19:
 				W5QueryResult qr=(W5QueryResult)o;
-				if(qr.getQuery().getMainTableId()!=0)t = FrameworkCache.getTable(ws.getProjectUuid(), qr.getQuery().getMainTableId());
+				if(qr.getQuery().getSourceObjectId()!=0)t = FrameworkCache.getTable(ws.getProjectUuid(), qr.getQuery().getSourceObjectId());
 				if(!GenericUtil.isEmpty(wsm.get_params())) {
 					lwsmp.addAll(wsm.get_params());
 				} else {
 					W5WsServerMethodParam tokenKey =new W5WsServerMethodParam(-998, "tokenKey", (short)1);tokenKey.setOutFlag((short)0);tokenKey.setNotNullFlag((short)1);
 					lwsmp.add(tokenKey);
 					lwsmp.add(new W5WsServerMethodParam(-999, "data", (short)10));
-					for(W5QueryParam qp:qr.getQuery().get_queryParams())if(qp.getSourceTip()==1){
+					for(W5QueryParam qp:qr.getQuery().get_queryParams())if(qp.getSourceType()==1){
 					
 						lwsmp.add(new W5WsServerMethodParam(qp, (short)0, 0));
 					}
@@ -361,10 +361,10 @@ public class RestController implements InitializingBean {
 				}
 				definitions.append("\"").append(wsm.getDsc()).append("Result\":{\"type\":\"object\",\"properties\":{\"data\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/");
 				definitions.append(wsm.getDsc()).append("Data\"}}}}\n,\"").append(wsm.getDsc()).append("Data\":{\"type\":\"object\",\"properties\":{");
-				for(W5WsServerMethodParam px:lwsmp)if(px.getDsc().equals("data") && px.getParamTip()==10 && px.getOutFlag()!=0) {
+				for(W5WsServerMethodParam px:lwsmp)if(px.getDsc().equals("data") && px.getParamType()==10 && px.getOutFlag()!=0) {
 					for(W5WsServerMethodParam px2:lwsmp)if(px2.getParentWsMethodParamId()==px.getWsServerMethodParamId()) {
 						definitions.append("\"").append(px2.getDsc()).append("\":{\"type\":\"")
-							.append(elementTypes[px2.getParamTip()]).append("\"},");
+							.append(elementTypes[px2.getParamType()]).append("\"},");
 					}
 					break;
 				}
@@ -381,7 +381,7 @@ public class RestController implements InitializingBean {
 			for(W5WsServerMethodParam wsmp:wsm.get_params())if(wsmp.getOutFlag()==0 && wsmp.getParentWsMethodParamId()==0){
 				buf.append("\n{\"in\":\"formData\"").append(wsmp.getNotNullFlag()==0 ? "":" ,\"required\":true").append(",\"name\":\"")
 				.append(wsmp.getDsc()).append("\",\"type\":\"");
-				buf.append(elementTypes[wsmp.getParamTip()]);
+				buf.append(elementTypes[wsmp.getParamType()]);
 				buf.append("\"},");
 			}
 			if(buf.charAt(buf.length()-1)==',')buf.setLength(buf.length()-1);
@@ -391,9 +391,9 @@ public class RestController implements InitializingBean {
 			for(W5WsServerMethodParam wsmp:wsm.get_params())if(wsmp.getOutFlag()!=0 && wsmp.getParentWsMethodParamId()==0){
 //				buf.append("\n{\"name\":\"")
 				if(wsmp.getOutFlag()!=0) {
-					if(wsmp.getDsc().equals("data") && wsmp.getParamTip()==10 )
+					if(wsmp.getDsc().equals("data") && wsmp.getParamType()==10 )
 						buf.append("\"$ref\":\"#/definitions/").append(wsm.getDsc()).append("Result\"");
-					else if(wsmp.getDsc().equals("result") && wsmp.getParamTip()==9 ) 
+					else if(wsmp.getDsc().equals("result") && wsmp.getParamType()==9 ) 
 						buf.append("\"$ref\":\"#/definitions/").append(wsm.getDsc()).append("Result\"");
 				} 
 				buf.append("}}");

@@ -3872,7 +3872,7 @@ class XGrid extends GridCommon {
         super(props);
         if (iwb.debug) console.log("XGrid", props);
         if(props.setCmp)props.setCmp(this);
-        var columns = [];
+        var columns = [], columnFilters = [];
         var columnExtensions = [];
         const canIOpenActions =
             (props.crudFlags && (props.crudFlags.edit || props.crudFlags.remove)) ||
@@ -3913,8 +3913,12 @@ class XGrid extends GridCommon {
 	                    align: colLocal.align || "left",
 	                    sortingEnabled: !!colLocal.sort
 	                });
+	                if(colLocal.filter)
+	                	columnFilters.push({columnName:colLocal.name, filteringEnabled:!0})
             	}
             });
+        
+        if(!columnFilters.length)columnFilters = null;
         if (canIOpenActions) {
             columns.push({
                 name: "_qw_",
@@ -3939,7 +3943,7 @@ class XGrid extends GridCommon {
             });
         }
         this.state = {
-            columns,
+            columns, columnFilters, filtersEnabled: !!columnFilters && !props._initHiddenFilters,
             sorting: [],
             totalCount: 0,
             currentPage: 0,
@@ -3956,6 +3960,10 @@ class XGrid extends GridCommon {
                 [] : //parseInt(props.pageSize / 2), props.pageSize, 3 * props.pageSize
                 [5, 10, 25, 100]
         };
+        
+        if(props._initHiddenFilters)this.toggleFilters = () =>{
+        	this.setState({filtersEnabled:!this.state.filtersEnabled});
+        }
         /**
          * @overloading
          * @description used to make request and fill the grid
@@ -4011,7 +4019,7 @@ class XGrid extends GridCommon {
             state: {
                 rows, loading,
                 order,
-                columns,
+                columns, columnFilters, filtersEnabled,
                 sorting,
                 pageSize,
                 pageSizes,
@@ -4042,6 +4050,8 @@ class XGrid extends GridCommon {
         if (!this.props._showAlways && (!rows || !rows.length)) return null;
         return _(
             _dxgrb.Grid, { style:{opacity:loading?.5:1}, rows, columns, getRowId: row => row[keyField] },
+            /** filtering */
+            filtersEnabled && columnFilters && _(_dxrg.FilteringState, {columnFilteringEnabled:false, columnExtensions:columnFilters}),
             /** sorting */
             !_disableIntegratedSorting &&
             _(
@@ -4052,9 +4062,9 @@ class XGrid extends GridCommon {
             /** state search */
             !pageSize && _(_dxrg.SearchState, null),
             /** Client filtering */
-            !_disableSearchPanel &&
+            ((filtersEnabled && columnFilters) || (!_disableSearchPanel &&
             !pageSize &&
-            rows.length > 1 &&
+            rows.length > 1)) &&
             _(_dxrg.IntegratedFiltering, null),
             /** state grouping */
             (groupColumn || (!_disableIntegratedGrouping &&
@@ -4093,8 +4103,6 @@ class XGrid extends GridCommon {
             multiselect && _(_dxrg.IntegratedSelection, null),
             /** Enable Drag and Drop */
             _(_dxgrb.DragDropProvider, null),
-            
-//            filterColumns && _(_dxgrb.FilteringState, {defaultFilters:filterColumns),
             /** UI table */
             _(this.props._virtual ? _dxgrb.VirtualTable : _dxgrb.Table, {
                 columnExtensions,
@@ -4111,6 +4119,7 @@ class XGrid extends GridCommon {
                 showSortingControls: true,
                 titleComponent: titleComponent || _dxgrb.TableHeaderRow.Title
             }),
+            filtersEnabled && columnFilters && _(_dxgrb.TableFilterRow, {showFilterSelector:!0}),
             /** UI detail Grid */
             showDetail ?
             _(_dxgrb.TableRowDetail, { contentComponent: showDetail }) :
@@ -8876,12 +8885,13 @@ class XPortletItem extends React.PureComponent {
                         className: "form-header",
                         style: {
                             fontSize: "1.5rem",
-                            padding: "10px 12px 0px",
+                            padding: "10px 7px 0px",
                             marginBottom: ".5rem"
                         }
                     },
                     name,
-                    _("i", { style:{cursor:'pointer'}, className: "portlet-refresh float-right icon-refresh", onClick:this.reloadItem }),
+                    !o.grid._hideRefreshBtn && _("i", { style:{cursor:'pointer'}, title:'Refresh', className: "portlet-refresh float-right icon-refresh", onClick:this.reloadItem }),
+                    o.grid._initHiddenFilters && _("i", { style:{cursor:'pointer'}, title:'Filters', className: "portlet-refresh float-right icon-magnifier", onClick:()=>o.grid.cmp.toggleFilters()}),
 	                (o.grid.extraButtons || []).map((btn, index) =>
 	                	_("i", { style:{cursor:'pointer', marginRight:5}, title:btn.text, className: "portlet-refresh float-right "+(btn.icon||'icon-heart'), onClick:btn.click })
 	                )

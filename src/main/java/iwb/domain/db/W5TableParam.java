@@ -18,8 +18,9 @@ import org.hibernate.annotations.Immutable;
 @Entity
 @Immutable
 @Table(name="w5_table_param",schema="iwb")
-public class W5TableParam  implements java.io.Serializable, W5Param {
-
+public class W5TableParam  implements java.io.Serializable, W5Param, W5Base {
+/*TABLE_ID: 42*/
+	
 	private static final long serialVersionUID = 1343434342L;
 	private int tableParamId;
 	private int tableId;
@@ -32,13 +33,11 @@ public class W5TableParam  implements java.io.Serializable, W5Param {
 
 	private short tabOrder;
 	
-	private short paramTip;
-
-	private short operatorTip;
+	private short paramType;
 
 	private short notNullFlag;
 
-	private short sourceTip;
+	private short sourceType;
 
 	private String defaultValue;
 
@@ -46,7 +45,7 @@ public class W5TableParam  implements java.io.Serializable, W5Param {
 	private	BigDecimal	maxValue;
 	
 	private	Short	minLength;
-	private	Short	maxLength;
+	private	Integer	maxLength;
 	
 	
 	public W5TableParam() {
@@ -84,30 +83,26 @@ public class W5TableParam  implements java.io.Serializable, W5Param {
 	}
 
 	@Column(name="param_tip")
-	public short getParamTip() {
-		return paramTip;
+	public short getParamType() {
+		return paramType;
 	}
 
-	public void setParamTip(short paramTip) {
-		this.paramTip = paramTip;
+	public void setParamType(short paramType) {
+		this.paramType = paramType;
 	}
 
-	@Column(name="operator_tip")
-	public short getOperatorTip() {
-		return operatorTip;
-	}
-
-	public void setOperatorTip(short operatorTip) {
-		this.operatorTip = operatorTip;
+	@Transient
+	public short getOperatorType() {
+		return 0;
 	}
 
 	@Column(name="source_tip")
-	public short getSourceTip() {
-		return sourceTip;
+	public short getSourceType() {
+		return sourceType;
 	}
 
-	public void setSourceTip(short sourceTip) {
-		this.sourceTip = sourceTip;
+	public void setSourceType(short sourceType) {
+		this.sourceType = sourceType;
 	}
 
 	
@@ -148,11 +143,11 @@ public class W5TableParam  implements java.io.Serializable, W5Param {
 	}
 
 	@Column(name="max_length")
-	public Short getMaxLength() {
+	public Integer getMaxLength() {
 		return maxLength;
 	}
 
-	public void setMaxLength(Short maxLength) {
+	public void setMaxLength(Integer maxLength) {
 		this.maxLength = maxLength;
 	}
 
@@ -214,5 +209,12 @@ public class W5TableParam  implements java.io.Serializable, W5Param {
 	@Transient
 	public int getParentId() {
 		return 0;
+	}
+	
+
+	@Transient
+	public boolean safeEquals(W5Base q) {
+
+			return false;
 	}
 }

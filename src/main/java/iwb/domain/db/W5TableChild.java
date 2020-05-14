@@ -4,6 +4,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import org.hibernate.annotations.Immutable;
 
@@ -16,13 +17,14 @@ import org.hibernate.annotations.Immutable;
 @Entity
 @Immutable
 @Table(name="w5_table_child",schema="iwb")
-public class W5TableChild implements java.io.Serializable {
-
+public class W5TableChild implements java.io.Serializable, W5Base {
+/*TABLE_ID: 657*/
 
 	private static final long serialVersionUID = 8385485198231L;
 	private int tableChildId;
-	private short relationTip;
 	private int tableId;
+	
+	private short relationType;
 	private int tableFieldId;
 	private int relatedTableId;
 	private int relatedTableFieldId;
@@ -43,11 +45,11 @@ public class W5TableChild implements java.io.Serializable {
 
 
 	@Column(name="relation_tip")
-	public short getRelationTip() {
-		return relationTip;
+	public short getRelationType() {
+		return relationType;
 	}
-	public void setRelationTip(short relationTip) {
-		this.relationTip = relationTip;
+	public void setRelationType(short relationType) {
+		this.relationType = relationType;
 	}
 	@Column(name="table_id")
 	public int getTableId() {
@@ -134,5 +136,12 @@ public class W5TableChild implements java.io.Serializable {
 	
 	public int hashCode() {
 		return projectUuid.hashCode() + 100*tableChildId;
-	}	
+	}
+	
+
+	@Transient
+	public boolean safeEquals(W5Base q) {
+
+			return false;
+	}
 }

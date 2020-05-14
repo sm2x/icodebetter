@@ -47,11 +47,11 @@ public class DebugEngine {
 		queryResult.setErrorMap(new HashMap());
 		queryResult.setScd(scd);
 		queryResult.setRequestParams(requestParams);
-		if( queryId == -11 || (queryResult.getQuery()!=null && queryResult.getQuery().getQuerySourceTip()==4658)) { //externalDB
+		if( queryId == -11 || (queryResult.getQuery()!=null && queryResult.getQuery().getQuerySourceType()==4658)) { //externalDB
 			W5Query q = new W5Query();
 			queryResult.setQuery(q);
-			q.setQuerySourceTip(4658);
-			q.setMainTableId(GenericUtil.uInt(requestParams, "external_db_id"));
+			q.setQuerySourceType(4658);
+			q.setSourceObjectId(GenericUtil.uInt(requestParams, "external_db_id"));
 			q.setSqlSelect(requestParams.get("_sql_select"));
 			q.setSqlFrom(requestParams.get("_sql_from"));
 			q.setSqlWhere(requestParams.get("_sql_where"));
@@ -93,7 +93,7 @@ public class DebugEngine {
 				return m;
 			}
 			
-		} else if (queryId == -1 || queryResult.getQuery().getQuerySourceTip() != 0) {
+		} else if (queryId == -1 || queryResult.getQuery().getQuerySourceType() != 0) {
 			String orderBy = requestParams.get("sort");
 			if (GenericUtil.isEmpty(orderBy))
 				orderBy = requestParams.get("_sql_orderby");
@@ -136,8 +136,8 @@ public class DebugEngine {
 		return queryResult;
 	}
 
-	public W5GlobalFuncResult executeGlobalFunc4Debug(Map<String, Object> scd, int dbFuncId,
+	public W5GlobalFuncResult executeGlobalFunc4Debug(Map<String, Object> scd, int globalFuncId,
 			Map<String, String> parameterMap) {
-		return scriptEngine.executeGlobalFunc4Debug(scd, dbFuncId, parameterMap);
+		return scriptEngine.executeGlobalFunc4Debug(scd, globalFuncId, parameterMap);
 	}
 }

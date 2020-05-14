@@ -14,19 +14,16 @@ import org.hibernate.annotations.Immutable;
 @Entity
 @Immutable
 @Table(name="w5_db_func",schema="iwb")
-public class W5GlobalFunc implements java.io.Serializable {
-
-	/**
-	 * 
-	 */
+public class W5GlobalFunc implements java.io.Serializable, W5Base {
+/*TABLE_ID: 20*/
+	
 	private static final long serialVersionUID = 182569357739547L;
 
-	private int dbFuncId;
+	private int globalFuncId;
 
 	private String dsc;
 	
-	private short logLevelTip;
-	private String rhinoScriptCode;
+	private short logLevelType;
 	
 	private short accessExecTip;
 	private String accessExecRoles;
@@ -35,18 +32,21 @@ public class W5GlobalFunc implements java.io.Serializable {
 	private String accessSourceTypes;
 	private int timeout;
 	private short lkpCodeType;
+	private String code;
 
 	
 	private List<W5GlobalFuncParam> _dbFuncParamList;
 
+
+	
 	
 	@Column(name="log_level_tip")	
-	public short getLogLevelTip() {
-		return logLevelTip;
+	public short getLogLevelType() {
+		return logLevelType;
 	}
 
-	public void setLogLevelTip(short logLevelTip) {
-		this.logLevelTip = logLevelTip;
+	public void setLogLevelType(short logLevelType) {
+		this.logLevelType = logLevelType;
 	}
 
 	public W5GlobalFunc() {
@@ -54,12 +54,12 @@ public class W5GlobalFunc implements java.io.Serializable {
 
 	@Id
 	@Column(name="db_func_id")
-	public int getDbFuncId() {
-		return this.dbFuncId;
+	public int getGlobalFuncId() {
+		return this.globalFuncId;
 	}
 
-	public void setDbFuncId(int dbFuncId) {
-		this.dbFuncId = dbFuncId;
+	public void setGlobalFuncId(int globalFuncId) {
+		this.globalFuncId = globalFuncId;
 	}
 
 
@@ -82,12 +82,12 @@ public class W5GlobalFunc implements java.io.Serializable {
 	}
 
 	@Column(name="rhino_script_code")
-	public String getRhinoScriptCode() {
-		return rhinoScriptCode;
+	public String getCode() {
+		return code;
 	}
 
-	public void setRhinoScriptCode(String rhinoScriptCode) {
-		this.rhinoScriptCode = rhinoScriptCode;
+	public void setCode(String code) {
+		this.code = code;
 	}	
 	
 
@@ -159,10 +159,15 @@ public class W5GlobalFunc implements java.io.Serializable {
 	public boolean equals(Object o) {
 		if(o==null || !(o instanceof W5GlobalFunc))return false;
 		W5GlobalFunc c = (W5GlobalFunc)o;
-		return c!=null && c.getDbFuncId()==getDbFuncId() && c.getProjectUuid().equals(projectUuid);
+		return c!=null && c.getGlobalFuncId()==getGlobalFuncId() && c.getProjectUuid().equals(projectUuid);
 	}
 	
 	public int hashCode() {
-		return projectUuid.hashCode() + 100*getDbFuncId();
+		return projectUuid.hashCode() + 100*getGlobalFuncId();
 	}
+
+	public boolean safeEquals(W5Base q) {
+		return false;
+	}
+	
 }

@@ -196,8 +196,8 @@ public class GraalScript {
 			
 	}
 
-	public Object execFunc(int dbFuncId, Object jsRequestParams) {
-		return execFunc(dbFuncId, jsRequestParams, true, null);
+	public Object execFunc(int globalFuncId, Object jsRequestParams) {
+		return execFunc(globalFuncId, jsRequestParams, true, null);
 	}
 
 	public int getAppSettingInt(String key) {
@@ -212,10 +212,10 @@ public class GraalScript {
 		return FrameworkCache.getAppSettingStringValue(scd, key);
 	}
 
-	public Object execFunc(int dbFuncId, Object jsRequestParams, boolean throwOnError, String throwMessage) {
-		W5GlobalFuncResult result = scriptEngine.executeGlobalFunc(scd, dbFuncId, fromGraalValue2Map(jsRequestParams), (short) 5);
+	public Object execFunc(int globalFuncId, Object jsRequestParams, boolean throwOnError, String throwMessage) {
+		W5GlobalFuncResult result = scriptEngine.executeGlobalFunc(scd, globalFuncId, fromGraalValue2Map(jsRequestParams), (short) 5);
 		if (throwOnError && !result.getErrorMap().isEmpty()) {
-			throw new IWBException("rhino", "GlobalFunc", dbFuncId, null,
+			throw new IWBException("rhino", "GlobalFunc", globalFuncId, null,
 					throwMessage != null ? LocaleMsgCache.get2(scd, throwMessage)
 							: "Validation Error: " + GenericUtil.fromMapToJsonString2(result.getErrorMap()),
 					null);
@@ -314,19 +314,19 @@ public class GraalScript {
 			if (t.getAccessViewUserFields() == null && !GenericUtil.accessControl(scd, t.getAccessViewTip(),
 					t.getAccessViewRoles(), t.getAccessViewUsers())) {
 				throw new IWBException("security", "Table", tableId, null,
-						LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_guvenlik_tablo_kontrol_goruntuleme"),
+						LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_guvenlik_table_kontrol_goruntuleme"),
 						null);
 			}
 			if (forAction == 1 && t.getAccessUpdateUserFields() == null && !GenericUtil.accessControl(scd,
 					t.getAccessUpdateTip(), t.getAccessUpdateRoles(), t.getAccessUpdateUsers())) {
 				throw new IWBException("security", "Table", tableId, null,
-						LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_guvenlik_tablo_kontrol_guncelleme"),
+						LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_guvenlik_table_kontrol_guncelleme"),
 						null);
 			}
 			if (forAction == 3 && t.getAccessDeleteUserFields() == null && !GenericUtil.accessControl(scd,
 					t.getAccessDeleteTip(), t.getAccessDeleteRoles(), t.getAccessDeleteUsers())) {
 				throw new IWBException("security", "Table", tableId, null,
-						LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_guvenlik_tablo_kontrol_silme"), null);
+						LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_guvenlik_table_kontrol_silme"), null);
 			}
 		}
 

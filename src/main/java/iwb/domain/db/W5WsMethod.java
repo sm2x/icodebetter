@@ -14,22 +14,29 @@ import org.hibernate.annotations.Immutable;
 @Entity
 @Immutable
 @Table(name="w5_ws_method",schema="iwb")
-public class W5WsMethod  implements java.io.Serializable {
+public class W5WsMethod  implements java.io.Serializable, W5Base {
+/*TABLE_ID: 1376*/
 
 	private static final long serialVersionUID = 161231122L;
+	
 	private int wsMethodId;
 	private int wsId;
 	private String dsc;
-	private String realDsc;
-	private short callMethodTip;
+	private String path;
+	private short callMethodType;//get, post, put,patch, delete
 	private short postUrlFlag;
-	private W5Ws _ws;
-	private short accessExecuteTip;
-	private	short paramSendTip;
+	private short activeFlag;
+	
+	private	short contentType;
 	private	short logLevelTip;
+
+	private W5Ws _ws;
 	private	Short headerAcceptTip;
+	
+	private short accessExecuteTip;
 	private String accessExecuteRoles;
 	private String accessExecuteUsers;
+	
 	private List<W5WsMethodParam> _params;
 	private Map<Integer, W5WsMethodParam> _paramMap;
 	
@@ -44,11 +51,11 @@ public class W5WsMethod  implements java.io.Serializable {
 	}
 	
 	@Column(name="call_method_tip")
-	public short getCallMethodTip() {
-		return callMethodTip;
+	public short getCallMethodType() {
+		return callMethodType;
 	}
-	public void setCallMethodTip(short callMethodTip) {
-		this.callMethodTip = callMethodTip;
+	public void setCallMethodType(short callMethodType) {
+		this.callMethodType = callMethodType;
 	}
 	
 	@Column(name="ws_id")
@@ -122,19 +129,19 @@ public class W5WsMethod  implements java.io.Serializable {
 	}
 	
 	@Column(name="param_send_tip")
-	public short getParamSendTip() {
-		return paramSendTip;
+	public short getContentType() {
+		return contentType;
 	}
-	public void setParamSendTip(short paramSendTip) {
-		this.paramSendTip = paramSendTip;
+	public void setContentType(short contentType) {
+		this.contentType = contentType;
 	}
 	
 	@Column(name="real_dsc")
-	public String getRealDsc() {
-		return realDsc;
+	public String getPath() {
+		return path;
 	}
-	public void setRealDsc(String realDsc) {
-		this.realDsc = realDsc;
+	public void setPath(String path) {
+		this.path = path;
 	}
 	
 	@Column(name="header_accept_tip")
@@ -174,4 +181,19 @@ public class W5WsMethod  implements java.io.Serializable {
 		return projectUuid.hashCode() + 100*getWsMethodId();
 	}	
 	
+
+	@Transient
+	public boolean safeEquals(W5Base q) {
+
+			return false;
+	}
+	
+	
+	@Column(name="active_flag")
+	public short getActiveFlag() {
+		return activeFlag;
+	}
+	public void setActiveFlag(short activeFlag) {
+		this.activeFlag = activeFlag;
+	}
 }

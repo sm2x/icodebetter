@@ -17,10 +17,11 @@ import org.hibernate.annotations.Immutable;
 @Immutable
 @Table(name="w5_data_view",schema="iwb")
 public class W5Card implements java.io.Serializable, W5Base, W5ListBase {
+/*TABLE_ID: 930*/
 
 	private static final long serialVersionUID = 1435135123L;
 
-	private int dataViewId;
+	private int cardId;
 
 	private String dsc;
 
@@ -61,14 +62,15 @@ public class W5Card implements java.io.Serializable, W5Base, W5ListBase {
 	private List<W5QueryField> _postProcessQueryFields;
 	private W5Workflow _approval;
 
+
 	
 	@Id
 	@Column(name="data_view_id")
-	public int getDataViewId() {
-		return dataViewId;
+	public int getCardId() {
+		return cardId;
 	}
-	public void setDataViewId(int gridId) {
-		this.dataViewId = gridId;
+	public void setCardId(int cardId) {
+		this.cardId = cardId;
 	}
 	@Column(name="dsc")
 	public String getDsc() {
@@ -285,10 +287,10 @@ public class W5Card implements java.io.Serializable, W5Base, W5ListBase {
 	public boolean equals(Object o) {
 		if(o==null || !(o instanceof W5Card))return false;
 		W5Card c = (W5Card)o;
-		return c!=null && c.getDataViewId()==dataViewId && c.getProjectUuid().equals(projectUuid);
+		return c!=null && c.getCardId()==cardId && c.getProjectUuid().equals(projectUuid);
 	}
 	
 	public int hashCode() {
-		return projectUuid.hashCode() + 100*dataViewId;
+		return projectUuid.hashCode() + 100*cardId;
 	}
 }

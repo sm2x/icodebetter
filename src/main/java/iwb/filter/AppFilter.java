@@ -51,13 +51,13 @@ public class AppFilter implements Filter {
 		switch(FrameworkSetting.systemStatus){
 		case	0://working
 			Log5VisitedPage lvp = null;
+			Map scd = null;
 			try {
 				String transactionId =  GenericUtil.getTransactionId();
 				request.setAttribute("_trid_", transactionId);
-				Map scd = null;
+				HttpSession session = ((HttpServletRequest)request).getSession(false);
+				scd = session!=null ? (Map)session.getAttribute("scd-dev"): null;
 				if(FrameworkSetting.logType>0 && (uri.contains("/app/") || uri.contains("/preview/"))){
-					HttpSession session = ((HttpServletRequest)request).getSession(false);
-					scd = session!=null ? (Map)session.getAttribute("scd-dev"): null;
 					if(scd!=null) {
 						String[] uuri = uri.split("/");
 						
@@ -105,17 +105,14 @@ public class AppFilter implements Filter {
 						b.append("ajaxErrorHandler(");
 						z = true;
 					}
-					b.append(iw.toJsonString(uri));
+					b.append(iw.toJsonString(uri, scd));
 					
 					if(z)b.append(")");
 				} else { //
-					b.append(iw.toHtmlString());
+					b.append(iw.toHtmlString(scd));
 				}
 				
 				if(FrameworkSetting.log2tsdb){
-					HttpSession session = ((HttpServletRequest)request).getSession(false);
-					Map scd = session!=null ? (Map)session.getAttribute("scd-dev"): null;
-					
 					LogUtil.logObject(new Log5IWBException(scd, ((HttpServletRequest) request).getRequestURI(), GenericUtil.getParameterMap((HttpServletRequest)request), request.getRemoteAddr(), iw), true);
 				}
 				

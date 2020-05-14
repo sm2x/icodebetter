@@ -60,9 +60,9 @@ public class ConversionEngine {
 			if (!cleanConversion)
 				for (W5Conversion cnv : formResult.getForm().get_conversionList())
 					if (
-					/* (action==1 && cnv.getSynchOnUpdateFlag()!=0) || */ ((cnv.getConversionTip() == 3 /* invisible */
-							|| cnv.getConversionTip() == 0 /* kesin */)
-							&& GenericUtil.hasPartInside2(cnv.getActionTips(), action))) {
+					/* (action==1 && cnv.getSynchOnUpdateFlag()!=0) || */ ((cnv.getConversionType() == 3 /* invisible */
+							|| cnv.getConversionType() == 0 /* kesin */)
+							&& GenericUtil.hasPartInside2(cnv.getActionTypes(), action))) {
 						cnvSet.add(cnv.getConversionId());
 					}
 			String cnvStr = requestParams.get("_cnvStr");
@@ -82,7 +82,7 @@ public class ConversionEngine {
 				String inStr = "";
 				if (!cleanConversion) {
 					for (W5Conversion cnv : formResult.getForm().get_conversionList())
-						if (GenericUtil.hasPartInside2(cnv.getActionTips(), action)
+						if (GenericUtil.hasPartInside2(cnv.getActionTypes(), action)
 								|| cnv.getSynchOnUpdateFlag() != 0) { // synch
 																		// varsa
 							inStr += "," + cnv.getConversionId();
@@ -203,7 +203,7 @@ public class ConversionEngine {
 								}
 							}
 						}
-						if (!GenericUtil.hasPartInside2(c.getActionTips(), action))
+						if (!GenericUtil.hasPartInside2(c.getActionTypes(), action))
 							continue; // bulamadi veya buldugunun action'i uygun
 										// degil
 
@@ -260,7 +260,7 @@ public class ConversionEngine {
 								} else {
 									if (FrameworkSetting.debug)
 										System.out.println(newFormResult.getErrorMap());
-									if (c.getRowErrorStrategyTip() == 1)
+									if (c.getRowErrorStrategyType() == 1)
 										throw new IWBException("security", "Form", 0, null,
 												LocaleMsgCache.get2(0, (String) scd.get("locale"),
 														"fw_conversion_auto_error") + "  2- ["
@@ -333,14 +333,14 @@ public class ConversionEngine {
 						}
 					}
 				} catch (IWBException e) {
-					if (c.getRowErrorStrategyTip() == 1 && cleanConversion) // throw
+					if (c.getRowErrorStrategyType() == 1 && cleanConversion) // throw
 																			// e;
 						throw new IWBException("framework", "Conversion", conversionId, null,
 								"[707," + conversionId + "] " + c.getDsc(), e);
 					// if(FrameworkSetting.debug)e.printStackTrace();
 					formResult.getOutputMessages().add("CONVERSION(" + conversionId + ") EXCEPTION: " + e.getMessage());
 				} catch (Exception e) {
-					if (c.getRowErrorStrategyTip() == 1 && cleanConversion)
+					if (c.getRowErrorStrategyType() == 1 && cleanConversion)
 						throw new IWBException("framework", "Conversion", conversionId, null,
 								"[707," + conversionId + "] " + c.getDsc(), e);
 					// throw new IWBException("framework","Conversion",
@@ -368,12 +368,12 @@ public class ConversionEngine {
 				cnv = (W5Conversion) metadataLoader.getMetadataObject(
 					"W5Conversion","conversionId", conversionId, projectId, null);
 			}
-			if (cnv == null || GenericUtil.isEmpty(cnv.getActionTips()) || cnv.getActiveFlag() == 0)
+			if (cnv == null || GenericUtil.isEmpty(cnv.getActionTypes()) || cnv.getActiveFlag() == 0)
 				throw new IWBException("validation", "Conversion", conversionId, null,
 						"Conversion Control Error (" + conversionId + ")", null);
 			Set<String> checkedParentRecords = new HashSet();
 
-			if (GenericUtil.hasPartInside2(cnv.getActionTips(), 0)) { // manual
+			if (GenericUtil.hasPartInside2(cnv.getActionTypes(), 0)) { // manual
 																		// conversion
 				int srcFormId = cnv.getSrcFormId();
 				W5FormResult formResult = metadataLoader.getFormResult(scd, srcFormId, 2, requestParams);
@@ -402,7 +402,7 @@ public class ConversionEngine {
 					boolean b = extFormConversion(formResult, prefix, 0, scd, m, t,
 							requestParams.get("srcTablePk" + prefix + id), true);
 					if (!b || !formResult.getErrorMap().isEmpty()) {
-						if (cnv.getRowErrorStrategyTip() == 1) {
+						if (cnv.getRowErrorStrategyType() == 1) {
 							String msg = LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_conversion_auto_error")
 									+ "  2- [" + LocaleMsgCache.get2(scd, cnv.getDsc()) + "]";
 							if (!GenericUtil.isEmpty(formResult.getOutputMessages()))
@@ -430,7 +430,7 @@ public class ConversionEngine {
 							+ LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_records_not_converted"));
 				formResult.setQueuedActionList(new ArrayList<W5QueuedActionHelper>());
 				return formResult;
-			} else if (GenericUtil.hasPartInside2(cnv.getActionTips(), 3)) { // bulk
+			} else if (GenericUtil.hasPartInside2(cnv.getActionTypes(), 3)) { // bulk
 																				// conversion
 
 				List<W5QueuedActionHelper> queuedGlobalFuncList = new ArrayList<W5QueuedActionHelper>();
@@ -440,12 +440,12 @@ public class ConversionEngine {
 				W5Table t = FrameworkCache.getTable(scd, formResult.getForm().getObjectId()); // formResult.getForm().get_sourceTable();
 				if (t.getAccessViewTip() == 0 && !FrameworkCache.roleAccessControl(scd, 0)) {
 					throw new IWBException("security", "Module", 0, null,
-							LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_guvenlik_modul_kontrol"), null);
+							LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_security_module_control"), null);
 				}
 				if (t.getAccessViewUserFields() == null && !GenericUtil.accessControl(scd, t.getAccessViewTip(),
 						t.getAccessViewRoles(), t.getAccessViewUsers())) {
 					throw new IWBException("security", "Form", dstFormId, null,
-							LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_guvenlik_tablo_kontrol_goruntuleme"),
+							LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_security_table_control_view"),
 							null);
 				}
 				Map originalRequestParams = formResult.getRequestParams();
@@ -571,7 +571,7 @@ public class ConversionEngine {
 																			// donusecek
 							if (fc.get_sourceObjectDetail() == null)
 								break;
-							short fieldTip = ((W5TableField) fc.get_sourceObjectDetail()).getFieldTip();
+							short fieldTip = ((W5TableField) fc.get_sourceObjectDetail()).getFieldType();
 							Object ob = GenericUtil.getObjectByTip(cc, fieldTip);
 							if (ob != null)
 								m.put(fc.getDsc(), fieldTip == 2 /* date? */ ? cc : ob.toString());
@@ -619,9 +619,9 @@ public class ConversionEngine {
 				for (W5WsMethodParam wsmp : wsm.get_params())
 					if (cCol.getFormCellId() == wsmp.getWsMethodParamId()) { // buna
 																				// donusecek
-						Object ob = GenericUtil.getObjectByTip(cc, wsmp.getParamTip());
+						Object ob = GenericUtil.getObjectByTip(cc, wsmp.getParamType());
 						if (ob != null)
-							m.put(wsmp.getDsc(), wsmp.getParamTip() == 2 /* date? */ ? cc : ob.toString());
+							m.put(wsmp.getDsc(), wsmp.getParamType() == 2 /* date? */ ? cc : ob.toString());
 						break;
 					}
 			}

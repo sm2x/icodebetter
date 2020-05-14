@@ -15,7 +15,7 @@ import org.hibernate.annotations.Immutable;
 @Entity
 @Immutable
 @Table(name="w5_list",schema="iwb")
-public class W5List implements java.io.Serializable {
+public class W5List implements java.io.Serializable, W5Base {
 
 	private static final long serialVersionUID = 72154123511L;
 
@@ -261,4 +261,10 @@ public class W5List implements java.io.Serializable {
 	public int hashCode() {
 		return projectUuid.hashCode() + 100*getListId();
 	}	
+
+	@Transient
+	public boolean safeEquals(W5Base q) {
+
+			return false;
+	}
 }

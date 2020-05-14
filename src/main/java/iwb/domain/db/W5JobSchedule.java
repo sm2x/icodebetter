@@ -18,14 +18,13 @@ import iwb.util.GenericUtil;
 @Entity
 @Immutable
 @Table(name = "W5_JOB_SCHEDULE",schema="iwb")
-public class W5JobSchedule implements java.io.Serializable {
-	/**
-	 * 
-	 */
+public class W5JobSchedule implements java.io.Serializable, W5Base {
+/*TABLE_ID: 674*/
+
 	private static final long serialVersionUID = 441165423423421L;
 	private int jobScheduleId;
 	private String dsc;
-	private int actionTip;
+	private int actionType;
 	private int activeFlag;
 	private int actionDbFuncId;
 	private int formValueId;
@@ -76,12 +75,12 @@ public class W5JobSchedule implements java.io.Serializable {
 	
 
 	@Column(name = "ACTION_TIP")
-	public int getActionTip() {
-		return actionTip;
+	public int getActionType() {
+		return actionType;
 	}
 
-	public void setActionTip(int actionTip) {
-		this.actionTip = actionTip;
+	public void setActionType(int actionType) {
+		this.actionType = actionType;
 	}
 
 	@Column(name = "ACTIVE_FLAG")
@@ -309,7 +308,7 @@ public class W5JobSchedule implements java.io.Serializable {
 
 	public boolean runCheck() {
 		if(this._running)return false;
-		if(this.getActionTip()!=3 ||  this.getActionDbFuncId()==0)return false;//TODO : only run global func
+		if(this.getActionType()!=3 ||  this.getActionDbFuncId()==0)return false;//TODO : only run global func
 		
 		Date dateNow = Calendar.getInstance().getTime();
 		Timestamp actionStartDttm = this.getActionStartDttm();					
@@ -417,5 +416,11 @@ public class W5JobSchedule implements java.io.Serializable {
 	
 	public int hashCode() {
 		return projectUuid.hashCode() + 100*getJobScheduleId();
+	}
+
+	@Transient
+	public boolean safeEquals(W5Base q) {
+
+			return false;
 	}
 }

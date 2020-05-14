@@ -21,10 +21,9 @@ import iwb.util.GenericUtil;
 @Immutable
 @Table(name="w5_table_field",schema="iwb")
 public class W5TableField implements java.io.Serializable, W5Param, W5Base {
+/*TABLE_ID: 16*/
 
-	/**
-	 * 
-	 */
+	
 	private static final long serialVersionUID = 133333233L;
 
 	private int tableFieldId;
@@ -33,15 +32,15 @@ public class W5TableField implements java.io.Serializable, W5Param, W5Base {
 
 	private String dsc;
 	
-	private short sourceTip;
+	private short sourceType;
 	
-	private short fieldTip;
+	private short fieldType;
 
 	private short notNullFlag;
 
 	private Short minLength;
 
-	private Short maxLength;
+	private Integer maxLength;
 
 	private BigDecimal minValue;
 
@@ -53,8 +52,8 @@ public class W5TableField implements java.io.Serializable, W5Param, W5Base {
 	private short copySourceTip;
 
 	private short canInsertFlag;
-
 	private short canUpdateFlag;
+	
 	private short accessViewTip; //0:kisitlama yok, 1:var
 	private String accessViewRoles;
 	private String accessViewUsers;
@@ -75,7 +74,7 @@ public class W5TableField implements java.io.Serializable, W5Param, W5Base {
 	private String accessMaskUserFields;
 	
 	private int defaultLookupTableId;
-	private short defaultControlTip;
+	private short defaultControlType;
 	private String relatedSessionField;
 	
 	private short lkpEncryptionType;
@@ -118,12 +117,12 @@ public class W5TableField implements java.io.Serializable, W5Param, W5Base {
 	}
 
 	@Column(name="field_tip")
-	public short getFieldTip() {
-		return this.fieldTip;
+	public short getFieldType() {
+		return this.fieldType;
 	}
 
-	public void setFieldTip(short fieldTip) {
-		this.fieldTip = fieldTip;
+	public void setFieldType(short fieldType) {
+		this.fieldType = fieldType;
 	}
 
 	@Column(name="min_length")
@@ -145,11 +144,11 @@ public class W5TableField implements java.io.Serializable, W5Param, W5Base {
 	}
 
 	@Column(name="max_length")
-	public Short getMaxLength() {
+	public Integer getMaxLength() {
 		return this.maxLength;
 	}
 
-	public void setMaxLength(Short maxLength) {
+	public void setMaxLength(Integer maxLength) {
 		this.maxLength = maxLength;
 	}
 
@@ -211,16 +210,16 @@ public class W5TableField implements java.io.Serializable, W5Param, W5Base {
 	}
 
 	@Column(name="source_tip")
-	public short getSourceTip() {
-		return this.sourceTip; //always request
+	public short getSourceType() {
+		return this.sourceType; //always request
 	}
 	@Transient
-	public short getParamTip() {
-		return this.fieldTip;
+	public short getParamType() {
+		return this.fieldType;
 	}
 
-	public void setSourceTip(short sourceTip) {
-		this.sourceTip = sourceTip;
+	public void setSourceType(short sourceType) {
+		this.sourceType = sourceType;
 	}
 	
 	
@@ -333,12 +332,12 @@ public class W5TableField implements java.io.Serializable, W5Param, W5Base {
 		this.defaultLookupTableId = defaultLookupTableId;
 	}
 	@Column(name="default_control_tip")
-	public short getDefaultControlTip() {
-		return defaultControlTip;
+	public short getDefaultControlType() {
+		return defaultControlType;
 	}
 
-	public void setDefaultControlTip(short defaultControlTip) {
-		this.defaultControlTip = defaultControlTip;
+	public void setDefaultControlType(short defaultControlType) {
+		this.defaultControlType = defaultControlType;
 	}
 	
 	
@@ -353,9 +352,9 @@ public class W5TableField implements java.io.Serializable, W5Param, W5Base {
 
 			GenericUtil.safeEquals(this.dsc,t.getDsc()) &&
 			
-			this.sourceTip==t.getSourceTip() &&
+			this.sourceType==t.getSourceType() &&
 			
-			this.fieldTip==t.getFieldTip() &&
+			this.fieldType==t.getFieldType() &&
 	
 			this.notNullFlag==t.getNotNullFlag() &&
 	
@@ -392,7 +391,7 @@ public class W5TableField implements java.io.Serializable, W5Param, W5Base {
 			
 		
 			this.defaultLookupTableId==t.getDefaultLookupTableId() &&
-			this.defaultControlTip==t.getDefaultControlTip();
+			this.defaultControlType==t.getDefaultControlType();
 	}
 	private String projectUuid;
 	

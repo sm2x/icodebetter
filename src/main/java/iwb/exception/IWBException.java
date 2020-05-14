@@ -2,18 +2,20 @@ package iwb.exception;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 
 import iwb.cache.FrameworkCache;
 import iwb.cache.FrameworkSetting;
-import iwb.cache.LocaleMsgCache;
-import iwb.domain.db.W5Table;
-import iwb.domain.helper.W5TableRecordHelper;
 import iwb.util.GenericUtil;
 
 
 public class IWBException extends RuntimeException {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 16432198746533L;
 	private	String errorType;
 	private	String objectType;
 	private	int objectId;
@@ -55,11 +57,11 @@ public class IWBException extends RuntimeException {
 		return new IWBException("framework",newObjectType, 0, null, te.getMessage(), null);
 	}
 
-	public String toHtmlString(){
+	public String toHtmlString(Map scd){
 		StringBuilder b = new StringBuilder();
 		b.append("<table>");
 		b.append("<tr><td><b>Error Type</b></td><td>").append(errorType).append("</td></tr>");
-		b.append("<tr><td><b>Error</b></td><td>").append(getMessage()).append("</td></tr>");
+		b.append("<tr><td><b>Error</b></td><td>").append(FrameworkCache.getExceptionMessage(scd, getMessage())).append("</td></tr>");
 		if(FrameworkCache.getAppSettingIntValue(0, "debug")!=0){
 			b.append("<tr><td><b>Object Type</b></td><td>").append(objectType).append("</td></tr>");
 			b.append("<tr><td><b>Object Id</b></td><td>").append(objectId).append("</td></tr>");
@@ -68,11 +70,11 @@ public class IWBException extends RuntimeException {
 		return b.toString();
 	}
 
-	public String toJsonString(String uri){
+	public String toJsonString(String uri, Map scd){
 		StringBuilder b = new StringBuilder();
 		IWBException e = GenericUtil.isEmpty(this.stack) ? this : this.stack.get(0);
 		b.append("{\"success\":false,\n\"errorType\":\"").append(e.getErrorType()).append("\"");
-		String msg = e.getMessage();
+		String msg = FrameworkCache.getExceptionMessage(scd, e.getMessage());
 		if(msg!=null){
 			b.append(",\"error\":\"").append(GenericUtil.stringToJS2(msg)).append("\"");
 		}
@@ -116,19 +118,6 @@ public class IWBException extends RuntimeException {
 		return b.append("}").toString();
 	}
 
-    private	StringBuilder serializeTableHelperList (int customizationId, String xlocale, List<W5TableRecordHelper> ltrh){//TODO aynisi extjs de de var
-    	StringBuilder buf = new StringBuilder();
-    	boolean bq=false;
-    	buf.append("[");
-		if(ltrh!=null)for(W5TableRecordHelper trh:ltrh){
-			W5Table dt=FrameworkCache.getTable(customizationId, trh.getTableId());
-			if(dt==null)break;
-			if(bq)buf.append(","); else bq=true;
-			buf.append("{\"tid\":").append(trh.getTableId()).append(",\"tpk\":").append(trh.getTablePk()).append(",\"tcc\":").append(trh.getCommentCount()).append(",\"tdsc\":\"").append(LocaleMsgCache.get2(customizationId, xlocale,dt.getDsc())).append("\"").append(",\"dsc\":\"").append(GenericUtil.stringToJS2(trh.getRecordDsc())).append("\"}");			        			
-		}
-		buf.append("]");
-    	return buf;
-    }
 	public String getErrorType() {
 		return errorType;
 	}

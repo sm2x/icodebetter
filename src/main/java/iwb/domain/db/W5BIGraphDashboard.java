@@ -233,4 +233,6 @@ public class W5BIGraphDashboard implements java.io.Serializable, W5Base {
 	public int hashCode() {
 		return projectUuid.hashCode() + 100*getGraphDashboardId();
 	}
+
+
 }

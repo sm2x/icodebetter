@@ -9,6 +9,7 @@
 package iwb.controller;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -17,11 +18,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -29,6 +34,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -65,7 +72,6 @@ import iwb.cache.FrameworkCache;
 import iwb.cache.FrameworkSetting;
 import iwb.cache.LocaleMsgCache;
 import iwb.domain.db.Log5UserAction;
-import iwb.domain.db.W5BIGraphDashboard;
 import iwb.domain.db.W5FileAttachment;
 import iwb.domain.db.W5LookUpDetay;
 import iwb.domain.db.W5Project;
@@ -85,7 +91,7 @@ import iwb.exception.IWBException;
 import iwb.report.RptExcelRenderer;
 import iwb.report.RptPdfRenderer;
 import iwb.service.FrameworkService;
-import iwb.service.VcsService;
+import iwb.service.ImportService;
 import iwb.timer.Action2Execute;
 import iwb.util.EncryptionUtil;
 import iwb.util.ExcelUtil;
@@ -101,9 +107,10 @@ public class AppController implements InitializingBean {
 
 	@Autowired
 	private FrameworkService service;
-	
+
+
 	@Autowired
-	private VcsService vcsService;
+	private ImportService importService;
 
 	@Autowired
 	private TaskExecutor taskExecutor;
@@ -191,6 +198,8 @@ public class AppController implements InitializingBean {
 		response.getWriter().write("{\"success\":"+b+", \"customizationId\":"+scd.get("customizationId")+",\"scd\":"+GenericUtil.fromMapToJsonString2Recursive(scd)+"}");
 		response.getWriter().close();		
 	}
+	
+	
 	
 	
 	@RequestMapping("/ajaxChangeProjectStatus")
@@ -357,7 +366,7 @@ public class AppController implements InitializingBean {
 				scd = UserUtil.getScd(request, "scd-dev", false);
 				W5QueryResult qr = new W5QueryResult(142);
 				W5Query q = new W5Query();
-				q.setQueryTip((short) 0);
+				q.setQueryType((short) 0);
 				qr.setQuery(q);
 				qr.setScd(scd);
 				qr.setErrorMap(new HashMap());
@@ -616,9 +625,11 @@ public class AppController implements InitializingBean {
 		if (request.getSession(false) != null) {
 			request.getSession(false).removeAttribute("scd-dev");
 		}
-		;
-		W5GlobalFuncResult result = service.executeFunc(new HashMap(), 1, requestParams, (short) 7); // user Authenticate DbFunc:1
 
+		Map<String, Object> scd = new HashMap();
+		scd.put("projectId", FrameworkSetting.devUuid);
+		W5GlobalFuncResult result = service.executeFunc(scd, 1, requestParams, (short) 7); // user Authenticate DbFunc:1
+		scd = null;
 		/*
 		 * 4 success 5 errorMsg 6 userId 7 expireFlag 8 smsFlag 9 roleCount
 		 */
@@ -636,7 +647,6 @@ public class AppController implements InitializingBean {
 		int forceUserRoleId = GenericUtil.uInt(requestParams.get("userRoleId"));
 		response.setContentType("application/json");
 		boolean genToken = GenericUtil.uInt(request, "generate_token") != 0;
-		Map<String, Object> scd = null;
 		if (success) { // basarili simdi sira diger islerde
 			HttpSession session = request.getSession(true);
 			session.setAttribute("locale", xlocale);
@@ -998,8 +1008,8 @@ public class AppController implements InitializingBean {
 				
 			}
 
-		} else if (formId < 0) { // negatifse direk -dbFuncId
-			// int dbFuncId= GenericUtil.uInt(request, "_did");
+		} else if (formId < 0) { // negatifse direk -globalFuncId
+			// int globalFuncId= GenericUtil.uInt(request, "_did");
 			W5GlobalFuncResult dbFuncResult = service.postEditGridGlobalFunc(scd, -formId, dirtyCount,
 					GenericUtil.getParameterMap(request), "");
 			response.getWriter().write(getViewAdapter(scd, request).serializeGlobalFunc(dbFuncResult).toString());
@@ -1052,23 +1062,23 @@ public class AppController implements InitializingBean {
 
 		Map<String, Object> scd = UserUtil.getScd(request, "scd-dev", true);
 
-		int dbFuncId = GenericUtil.uInt(request, "_did"); // +:dbFuncId,
+		int globalFuncId = GenericUtil.uInt(request, "_did"); // +:globalFuncId,
 															// -:formId
-		if (dbFuncId == 0) {
-			dbFuncId = -GenericUtil.uInt(request, "_fid"); // +:dbFuncId,
+		if (globalFuncId == 0) {
+			globalFuncId = -GenericUtil.uInt(request, "_fid"); // +:globalFuncId,
 															// -:formId
 		}
 		
 		response.setContentType("application/json");
-		if(dbFuncId==-1){
+		if(globalFuncId==-1){
 			if((Integer)scd.get("roleId")!=0)
-				throw new IWBException("security","System DbProc", dbFuncId, null, "Only for developers", null);
+				throw new IWBException("security","System DbProc", globalFuncId, null, "Only for developers", null);
 			service.organizeQueryFields(scd, GenericUtil.uInt(request,("queryId")), (short)GenericUtil.uInt(request,("insertFlag")));
 			response.getWriter().write("{\"success\":true}");
 		} else {
 			W5GlobalFuncResult dbFuncResult = GenericUtil.uInt(request, "_notran")==0 ? 
-					service.executeFunc(scd, dbFuncId, GenericUtil.getParameterMap(request), (short) 1) 
-					: service.executeFuncNT(scd, dbFuncId, GenericUtil.getParameterMap(request),
+					service.executeFunc(scd, globalFuncId, GenericUtil.getParameterMap(request), (short) 1) 
+					: service.executeFuncNT(scd, globalFuncId, GenericUtil.getParameterMap(request),
 							(short) 1);; //request
 			response.getWriter().write(getViewAdapter(scd, request).serializeGlobalFunc(dbFuncResult).toString());
 		}
@@ -1259,11 +1269,12 @@ public class AppController implements InitializingBean {
 		Map<String, Object> scd = new HashMap();
 		scd.put("userId", 1);
 		scd.put("customizationId", cusId);
+		scd.put("projectId", FrameworkSetting.devUuid);
 		scd.put("path", "");
 		Locale blocale = request.getLocale();
 		scd.put("locale", FrameworkCache.getAppSettingStringValue(0, "locale", "en"));
 
-		int templateId = 1; // Login Page Template
+		int pageId = 1; // Login Page Template
 		if (FrameworkCache.getAppSettingIntValue(0, "mobile_flag") != 0) {
 			String requestHeaderUserAgent = request.getHeader("User-Agent");
 			// iphone -> Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_1_3 like Mac OS
@@ -1277,13 +1288,13 @@ public class AppController implements InitializingBean {
 				if (requestHeaderUserAgent.contains("symbian") || requestHeaderUserAgent.contains("iphone")
 						|| requestHeaderUserAgent.contains("ipad") || request.getParameter("iphone") != null
 						|| requestHeaderUserAgent.contains("android") || request.getParameter("android") != null) {
-					// templateId = 564; //TODO : sencha ile ilgili kısımda
+					// pageId = 564; //TODO : sencha ile ilgili kısımda
 					// hatalar olduğundan burası geçici olarak kapatıldı.
 				}
 			}
 		}
 
-		W5PageResult pageResult = service.getPageResult(scd, templateId, GenericUtil.getParameterMap(request));
+		W5PageResult pageResult = service.getPageResult(scd, pageId, GenericUtil.getParameterMap(request));
 		response.setContentType("text/html; charset=UTF-8");
 		response.getWriter().write(getViewAdapter(scd, request).serializeTemplate(pageResult).toString());
 		response.getWriter().close();
@@ -1304,9 +1315,9 @@ public class AppController implements InitializingBean {
 		scd.put("locale", GenericUtil.getParameterMap(request).get("locale") != null
 				? GenericUtil.getParameterMap(request).get("locale") : getDefaultLanguage(scd, blocale.getLanguage()));
 
-		int templateId = 7; // Page Template
+		int pageId = 7; // Page Template
 
-		W5PageResult pageResult = service.getPageResult(scd, templateId, GenericUtil.getParameterMap(request));
+		W5PageResult pageResult = service.getPageResult(scd, pageId, GenericUtil.getParameterMap(request));
 		response.setContentType("text/html; charset=UTF-8");
 		response.getWriter().write(getViewAdapter(scd, request).serializeTemplate(pageResult).toString());
 		response.getWriter().close();
@@ -1351,13 +1362,13 @@ public class AppController implements InitializingBean {
 		if (scd.get("mobile") != null)
 			scd.remove("mobile");
 
-		int templateId = GenericUtil.uInt(scd.get("mainTemplateId")); // Login
+		int pageId = GenericUtil.uInt(scd.get("mainTemplateId")); // Login
 		
 	
 		
 																		// Page
 																		// Template
-		W5PageResult pageResult = service.getPageResult(scd, templateId, GenericUtil.getParameterMap(request));
+		W5PageResult pageResult = service.getPageResult(scd, pageId, GenericUtil.getParameterMap(request));
 		response.setContentType("text/html; charset=UTF-8");
 		response.getWriter().write(getViewAdapter(scd, request).serializeTemplate(pageResult).toString());
 		response.getWriter().close();
@@ -1381,20 +1392,20 @@ public class AppController implements InitializingBean {
 	public void hndShowPage(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		
-		int templateId = GenericUtil.uInt(request, "_tid");
-		logger.info("hndShowPage(" + templateId + ")");
+		int pageId = GenericUtil.uInt(request, "_tid");
+		logger.info("hndShowPage(" + pageId + ")");
 
 		Map<String, Object> scd = UserUtil.getScd(request, "scd-dev", true);
 
-		W5PageResult pageResult = service.getPageResult(scd, templateId, GenericUtil.getParameterMap(request));
-		// if(pageResult.getTemplate().getTemplateTip()!=2 && templateId!=218 &&
-		// templateId!=611 && templateId!=551 && templateId!=566){ //TODO:cok
+		W5PageResult pageResult = service.getPageResult(scd, pageId, GenericUtil.getParameterMap(request));
+		// if(pageResult.getTemplate().getTemplateTip()!=2 && pageId!=218 &&
+		// pageId!=611 && pageId!=551 && pageId!=566){ //TODO:cok
 		// amele
 		// throw new PromisException("security","Template",0,null, "Wrong
 		// Template Tip (must be page)", null);
 		// }
 
-		if(pageResult.getPage().getTemplateTip()!=0)
+		if(pageResult.getPage().getPageType()!=0)
 			response.setContentType("application/json");
 
 		response.getWriter().write(getViewAdapter(scd, request).serializeTemplate(pageResult).toString());
@@ -1412,8 +1423,8 @@ public class AppController implements InitializingBean {
 		Map<String, Object> scd = UserUtil.getScd(request, "scd-dev", true);
 
 		M5ListResult listResult = service.getMListResult(scd, listId, GenericUtil.getParameterMap(request));
-		// if(pageResult.getTemplate().getTemplateTip()!=2 && templateId!=218 &&
-		// templateId!=611 && templateId!=551 && templateId!=566){ //TODO:cok
+		// if(pageResult.getTemplate().getTemplateTip()!=2 && pageId!=218 &&
+		// pageId!=611 && pageId!=551 && pageId!=566){ //TODO:cok
 		// amele
 		// throw new PromisException("security","Template",0,null, "Wrong
 		// Template Tip (must be page)", null);
@@ -1429,15 +1440,15 @@ public class AppController implements InitializingBean {
 	public void hndShowMPage(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		
-		int templateId = GenericUtil.uInt(request, "_tid");
-		logger.info("hndShowMPage(" + templateId + ")");
+		int pageId = GenericUtil.uInt(request, "_tid");
+		logger.info("hndShowMPage(" + pageId + ")");
 
 		Map<String, Object> scd = UserUtil.getScd(request, "scd-dev", true);
 
-		W5PageResult pageResult = service.getPageResult(scd, templateId, GenericUtil.getParameterMap(request));
+		W5PageResult pageResult = service.getPageResult(scd, pageId, GenericUtil.getParameterMap(request));
 
 
-		if(pageResult.getPage().getTemplateTip()!=0)
+		if(pageResult.getPage().getPageType()!=0)
 			response.setContentType("application/json");
 
 		response.getWriter().write(f7.serializePage(pageResult).toString());
@@ -1645,7 +1656,7 @@ public class AppController implements InitializingBean {
     	if(uri.endsWith(".css")){
     		uri = uri.substring(uri.lastIndexOf('/')+1);
     		uri = uri.substring(0, uri.length()-4);
-        	String css = FrameworkCache.getPageCss(scd, GenericUtil.uInt(uri));
+        	String css = FrameworkCache.getPageResource(scd, uri);
         	if(css!=null){
         		response.setContentType("text/css; charset=UTF-8");
         		response.getWriter().write(css);
@@ -2243,9 +2254,9 @@ public class AppController implements InitializingBean {
 			throw new IWBException("security","Developer",0,null, "You Have to Be Developer TO Run this", null);
 		}
 
-		int dbFuncId= GenericUtil.uInt(request, "_did"); // +:dbFuncId, -:formId
+		int globalFuncId= GenericUtil.uInt(request, "_did"); // +:globalFuncId, -:formId
 
-		W5GlobalFuncResult dbFuncResult = service.executeGlobalFunc4Debug(scd, dbFuncId, GenericUtil.getParameterMap(request));
+		W5GlobalFuncResult dbFuncResult = service.executeGlobalFunc4Debug(scd, globalFuncId, GenericUtil.getParameterMap(request));
 
 		response.setContentType("application/json");
 		response.getWriter().write(getViewAdapter(scd, request).serializeGlobalFunc(dbFuncResult).toString());
@@ -2390,7 +2401,7 @@ public class AppController implements InitializingBean {
 			    	LinkedHashMap<String,List<HashMap<String,String>>> parsedData = p.parseExcel();			    	
 			    	
 			    	if(parsedData != null && parsedData.size() > 0){
-			    		excelImportId = service.saveExcelImport(scd, tmpFile.getName(), uploadedFilePath, parsedData);
+			    		excelImportId = importService.saveExcelImport(scd, tmpFile.getName(), uploadedFilePath, parsedData);
 			    	}		    	
 			    }else if(extension.compareTo("csv") == 0){
 			    	Reader in = new FileReader(tmpFile.getPath());
@@ -2407,7 +2418,7 @@ public class AppController implements InitializingBean {
 			    			m.put(keyz[qi], record.get(qi));			    			
 			    		}
 			        }
-		    		excelImportId = service.saveExcelImport(scd, tmpFile.getName(), uploadedFilePath, parsedData);
+		    		excelImportId = importService.saveExcelImport(scd, tmpFile.getName(), uploadedFilePath, parsedData);
 			    	 
 			    }
 //			    tmpFile.delete();
@@ -2416,6 +2427,90 @@ public class AppController implements InitializingBean {
 		} catch (Exception e){
 			if(FrameworkSetting.debug)e.printStackTrace();
 			return "{ \"success\": false }";
+		}
+	}	
+	
+	@RequestMapping(value ="/appMakerImport", method = RequestMethod.POST)
+	@ResponseBody
+	public String appMakerHandler(
+		@RequestParam("file") MultipartFile file,
+		HttpServletRequest request,
+		HttpServletResponse response
+	)throws IOException{
+		logger.info("appMakerImportHandler");	
+		Map<String, Object> scd = UserUtil.getScd(request, "scd-dev", true);
+		W5Project po = FrameworkCache.getProject(scd);
+		if(po.getUiWebFrontendTip()!=8)
+			return "{ \"success\": false, \"error\":\"To Import AppMaker project, the FrontendUI of the project must be GReact16\" }";
+			
+		try {
+			if(!file.isEmpty()){
+				String path = FrameworkCache.getAppSettingStringValue(0, "file_local_path")
+						+ File.separator + scd.get("customizationId") + File.separator + "attachment";
+		
+				File dirPath = new File(path);
+			    if (!dirPath.exists()) {
+			    	if(!dirPath.mkdirs()) return "{ \"success\":false, \"msg\":\"wrong file path: "+path+"\"}";
+			    }
+			    // f.transferTo(new File(path + File.separator + fa.getSystemFileName()));
+			    String uploadedFilePath = path + File.separator + GenericUtil.strUTF2En(file.getOriginalFilename());
+			    String extension = file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf(".")+1).toLowerCase();
+			    File tmpFile = new File(uploadedFilePath);
+			    file.transferTo(tmpFile);
+			    if(extension.compareTo("zip") == 0)try(ZipFile zfile = new ZipFile(tmpFile.getPath())){
+			    	Map m = new HashMap();
+		            FileSystem fileSystem = FileSystems.getDefault();
+		            //Get file entries
+		            Enumeration<? extends ZipEntry> entries = zfile.entries();
+		             
+		            Map<String, String> scriptHelper = new HashMap();
+		             
+		            //Iterate over entries
+		            while (entries.hasMoreElements()) 
+		            {
+		                ZipEntry entry = entries.nextElement();
+		                //If directory then create a new directory in uncompressed folder
+
+	                    InputStream inputStream = zfile.getInputStream(entry);
+
+	                    ByteArrayOutputStream result = new ByteArrayOutputStream();
+	                    byte[] buffer = new byte[1024];
+	                    int length;
+	                    while ((length = inputStream.read(buffer)) != -1) {
+	                        result.write(buffer, 0, length);
+	                    }
+	                    String fname = entry.getName().toLowerCase(FrameworkSetting.appLocale);
+	                    String body = result.toString(StandardCharsets.UTF_8.name());
+	                    if(!fname.contains("scripts/"))
+	                    	importService.importAppMaker(scd, 
+	                    			fname.lastIndexOf('.')>-1? entry.getName().substring(0, entry.getName().lastIndexOf('.')):entry.getName(), 
+	                    					body, null);
+	                    else {
+	                    	String fileName = fname.substring("scripts/".length());
+	                    	fileName = fileName.substring(0, fileName.lastIndexOf('.'));
+	                    	if(scriptHelper.containsKey(fileName)) {
+	                    		boolean b = fname.endsWith(".json");
+	                    		String body2 = scriptHelper.get(fileName);
+		                    	importService.importAppMaker(scd, entry.getName(), b?body:body2, !b?body:body2);
+	                    	} else
+	                    		scriptHelper.put(fileName, body);
+	                    	
+	                    }
+//	                    m.put(entry.getName(), result.toString(StandardCharsets.UTF_8.name()));
+//	                    System.out.println(result.toString(StandardCharsets.UTF_8.name()));
+
+		            }
+		        }
+		        catch(IOException e)
+		        {
+		            e.printStackTrace();
+		        }
+//			    tmpFile.delete();
+			}
+			return "{ \"success\": true }";
+		} catch (Exception e){
+			if(FrameworkSetting.debug)e.printStackTrace();
+			return "{ \"success\": false, \"error\":\""+e.getMessage()+"\" }";
 		}
 	}	
 	

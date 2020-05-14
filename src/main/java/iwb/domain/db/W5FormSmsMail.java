@@ -29,8 +29,8 @@ public class W5FormSmsMail implements java.io.Serializable, W5Base {
 
 	private short tabOrder;
 
-	private short smsMailTip; // 0: sms, 1:mail 
-	private short smsMailSentTip; // 0: disabled, 1: auto, 2: preview_before, 3: manual 
+	private short smsMailType; // 0: sms, 1:mail 
+	private short smsMailSentType; // 0: disabled, 1: auto, 2: preview_before, 3: manual 
 	private short previewFlag;
 	
 	private String smsMailTo;
@@ -38,7 +38,7 @@ public class W5FormSmsMail implements java.io.Serializable, W5Base {
 	private String smsMailBcc;
 	private String smsMailSubject;
 	private String smsMailBody;
-	private String actionTips;
+	private String actionTypes;
 	private String webMobileTips;
 	private short activeFlag;
 	private short alarmFlag;
@@ -50,6 +50,8 @@ public class W5FormSmsMail implements java.io.Serializable, W5Base {
 	private String conditionSqlCode;
 	
 
+
+	
 	@Column(name="form_id")
 	public int getFormId() {
 		return formId;
@@ -88,18 +90,18 @@ public class W5FormSmsMail implements java.io.Serializable, W5Base {
 	}
 
 	@Column(name="sms_mail_tip")
-	public short getSmsMailTip() {
-		return smsMailTip;
+	public short getSmsMailType() {
+		return smsMailType;
 	}
-	public void setSmsMailTip(short smsMailTip) {
-		this.smsMailTip = smsMailTip;
+	public void setSmsMailType(short smsMailType) {
+		this.smsMailType = smsMailType;
 	}
 	@Column(name="sms_mail_sent_tip")
-	public short getSmsMailSentTip() {
-		return smsMailSentTip;
+	public short getSmsMailSentType() {
+		return smsMailSentType;
 	}
-	public void setSmsMailSentTip(short smsMailSentTip) {
-		this.smsMailSentTip = smsMailSentTip;
+	public void setSmsMailSentType(short smsMailSentType) {
+		this.smsMailSentType = smsMailSentType;
 	}
 	@Column(name="sms_mail_to")
 	public String getSmsMailTo() {
@@ -145,11 +147,11 @@ public class W5FormSmsMail implements java.io.Serializable, W5Base {
 	}
 	
 	@Column(name="action_tips")
-	public String getActionTips() {
-		return actionTips;
+	public String getActionTypes() {
+		return actionTypes;
 	}
-	public void setActionTips(String actionTips) {
-		this.actionTips = actionTips;
+	public void setActionTypes(String actionTypes) {
+		this.actionTypes = actionTypes;
 	}
 	@Column(name="active_flag")
 	public short getActiveFlag() {

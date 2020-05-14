@@ -154,4 +154,12 @@ public class LocaleMsgCache {
 		}
 		return tmp;
 	}
+
+	public static void addLocaleMsgs2Cache(int customizationId, String locale, Map<String, String> localeMsgs) {
+		if(localeMsgs == null) localeMsgs = new HashMap();
+		if(localeMsgs.isEmpty()) localeMsgs.put("test", "test");
+		for(String key: localeMsgs.keySet())
+			set2(customizationId, locale, key, localeMsgs.get(key));
+		
+	}
 }

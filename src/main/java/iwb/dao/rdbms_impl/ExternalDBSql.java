@@ -83,7 +83,7 @@ public class ExternalDBSql {
 	public void runQuery(W5QueryResult queryResult) {
 //		String projectId = (String) queryResult.getScd().get("projectId");
 		W5Query q = queryResult.getQuery();
-		W5ExternalDb edb = FrameworkCache.getExternalDb(queryResult.getScd(), q.getMainTableId());//FrameworkCache.wExternalDbs.get(projectId).get(q.getMainTableId());
+		W5ExternalDb edb = FrameworkCache.getExternalDb(queryResult.getScd(), q.getSourceObjectId());//FrameworkCache.wExternalDbs.get(projectId).get(q.getMainTableId());
 		if(edb.getLkpDbType()==11) { //influxDB
 			prepareInfluxQuery(queryResult);
 			String influxQL = queryResult.getExecutedSql();
@@ -232,7 +232,7 @@ public class ExternalDBSql {
 					if (obj != null) {
 						if (obj instanceof java.sql.Timestamp) {
 							try {
-								obj = (queryResult.getQuery().getQueryTip() == 2 && field.getFieldTip() == 2)
+								obj = (queryResult.getQuery().getQueryType() == 2 && field.getFieldType() == 2)
 										? (java.sql.Timestamp) obj
 										: GenericUtil.uFormatDateTime((java.sql.Timestamp) obj);
 							} catch (Exception e) {
@@ -240,7 +240,7 @@ public class ExternalDBSql {
 							}
 						} else if (obj instanceof java.sql.Date) {
 							try {
-								obj = (queryResult.getQuery().getQueryTip() == 2 && field.getFieldTip() == 2)
+								obj = (queryResult.getQuery().getQueryType() == 2 && field.getFieldType() == 2)
 										? rs.getTimestamp(field.getDsc())
 										: GenericUtil.uFormatDateTime(rs.getTimestamp(field.getDsc()));
 							} catch (Exception e) {

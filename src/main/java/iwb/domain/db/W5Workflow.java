@@ -17,14 +17,12 @@ import iwb.util.GenericUtil;
 @Entity
 @Immutable
 @Table(name="w5_approval", schema="iwb")
-public class W5Workflow implements java.io.Serializable {
+public class W5Workflow implements java.io.Serializable, W5Base {
+/*TABLE_ID: 389*/
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 199911882277343L;
 
-	private int approvalId;
+	private int workflowId;
 	
 	private String dsc;
 
@@ -54,11 +52,11 @@ public class W5Workflow implements java.io.Serializable {
 	
 	@Id
 	@Column(name="approval_id")
-	public int getApprovalId() {
-		return approvalId;
+	public int getWorkflowId() {
+		return workflowId;
 	}
-	public void setApprovalId(int approvalId) {
-		this.approvalId = approvalId;
+	public void setWorkflowId(int workflowId) {
+		this.workflowId = workflowId;
 	}
 
 	@Column(name="dsc")
@@ -251,9 +249,9 @@ public class W5Workflow implements java.io.Serializable {
 		if(q==null)return false;
 		W5Workflow a = (W5Workflow)q;
 		boolean b =
-			this.approvalId==a.approvalId &&
+			this.workflowId==a.workflowId &&
 			GenericUtil.safeEquals(this.dsc,a.dsc) &&
-			this.activeFlag==a.approvalId &&
+			this.activeFlag==a.activeFlag &&
 			this.tableId==a.tableId &&
 			this.actionTip==a.actionTip &&
 			this.approvalFlowTip==a.approvalFlowTip &&
@@ -293,10 +291,10 @@ public class W5Workflow implements java.io.Serializable {
 	public boolean equals(Object o) {
 		if(o==null || !(o instanceof W5Workflow))return false;
 		W5Workflow c = (W5Workflow)o;
-		return c!=null && c.getApprovalId()==getApprovalId() && c.getProjectUuid().equals(projectUuid);
+		return c!=null && c.getWorkflowId()==getWorkflowId() && c.getProjectUuid().equals(projectUuid);
 	}
 	
 	public int hashCode() {
-		return projectUuid.hashCode() + 100*getApprovalId();
+		return projectUuid.hashCode() + 100*getWorkflowId();
 	}	
 }

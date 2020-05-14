@@ -72,9 +72,9 @@ public class F7 implements ViewMobileAdapter {
 		return buf;
 	}
 	public StringBuilder serializeQueryData(W5QueryResult queryResult) {
-		if (queryResult.getQuery().getQueryTip() == 10)
+		if (queryResult.getQuery().getQueryType() == 10)
 			return null;
-		if (queryResult.getQuery().getQueryTip() == 14)
+		if (queryResult.getQuery().getQueryType() == 14)
 			return null;
 		int customizationId = (Integer) queryResult.getScd().get("customizationId");
 		String xlocale = (String) queryResult.getScd().get("locale");
@@ -101,18 +101,18 @@ public class F7 implements ViewMobileAdapter {
 							buf.append(",");
 						else
 							b = true;
-						if (f.getPostProcessTip() == 9)
+						if (f.getPostProcessType() == 9)
 							buf.append("\"_");
 						else
 							buf.append("\"");
-						buf.append(f.getPostProcessTip() == 6 ? f.getDsc()
+						buf.append(f.getPostProcessType() == 6 ? f.getDsc()
 								.substring(1) : f.getDsc());
 						Object obj = o[f.getTabOrder() - 1];
-						if (f.getFieldTip() == 5) {// boolean
+						if (f.getFieldType() == 5) {// boolean
 							buf.append("\":").append(GenericUtil.uInt(obj) != 0);
 							continue;
 						}
-						if (f.getFieldTip() == 6) {// auto
+						if (f.getFieldType() == 6) {// auto
 							buf.append("\":");
 							if (obj == null || obj.toString().equals("0"))
 								buf.append("null");
@@ -124,7 +124,7 @@ public class F7 implements ViewMobileAdapter {
 						}
 						buf.append("\":\"");
 						if (obj != null)
-							switch (f.getPostProcessTip()) { // queryField
+							switch (f.getPostProcessType()) { // queryField
 																// PostProcessTip
 							case 3:
 								buf.append(GenericUtil.onlyHTMLToJS(obj
@@ -200,7 +200,7 @@ public class F7 implements ViewMobileAdapter {
 									break;
 								buf.append("\",\"").append(f.getDsc())
 										.append("_qw_\":\"");
-								String[] objs = f.getPostProcessTip() == 11 ? ((String) obj)
+								String[] objs = f.getPostProcessType() == 11 ? ((String) obj)
 										.split(",") : new String[] { obj
 										.toString() };
 								boolean bz = false;
@@ -570,7 +570,7 @@ public class F7 implements ViewMobileAdapter {
 		
 		boolean masterDetail = false;
 		
-		if (f.getObjectTip() == 2){
+		if (f.getObjectType() == 2){
 			W5Table t = FrameworkCache.getTable(scd, f.getObjectId());
 			liveSyncRecord = FrameworkSetting.liveSyncRecord && t.getLiveSyncFlag() != 0 && !formResult.isViewMode();
 			pictureFlag =FrameworkCache.getAppSettingIntValue(scd, "attach_picture_flag") != 0
@@ -617,15 +617,11 @@ public class F7 implements ViewMobileAdapter {
 					&& FrameworkCache.roleAccessControl(scd, 101))
 				s.append(",\n fileAttachFlag:true, fileAttachCount:").append(
 						formResult.getFileAttachmentCount());
-			if (FrameworkCache.getAppSettingIntValue(scd,
-					"row_based_security_flag") != 0
-					&& ((Integer) scd.get("userTip") != 3 && t.getAccessTips() != null))
-				s.append(",\n accessControlFlag:true, accessControlCount:")
-						.append(formResult.getAccessControlCount());
+
 			if(!GenericUtil.isEmpty(f.get_moduleList()) && formResult.getModuleListMap()!=null){
 				s.append(",\n subLists:[");
 				boolean bq = false;
-				for(W5FormModule fm:f.get_moduleList())if(fm.getModuleTip()==10 && (fm.getModuleViewTip()==0 || formResult.getAction()==fm.getModuleViewTip())){
+				for(W5FormModule fm:f.get_moduleList())if(fm.getModuleType()==10 && (fm.getModuleViewType()==0 || formResult.getAction()==fm.getModuleViewType())){
 					M5ListResult mlr = formResult.getModuleListMap().get(fm.getObjectId());
 					if(mlr==null)continue;
 					if(bq)s.append("\n,"); else bq=true;
@@ -662,7 +658,7 @@ public class F7 implements ViewMobileAdapter {
 
 /*		if(f.getRenderTip()==5 && !GenericUtil.isEmpty(f.getJsCode())){
 			s.append(GenericUtil.stringToJS(GenericUtil.filterExt(f.getJsCode().substring(0, f.getJsCode().indexOf("${iwb-data}")),formResult.getScd(), formResult.getRequestParams(),null)));
-		} else */if (f.getObjectTip() == 2){
+		} else */if (f.getObjectType() == 2){
 			s.append("<div data-page=\"iwb-form-").append(formResult.getFormId()).append("\" class=\"page\"><div class=\"navbar\">")
 				.append("<div class=\"navbar-inner iwb-navbar-form\"><div class=\"left\"><a href=# class=\"back link icon-only\"><i class=\"icon f7-icons\">left_arrow</i></a></div><div class=\"center\">")
 				.append(formResult.getForm().getLocaleMsgKey()).append("</div><div class=\"right\">");
@@ -691,18 +687,18 @@ public class F7 implements ViewMobileAdapter {
 			List<W5FormCellHelper> r = map.get(m.getFormModuleId());
 			if(GenericUtil.isEmpty(r))continue;
 			if(m.getFormModuleId()!=0){
-				W5FormCell fcx = new W5FormCell(); fcx.setControlTip((short)102);fcx.setLookupQueryId(10); fcx.setLocaleMsgKey(m.getLocaleMsgKey());
+				W5FormCell fcx = new W5FormCell(); fcx.setControlType((short)102);fcx.setLookupQueryId(10); fcx.setLocaleMsgKey(m.getLocaleMsgKey());
 				s.append(GenericUtil.stringToJS(serializeFormCellMaterial(customizationId, xlocale,new W5FormCellHelper(fcx), formResult)));
 			}
 			for (W5FormCellHelper fc : r){
 				s.append(GenericUtil.stringToJS(serializeFormCellMaterial(customizationId, xlocale,fc, formResult)));
-				switch(fc.getFormCell().getControlTip()){
+				switch(fc.getFormCell().getControlType()){
 				case	2://date
 					jsCode.append("iwb.app.calendar({input: '#idx-formcell-").append(fc.getFormCell().getFormCellId()).append("',dateFormat: 'dd/mm/yyyy'});\n");
 					break;
 				case	10://autocomplete
 				case	61://autocomplete-multi
-					jsCode.append("iwb.app.autocomplete(iwb.apply({multiple:").append(fc.getFormCell().getControlTip()==61).append(", opener: $$('#idx-formcell-").append(fc.getFormCell().getFormCellId()).append("'), params:'_qid=").append(fc.getFormCell().getLookupQueryId());
+					jsCode.append("iwb.app.autocomplete(iwb.apply({multiple:").append(fc.getFormCell().getControlType()==61).append(", opener: $$('#idx-formcell-").append(fc.getFormCell().getFormCellId()).append("'), params:'_qid=").append(fc.getFormCell().getLookupQueryId());
 					if (fc.getFormCell().getLookupIncludedParams() != null && fc.getFormCell().getLookupIncludedParams().length() > 2)
 						jsCode.append("&").append(fc.getFormCell().getLookupIncludedParams());
 					jsCode.append("'}, ");
@@ -710,7 +706,7 @@ public class F7 implements ViewMobileAdapter {
 					for (W5FormCellHelper cfc : formResult.getFormCellResults()) {
 						if (cfc.getFormCell().getParentFormCellId() == fc.getFormCell().getFormCellId()) {
 							if(!GenericUtil.isEmpty(cfc.getFormCell().getLookupIncludedParams()))
-								switch(cfc.getFormCell().getControlTip()){
+								switch(cfc.getFormCell().getControlType()){
 							case	9:case	16:
 								jsCode.append("iwb.autoCompleteJson4Autocomplete('")
 									.append(GenericUtil.isEmpty(fc.getValue()) ? "":fc.getValue()).append("','#idx-formcell-")
@@ -737,9 +733,9 @@ public class F7 implements ViewMobileAdapter {
 						for (W5FormCellHelper rfc : formResult.getFormCellResults()) {
 							if (rfc.getFormCell().getFormCellId() == fc.getFormCell().getParentFormCellId()) {
 								W5FormCell pfc = rfc.getFormCell();
-								if (pfc.getControlTip() == 6
-										|| pfc.getControlTip() == 7
-										|| pfc.getControlTip() == 9)
+								if (pfc.getControlType() == 6
+										|| pfc.getControlType() == 7
+										|| pfc.getControlType() == 9)
 									jsCode.append(
 											"iwb.combo2combo('#idx-formcell-").append(pfc.getFormCellId())
 											.append("','#idx-formcell-").append(fc.getFormCell().getFormCellId()).append("',function(ax,bx){\n")
@@ -754,14 +750,14 @@ public class F7 implements ViewMobileAdapter {
 			}
 		}
 
-		if (f.getObjectTip() == 2 && f.get_formSmsMailList() != null && !f.get_formSmsMailList().isEmpty()) { // automatic sms isleri varsa
+		if (f.getObjectType() == 2 && f.get_formSmsMailList() != null && !f.get_formSmsMailList().isEmpty()) { // automatic sms isleri varsa
 			StringBuilder s2 = new StringBuilder();
 			int cnt = 0;
 			for (W5FormSmsMail fsm : f.get_formSmsMailList())
-				if (((fsm.getSmsMailTip() == 0 && FrameworkSetting.sms && FrameworkCache.getAppSettingIntValue(customizationId, "sms_flag") != 0) || 
-						(fsm.getSmsMailTip() != 0 && FrameworkSetting.mail && FrameworkCache.getAppSettingIntValue(customizationId, "mail_flag") != 0))
+				if (((fsm.getSmsMailType() == 0 && FrameworkSetting.sms && FrameworkCache.getAppSettingIntValue(customizationId, "sms_flag") != 0) || 
+						(fsm.getSmsMailType() != 0 && FrameworkSetting.mail && FrameworkCache.getAppSettingIntValue(customizationId, "mail_flag") != 0))
 						&& fsm.getAlarmFlag() == 0 && fsm.getPreviewFlag()==0
-						&& GenericUtil.hasPartInside2(fsm.getActionTips(), formResult.getAction())
+						&& GenericUtil.hasPartInside2(fsm.getActionTypes(), formResult.getAction())
 						&& GenericUtil.hasPartInside2(fsm.getWebMobileTips(),"2")) {
 					cnt++;
 				}
@@ -769,17 +765,17 @@ public class F7 implements ViewMobileAdapter {
 //				s2.append(",\n\"smsMailTemplateCnt\":").append(cnt).append(",\n\"smsMailTemplates\":[");
 				boolean b = false;
 				for (W5FormSmsMail fsm : f.get_formSmsMailList())
-					if (((fsm.getSmsMailTip() == 0 && FrameworkSetting.sms && FrameworkCache.getAppSettingIntValue(customizationId, "sms_flag") != 0) || 
-						 (fsm.getSmsMailTip() != 0 && FrameworkSetting.mail && FrameworkCache.getAppSettingIntValue(customizationId, "mail_flag") != 0))
+					if (((fsm.getSmsMailType() == 0 && FrameworkSetting.sms && FrameworkCache.getAppSettingIntValue(customizationId, "sms_flag") != 0) || 
+						 (fsm.getSmsMailType() != 0 && FrameworkSetting.mail && FrameworkCache.getAppSettingIntValue(customizationId, "mail_flag") != 0))
 							&& fsm.getAlarmFlag() == 0 && fsm.getPreviewFlag()==0
-							&& GenericUtil.hasPartInside2(fsm.getActionTips(), formResult.getAction())
+							&& GenericUtil.hasPartInside2(fsm.getActionTypes(), formResult.getAction())
 							&& GenericUtil.hasPartInside2(fsm.getWebMobileTips(), "2")) {
-						W5FormCell fcx = new W5FormCell(); fcx.setControlTip((short)5);fcx.setLookupQueryId(10); 
-						fcx.setLocaleMsgKey((fsm.getSmsMailTip() == 0 ? "[SMS] " : "[" + (LocaleMsgCache.get2(customizationId, xlocale, "email_upper")) + "] ") + LocaleMsgCache.get2(customizationId, xlocale, fsm.getDsc())
+						W5FormCell fcx = new W5FormCell(); fcx.setControlType((short)5);fcx.setLookupQueryId(10); 
+						fcx.setLocaleMsgKey((fsm.getSmsMailType() == 0 ? "[SMS] " : "[" + (LocaleMsgCache.get2(customizationId, xlocale, "email_upper")) + "] ") + LocaleMsgCache.get2(customizationId, xlocale, fsm.getDsc())
 						+ (fsm.getPreviewFlag() != 0 ? " (" + (LocaleMsgCache.get2(customizationId, xlocale, "with_preview")) + ")" : ""));
 						fcx.setLookupQueryId(fsm.getFormSmsMailId()); fcx.setDsc("_smsStr");
 						W5FormCellHelper fcr = new W5FormCellHelper(fcx);
-						if(fsm.getSmsMailSentTip() == 1 || fsm.getSmsMailSentTip() == 0) fcr.setValue("1");
+						if(fsm.getSmsMailSentType() == 1 || fsm.getSmsMailSentType() == 0) fcr.setValue("1");
 						s2.append(GenericUtil.stringToJS(serializeFormCellMaterial(customizationId, xlocale, fcr, formResult)));
 						
 						/*if (b)s2.append("\n,");
@@ -804,7 +800,7 @@ public class F7 implements ViewMobileAdapter {
 			//	s2.append("]");
 			}
 			if(s2.length()>0){
-					W5FormCell fcx = new W5FormCell(); fcx.setControlTip((short)102);fcx.setLookupQueryId(11); fcx.setLocaleMsgKey("SMS/E-Posta Dönüşümleri");
+					W5FormCell fcx = new W5FormCell(); fcx.setControlType((short)102);fcx.setLookupQueryId(11); fcx.setLocaleMsgKey("SMS/E-Posta Dönüşümleri");
 					s.append(GenericUtil.stringToJS(serializeFormCellMaterial(customizationId, xlocale,new W5FormCellHelper(fcx), formResult)));
 					s.append(s2);
 			}
@@ -850,7 +846,7 @@ public class F7 implements ViewMobileAdapter {
 
 /*		if(f.getRenderTip()==5 && !GenericUtil.isEmpty(f.getJsCode())){
 			s.append(GenericUtil.stringToJS(f.getJsCode().substring(f.getJsCode().indexOf("${iwb-data}")+11)));
-		} else */if (f.getObjectTip() == 2){
+		} else */if (f.getObjectType() == 2){
 			s.append("</ul>");
 			if (!formResult.isViewMode()){//kaydet butonu
 				if(masterDetail) //master detail
@@ -901,7 +897,7 @@ public class F7 implements ViewMobileAdapter {
 			return buf;
 			
 		}
-		if ((fc.getControlTip() == 101 || cellResult.getHiddenValue() != null)/* && (fc.getControlTip()!=9 && fc.getControlTip()!=16) */) { //readonly
+		if ((fc.getControlType() == 101 || cellResult.getHiddenValue() != null)/* && (fc.getControlTip()!=9 && fc.getControlTip()!=16) */) { //readonly
 			buf.append("<li id=\"id-formcell-").append(fc.getFormCellId()).append("\"><div class=\"item-content\"><div class=\"item-inner\">")
 			.append("<div class=\"item-title label\">").append(fieldLabel).append("</div>")
 			.append("<div class=\"item-after\"><b>").append(GenericUtil.stringToHtml(value)).append("</b>");;
@@ -909,7 +905,7 @@ public class F7 implements ViewMobileAdapter {
 			return buf;
 		}
 		
-		switch(fc.getControlTip()){
+		switch(fc.getControlType()){
 		case	102://label
 			if(fc.getLookupQueryId()>=10){
 				buf.append("<li class=\"iwb-form-tab iwb-type-").append(fc.getLookupQueryId()).append("\"><div class=\"content-block-title\" style=\"height: 30px;text-align:center;\">").append(GenericUtil.uStrNvl(value, fieldLabel)).append("</div></li>");
@@ -951,7 +947,7 @@ public class F7 implements ViewMobileAdapter {
 		case	8: case	15://lov-static, lov-query combo
 		case	58: case	59://superbox lov-static, superbox lov-query combo
 		case    51: case 52://user defined combo, multi
-			boolean multi = fc.getControlTip()!=6 && fc.getControlTip()!=7 && fc.getControlTip()!=51;
+			boolean multi = fc.getControlType()!=6 && fc.getControlType()!=7 && fc.getControlType()!=51;
 			StringBuilder resultText = new StringBuilder();
 			buf.append("<li id=\"id-formcell-").append(fc.getFormCellId()).append("\"><a href=#").append(multi ? "":" data-back-on-select=\"true\"").append(" class=\"item-link smart-select\"")
 				.append((cellResult.getLookupListValues() != null && cellResult.getLookupListValues().size()>40) || (cellResult.getLookupQueryResult() != null && cellResult.getLookupQueryResult().getData().size()>40) ? " data-virtual-list=\"true\"" : "")
@@ -987,7 +983,7 @@ public class F7 implements ViewMobileAdapter {
 			
 		case	9://combo-remote
 		case	16://lovcombo-remote
-			multi = fc.getControlTip()==16;
+			multi = fc.getControlType()==16;
 			buf.append("<li id=\"id-formcell-").append(fc.getFormCellId()).append("\"><a href=#").append(multi ? "":" data-back-on-select=\"true\"").append(" class=\"item-link smart-select\"")
 				.append(" data-searchbar=\"true\" data-searchbar-placeholder=\"Ara..\">")
 				.append("<select id=\"idx-formcell-").append(fc.getFormCellId()).append("\" name=\"").append(fc.getDsc()).append("\"").append(multi ? " multiple":"");
@@ -1040,7 +1036,7 @@ public class F7 implements ViewMobileAdapter {
 		StringBuilder jsCode = new StringBuilder();
 		buf.append("\n htmlPage:'");
 		W5FormCell c0 = new W5FormCell();
-		c0.setLocaleMsgKey(formBuilder.getString("title"));c0.setControlTip((short)102);
+		c0.setLocaleMsgKey(formBuilder.getString("title"));c0.setControlType((short)102);
 		W5FormCellHelper cellResult0 = new W5FormCellHelper(c0);
 		buf.append(serializeFormCellMaterial(0,"tr", cellResult0, r));
 		
@@ -1062,10 +1058,10 @@ public class F7 implements ViewMobileAdapter {
 						d.setDsc(i.getString(1));
 						cellResult.getLookupListValues().add(d);
 					}
-					c.setControlTip((short)6);;
+					c.setControlType((short)6);;
 				} else
-					c.setControlTip(o.has("_controlTip") ? (short)o.getInt("_controlTip") : 1);;
-				if(c.getControlTip()==2){
+					c.setControlType(o.has("_controlTip") ? (short)o.getInt("_controlTip") : 1);;
+				if(c.getControlType()==2){
 					int formCellId = (int)new Date().getTime();
 					jsCode.append("iwb.app.calendar({input: '#idx-formcell-").append(formCellId).append("',dateFormat: 'dd/mm/yyyy'});\n");
 					c.setFormCellId(formCellId);
@@ -1115,7 +1111,7 @@ public class F7 implements ViewMobileAdapter {
 			return buf;
 			
 		}
-		if ((fc.getControlTip() == 101 || cellResult.getHiddenValue() != null)/* && (fc.getControlTip()!=9 && fc.getControlTip()!=16) */) { //readonly
+		if ((fc.getControlType() == 101 || cellResult.getHiddenValue() != null)/* && (fc.getControlTip()!=9 && fc.getControlTip()!=16) */) { //readonly
 			buf.append("<li id=\"id-formcell-").append(fc.getFormCellId()).append("\"><div class=\"item-content\"><div class=\"item-inner\">")
 			.append("<div class=\"item-title label\">").append(fieldLabel).append("</div>")
 			.append("<div class=\"item-after\"><b>").append(GenericUtil.stringToHtml(value)).append("</b>");;
@@ -1123,7 +1119,7 @@ public class F7 implements ViewMobileAdapter {
 			return buf;
 		}
 		
-		switch(fc.getControlTip()){
+		switch(fc.getControlType()){
 		case	102://label
 			if(fc.getLookupQueryId()>=10){
 				buf.append("<li class=\"iwb-form-tab iwb-type-").append(fc.getLookupQueryId()).append("\"><div class=\"content-block-title\" style=\"height: 30px;text-align:center;\">").append(GenericUtil.uStrNvl(value, fieldLabel)).append("</div></li>");
@@ -1165,7 +1161,7 @@ public class F7 implements ViewMobileAdapter {
 		case	8: case	15://lov-static, lov-query combo
 		case	58: case	59://superbox lov-static, superbox lov-query combo
 		case    51: case 52://user defined combo, multi
-			boolean multi = fc.getControlTip()!=6 && fc.getControlTip()!=7 && fc.getControlTip()!=51;
+			boolean multi = fc.getControlType()!=6 && fc.getControlType()!=7 && fc.getControlType()!=51;
 			StringBuilder resultText = new StringBuilder();
 			buf.append("<li id=\"id-formcell-").append(fc.getFormCellId()).append("\"><a href=#").append(multi ? "":" data-back-on-select=\"true\"").append(" class=\"item-link smart-select\"")
 				.append((cellResult.getLookupListValues() != null && cellResult.getLookupListValues().size()>40) || (cellResult.getLookupQueryResult() != null && cellResult.getLookupQueryResult().getData().size()>40) ? " data-virtual-list=\"true\"" : "")
@@ -1201,7 +1197,7 @@ public class F7 implements ViewMobileAdapter {
 			
 		case	9://combo-remote
 		case	16://lovcombo-remote
-			multi = fc.getControlTip()==16;
+			multi = fc.getControlType()==16;
 			buf.append("<li id=\"id-formcell-").append(fc.getFormCellId()).append("\"><a href=#").append(multi ? "":" data-back-on-select=\"true\"").append(" class=\"item-link smart-select\"")
 				.append(" data-searchbar=\"true\" data-searchbar-placeholder=\"Ara..\">")
 				.append("<select id=\"idx-formcell-").append(fc.getFormCellId()).append("\" name=\"").append(fc.getDsc()).append("\"").append(multi ? " multiple":"");
@@ -1256,7 +1252,7 @@ public class F7 implements ViewMobileAdapter {
 		}
 		
 		boolean masterDetail = false;
-		if (f.getObjectTip() == 2){
+		if (f.getObjectType() == 2){
 			W5Table t = FrameworkCache.getTable(scd, f.getObjectId());
 			liveSyncRecord = FrameworkSetting.liveSyncRecord && t.getLiveSyncFlag() != 0 && !formResult.isViewMode();
 			pictureFlag = FrameworkCache.getAppSettingIntValue(scd, "attach_picture_flag") != 0
@@ -1302,15 +1298,11 @@ public class F7 implements ViewMobileAdapter {
 					&& FrameworkCache.roleAccessControl(scd, 101))
 				s.append(",\n fileAttachFlag:true, fileAttachCount:").append(
 						formResult.getFileAttachmentCount());
-			if (FrameworkCache.getAppSettingIntValue(scd,
-					"row_based_security_flag") != 0
-					&& ((Integer) scd.get("userTip") != 3 && t.getAccessTips() != null))
-				s.append(",\n accessControlFlag:true, accessControlCount:")
-						.append(formResult.getAccessControlCount());
+
 			if(!GenericUtil.isEmpty(f.get_moduleList()) && formResult.getModuleListMap()!=null){
 				s.append(",\n subLists:[");
 				boolean bq = false;
-				for(W5FormModule fm:f.get_moduleList())if(fm.getModuleTip()==10 && (fm.getModuleViewTip()==0 || formResult.getAction()==fm.getModuleViewTip())){
+				for(W5FormModule fm:f.get_moduleList())if(fm.getModuleType()==10 && (fm.getModuleViewType()==0 || formResult.getAction()==fm.getModuleViewType())){
 					M5ListResult mlr = formResult.getModuleListMap().get(fm.getObjectId());
 					if(mlr==null)continue;
 					if(bq)s.append("\n,"); else bq=true;
@@ -1345,7 +1337,7 @@ public class F7 implements ViewMobileAdapter {
 
 /*		if(f.getRenderTip()==5 && !GenericUtil.isEmpty(f.getJsCode())){
 			s.append(GenericUtil.stringToJS(GenericUtil.filterExt(f.getJsCode().substring(0, f.getJsCode().indexOf("${iwb-data}")),formResult.getScd(), formResult.getRequestParams(),null)));
-		} else */if (f.getObjectTip() == 2){
+		} else */if (f.getObjectType() == 2){
 			s.append("<div data-page=\"iwb-form-").append(formResult.getFormId()).append("\" class=\"page\"><div class=\"navbar\">")
 				.append("<div class=\"navbar-inner iwb-navbar-form\"><div class=\"left\"><a href=# class=\"back link icon-only\"><i class=\"icon f7-icons\">left_arrow</i></a></div><div class=\"center\">")
 				.append(formResult.getForm().getLocaleMsgKey()).append("</div><div class=\"right\">");
@@ -1374,18 +1366,18 @@ public class F7 implements ViewMobileAdapter {
 			List<W5FormCellHelper> r = map.get(m.getFormModuleId());
 			if(GenericUtil.isEmpty(r))continue;
 			if(m.getFormModuleId()!=0){
-				W5FormCell fcx = new W5FormCell(); fcx.setControlTip((short)102);fcx.setLookupQueryId(10); fcx.setLocaleMsgKey(m.getLocaleMsgKey());
+				W5FormCell fcx = new W5FormCell(); fcx.setControlType((short)102);fcx.setLookupQueryId(10); fcx.setLocaleMsgKey(m.getLocaleMsgKey());
 				s.append(GenericUtil.stringToJS(serializeFormCelliOS(customizationId, xlocale,new W5FormCellHelper(fcx), formResult)));
 			}
 			for (W5FormCellHelper fc : r){
 				s.append(GenericUtil.stringToJS(serializeFormCelliOS(customizationId, xlocale,fc, formResult)));
-				switch(fc.getFormCell().getControlTip()){
+				switch(fc.getFormCell().getControlType()){
 				case	2://date
 					jsCode.append("iwb.app.calendar({input: '#idx-formcell-").append(fc.getFormCell().getFormCellId()).append("',dateFormat: 'dd/mm/yyyy'});\n");
 					break;
 				case	10://autocomplete
 				case	61://autocomplete-multi
-					jsCode.append("iwb.app.autocomplete(iwb.apply({multiple:").append(fc.getFormCell().getControlTip()==61).append(", opener: $$('#idx-formcell-").append(fc.getFormCell().getFormCellId()).append("'), params:'_qid=").append(fc.getFormCell().getLookupQueryId());
+					jsCode.append("iwb.app.autocomplete(iwb.apply({multiple:").append(fc.getFormCell().getControlType()==61).append(", opener: $$('#idx-formcell-").append(fc.getFormCell().getFormCellId()).append("'), params:'_qid=").append(fc.getFormCell().getLookupQueryId());
 					if (fc.getFormCell().getLookupIncludedParams() != null && fc.getFormCell().getLookupIncludedParams().length() > 2)
 						jsCode.append("&").append(fc.getFormCell().getLookupIncludedParams());
 					jsCode.append("'}, ");
@@ -1393,7 +1385,7 @@ public class F7 implements ViewMobileAdapter {
 					for (W5FormCellHelper cfc : formResult.getFormCellResults()) {
 						if (cfc.getFormCell().getParentFormCellId() == fc.getFormCell().getFormCellId()) {
 							if(!GenericUtil.isEmpty(cfc.getFormCell().getLookupIncludedParams()))
-								switch(cfc.getFormCell().getControlTip()){
+								switch(cfc.getFormCell().getControlType()){
 							case	9:case	16:
 								jsCode.append("iwb.autoCompleteJson4Autocomplete('")
 									.append(GenericUtil.isEmpty(fc.getValue()) ? "":fc.getValue()).append("','#idx-formcell-")
@@ -1420,9 +1412,9 @@ public class F7 implements ViewMobileAdapter {
 						for (W5FormCellHelper rfc : formResult.getFormCellResults()) {
 							if (rfc.getFormCell().getFormCellId() == fc.getFormCell().getParentFormCellId()) {
 								W5FormCell pfc = rfc.getFormCell();
-								if (pfc.getControlTip() == 6
-										|| pfc.getControlTip() == 7
-										|| pfc.getControlTip() == 9)
+								if (pfc.getControlType() == 6
+										|| pfc.getControlType() == 7
+										|| pfc.getControlType() == 9)
 									jsCode.append(
 											"iwb.combo2combo('#idx-formcell-").append(pfc.getFormCellId())
 											.append("','#idx-formcell-").append(fc.getFormCell().getFormCellId()).append("',function(ax,bx){\n")
@@ -1437,14 +1429,14 @@ public class F7 implements ViewMobileAdapter {
 			}
 		}
 		
-		if (f.getObjectTip() == 2 && f.get_formSmsMailList() != null && !f.get_formSmsMailList().isEmpty()) { // automatic sms isleri varsa
+		if (f.getObjectType() == 2 && f.get_formSmsMailList() != null && !f.get_formSmsMailList().isEmpty()) { // automatic sms isleri varsa
 			StringBuilder s2 = new StringBuilder();
 			int cnt = 0;
 			for (W5FormSmsMail fsm : f.get_formSmsMailList())
-				if (((fsm.getSmsMailTip() == 0 && FrameworkSetting.sms && FrameworkCache.getAppSettingIntValue(customizationId, "sms_flag") != 0) || 
-						(fsm.getSmsMailTip() != 0 && FrameworkSetting.mail && FrameworkCache.getAppSettingIntValue(customizationId, "mail_flag") != 0))
+				if (((fsm.getSmsMailType() == 0 && FrameworkSetting.sms && FrameworkCache.getAppSettingIntValue(customizationId, "sms_flag") != 0) || 
+						(fsm.getSmsMailType() != 0 && FrameworkSetting.mail && FrameworkCache.getAppSettingIntValue(customizationId, "mail_flag") != 0))
 						&& fsm.getAlarmFlag() == 0 && fsm.getPreviewFlag()==0
-						&& GenericUtil.hasPartInside2(fsm.getActionTips(), formResult.getAction())
+						&& GenericUtil.hasPartInside2(fsm.getActionTypes(), formResult.getAction())
 						&& GenericUtil.hasPartInside2(fsm.getWebMobileTips(),"2")) {
 					cnt++;
 				}
@@ -1452,17 +1444,17 @@ public class F7 implements ViewMobileAdapter {
 //				s2.append(",\n\"smsMailTemplateCnt\":").append(cnt).append(",\n\"smsMailTemplates\":[");
 				boolean b = false;
 				for (W5FormSmsMail fsm : f.get_formSmsMailList())
-					if (((fsm.getSmsMailTip() == 0 && FrameworkSetting.sms && FrameworkCache.getAppSettingIntValue(customizationId, "sms_flag") != 0) || 
-						 (fsm.getSmsMailTip() != 0 && FrameworkSetting.mail && FrameworkCache.getAppSettingIntValue(customizationId, "mail_flag") != 0))
+					if (((fsm.getSmsMailType() == 0 && FrameworkSetting.sms && FrameworkCache.getAppSettingIntValue(customizationId, "sms_flag") != 0) || 
+						 (fsm.getSmsMailType() != 0 && FrameworkSetting.mail && FrameworkCache.getAppSettingIntValue(customizationId, "mail_flag") != 0))
 							&& fsm.getAlarmFlag() == 0 && fsm.getPreviewFlag()==0
-							&& GenericUtil.hasPartInside2(fsm.getActionTips(), formResult.getAction())
+							&& GenericUtil.hasPartInside2(fsm.getActionTypes(), formResult.getAction())
 							&& GenericUtil.hasPartInside2(fsm.getWebMobileTips(), "2")) {
-						W5FormCell fcx = new W5FormCell(); fcx.setControlTip((short)5);fcx.setLookupQueryId(10); 
-						fcx.setLocaleMsgKey((fsm.getSmsMailTip() == 0 ? "[SMS] " : "[" + (LocaleMsgCache.get2(customizationId, xlocale, "email_upper")) + "] ") + LocaleMsgCache.get2(customizationId, xlocale, fsm.getDsc())
+						W5FormCell fcx = new W5FormCell(); fcx.setControlType((short)5);fcx.setLookupQueryId(10); 
+						fcx.setLocaleMsgKey((fsm.getSmsMailType() == 0 ? "[SMS] " : "[" + (LocaleMsgCache.get2(customizationId, xlocale, "email_upper")) + "] ") + LocaleMsgCache.get2(customizationId, xlocale, fsm.getDsc())
 						+ (fsm.getPreviewFlag() != 0 ? " (" + (LocaleMsgCache.get2(customizationId, xlocale, "with_preview")) + ")" : ""));
 						fcx.setLookupQueryId(fsm.getFormSmsMailId()); fcx.setDsc("_smsStr");
 						W5FormCellHelper fcr = new W5FormCellHelper(fcx);
-						if(fsm.getSmsMailSentTip() == 1 || fsm.getSmsMailSentTip() == 0) fcr.setValue("1");
+						if(fsm.getSmsMailSentType() == 1 || fsm.getSmsMailSentType() == 0) fcr.setValue("1");
 						s2.append(GenericUtil.stringToJS(serializeFormCelliOS(customizationId, xlocale, fcr, formResult)));
 						
 						/*if (b)s2.append("\n,");
@@ -1487,7 +1479,7 @@ public class F7 implements ViewMobileAdapter {
 			//	s2.append("]");
 			}
 			if(s2.length()>0){
-					W5FormCell fcx = new W5FormCell(); fcx.setControlTip((short)102);fcx.setLookupQueryId(11); fcx.setLocaleMsgKey("SMS/E-Posta Dönüşümleri");
+					W5FormCell fcx = new W5FormCell(); fcx.setControlType((short)102);fcx.setLookupQueryId(11); fcx.setLocaleMsgKey("SMS/E-Posta Dönüşümleri");
 					s.append(GenericUtil.stringToJS(serializeFormCelliOS(customizationId, xlocale,new W5FormCellHelper(fcx), formResult)));
 					s.append(s2);
 			}
@@ -1533,7 +1525,7 @@ public class F7 implements ViewMobileAdapter {
 
 /*		if(f.getRenderTip()==5 && !GenericUtil.isEmpty(f.getJsCode())){
 			s.append(GenericUtil.stringToJS(f.getJsCode().substring(f.getJsCode().indexOf("${iwb-data}")+11)));
-		} else */if (f.getObjectTip() == 2){
+		} else */if (f.getObjectType() == 2){
 			s.append("</ul>");
 			if (!formResult.isViewMode()){//kaydet butonu
 				if(masterDetail) //master detail

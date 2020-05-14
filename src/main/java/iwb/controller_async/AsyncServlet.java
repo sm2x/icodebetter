@@ -42,7 +42,7 @@ public class AsyncServlet {
 			scd =  false && GenericUtil.uInt(request,"_preview")!=0 ? UserUtil.getScd4Preview(request, "scd-dev", false):UserUtil.getScd(request, "scd-dev", false);
 		} catch(IWBException e){
 			try {
-				response.getWriter().write(e.toJsonString(null));
+				response.getWriter().write(e.toJsonString(null, null));
 				response.getWriter().close();
 				
 				if(false && FrameworkSetting.debug) {
@@ -99,8 +99,9 @@ public class AsyncServlet {
 	    });
 
 	    Object o = UserUtil.addDeferredResult(rpid, userId, request.getSession().getId(), webPageId, activeTabId, scd, deferredResult);
+
 	    
-	    if(FrameworkSetting.liveSyncRecord && !GenericUtil.isEmpty(webPageId)){
+	    if(o!=null && FrameworkSetting.liveSyncRecord && !GenericUtil.isEmpty(webPageId)){
 	    	int	cnt =  GenericUtil.uInt(request, ".c");
 	    	long now = System.currentTimeMillis();
 	    	for(int i=0;i<cnt;i++){

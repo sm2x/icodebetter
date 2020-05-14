@@ -17,27 +17,24 @@ import org.hibernate.annotations.Immutable;
 @Entity
 @Immutable
 @Table(name="w5_ws",schema="iwb")
-public class W5Ws  implements java.io.Serializable {
-
-	/**
-	 * 
-	 */
+public class W5Ws  implements java.io.Serializable, W5Base {
+/*TABLE_ID: 1375*/
+	
 	private static final long serialVersionUID = 213123123451L;
 	private int wsId;
 	private String dsc;
 	private String wsUrl;
-	private short wsTip;
 	private short accessExecuteTip;
 	private String accessExecuteRoles;
 	private String accessExecuteUsers;
 	private short activeFlag;
-	private List<W5WsMethod> _methods;
 	//private	SoapService _service;
-	private	Map<String, Object> _map;
 	private int timeout;
-	private short wssTip;//0:none, 1:credentials, 2:token
+	private short wsSecurityType;//security: 0:none, 1:credentials
 	private String wssCredentials;
-	
+
+	private List<W5WsMethod> _methods;
+
 	@Id
 	@Column(name="ws_id")
 	public int getWsId() {
@@ -62,14 +59,6 @@ public class W5Ws  implements java.io.Serializable {
 	}
 	public void setWsUrl(String url) {
 		this.wsUrl = url;
-	}
-	
-	@Column(name="ws_tip")
-	public short getWsTip() {
-		return wsTip;
-	}
-	public void setWsTip(short wsTip) {
-		this.wsTip = wsTip;
 	}
 
 	@Column(name="access_execute_tip")
@@ -112,31 +101,13 @@ public class W5Ws  implements java.io.Serializable {
 		this._methods = _methods;
 	}
 	
-	/*@Transient
-	public SoapService get_service() {
-		return _service;
-	}
-	public void set_service(SoapService _service) {
-		this._service = _service;
-	}*/
 	
-	@Transient
-	public void storeValue(String key, Object value){
-		if(_map==null)_map=new HashMap<String, Object>();
-		_map.put(key, value);
-	}
-	
-	@Transient
-	public Object loadValue(String key){
-		if(_map==null)return null;
-		return _map.get(key);
-	}
 	@Column(name="wss_tip")
-	public short getWssTip() {
-		return wssTip;
+	public short getWsSecurityType() {
+		return wsSecurityType;
 	}
-	public void setWssTip(short wssTip) {
-		this.wssTip = wssTip;
+	public void setWsSecurityType(short wsSecurityType) {
+		this.wsSecurityType = wsSecurityType;
 	}
 
 	
@@ -175,5 +146,12 @@ public class W5Ws  implements java.io.Serializable {
 	
 	public int hashCode() {
 		return projectUuid.hashCode() + 100*getWsId();
-	}	
+	}
+	
+
+	@Transient
+	public boolean safeEquals(W5Base q) {
+
+			return false;
+	}
 }

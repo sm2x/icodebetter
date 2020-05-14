@@ -19,10 +19,8 @@ import iwb.util.GenericUtil;
 @Immutable
 @Table(name="w5_grid",schema="iwb")
 public class W5Grid implements java.io.Serializable, W5Base, W5ListBase {
+/*TABLE_ID: 5*/
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 8761234987321L;
 
 	private int gridId;
@@ -33,15 +31,13 @@ public class W5Grid implements java.io.Serializable, W5Base, W5ListBase {
 
 	private String localeMsgKey;
 
-	private short gridTip;
-
 	private short defaultPageRecordNumber;
 
 	private short defaultWidth;
 
 	private short defaultHeight;
 
-	private short selectionModeTip;
+	private short selectionModeType;
 	
 	private int pkQueryFieldId;
 
@@ -51,15 +47,16 @@ public class W5Grid implements java.io.Serializable, W5Base, W5ListBase {
 
 	private int defaultCrudFormId;// burdan edit, insert vs olaylari incelenecek
 	 
-	private short columnRenderTip;
 	private int groupingFieldId;
 	private int treeMasterFieldId;
 	private short insertEditModeFlag;
 
+	private short rowColorFxType;
+	private int rowColorFxQueryFieldId;
 	
-	private int _searchFormId;
 	private	String jsCode;	
 
+	private int _searchFormId;
 	private Map<String, W5QueryField> _queryFieldMapDsc;
 	private W5QueryField	_pkQueryField;
 	private W5QueryField	_autoExpandField;	
@@ -78,9 +75,16 @@ public class W5Grid implements java.io.Serializable, W5Base, W5ListBase {
 	private Map<Integer, W5QueryField> _queryFieldMap;
 	private List<W5CustomGridColumnRenderer> _listCustomGridColumnRenderer;
 	private List<W5CustomGridColumnCondition> _listCustomGridColumnCondition;
-	private short rowColorFxTip;
-	private int rowColorFxQueryFieldId;
 	private W5Workflow _approval;
+	
+
+	public String toJson() {
+		StringBuilder s = new StringBuilder();
+		s.append("{\"gridId\":").append(gridId);
+		s.append("}");
+		return s.toString();
+	}
+	
 	
 	@Id
 	@Column(name="grid_id")
@@ -111,13 +115,7 @@ public class W5Grid implements java.io.Serializable, W5Base, W5ListBase {
 	public void setLocaleMsgKey(String localeMsgKey) {
 		this.localeMsgKey = localeMsgKey;
 	}
-	@Column(name="grid_tip")
-	public short getGridTip() {
-		return gridTip;
-	}
-	public void setGridTip(short gridTip) {
-		this.gridTip = gridTip;
-	}
+
 	@Column(name="default_page_record_number")
 	public short getDefaultPageRecordNumber() {
 		return defaultPageRecordNumber;
@@ -140,11 +138,11 @@ public class W5Grid implements java.io.Serializable, W5Base, W5ListBase {
 		this.defaultHeight = defaultHeight;
 	}
 	@Column(name="selection_mode_tip")
-	public short getSelectionModeTip() {
-		return selectionModeTip;
+	public short getSelectionModeType() {
+		return selectionModeType;
 	}
-	public void setSelectionModeTip(short selectionMode) {
-		this.selectionModeTip = selectionMode;
+	public void setSelectionModeType(short selectionMode) {
+		this.selectionModeType = selectionMode;
 	}
 	@Column(name="pk_query_field_id")
 	public int getPkQueryFieldId() {
@@ -229,15 +227,6 @@ public class W5Grid implements java.io.Serializable, W5Base, W5ListBase {
 		_query = query;
 	}
 
-	
-	
-	@Column(name="column_render_tip")
-	public short getColumnRenderTip() {
-		return columnRenderTip;
-	}
-	public void setColumnRenderTip(short columnRenderTip) {
-		this.columnRenderTip = columnRenderTip;
-	}
 	
 	@Column(name="grouping_field_id")
 	public int getGroupingFieldId() {
@@ -326,12 +315,12 @@ public class W5Grid implements java.io.Serializable, W5Base, W5ListBase {
 		_listCustomGridColumnRenderer = listCustomGridColumnRenderer;
 	}
 	@Column(name="row_color_fx_tip")
-	public short getRowColorFxTip() {
-		return rowColorFxTip;
+	public short getRowColorFxType() {
+		return rowColorFxType;
 	}
 
-	public void setRowColorFxTip(short rowColorFxTip) {
-		this.rowColorFxTip = rowColorFxTip;
+	public void setRowColorFxType(short rowColorFxType) {
+		this.rowColorFxType = rowColorFxType;
 	}
 
 	@Column(name="row_color_fx_query_field_id")
@@ -392,15 +381,13 @@ public class W5Grid implements java.io.Serializable, W5Base, W5ListBase {
 
 		GenericUtil.safeEquals(this.localeMsgKey, g.getLocaleMsgKey()) &&
 
-		this.gridTip == g.getGridTip() &&
-
 		this.defaultPageRecordNumber == g.getDefaultPageRecordNumber() &&
 
 		this.defaultWidth == g.getDefaultWidth() &&
 
 		this.defaultHeight == g.getDefaultHeight() &&
 
-		this.selectionModeTip == g.getSelectionModeTip() &&
+		this.selectionModeType == g.getSelectionModeType() &&
 		
 		this.pkQueryFieldId == g.getPkQueryFieldId() &&
 
@@ -411,7 +398,6 @@ public class W5Grid implements java.io.Serializable, W5Base, W5ListBase {
 
 		this.defaultCrudFormId == g.getDefaultCrudFormId() &&// burdan edit, insert vs olaylari incelenecek
 		 
-		this.columnRenderTip == g.getColumnRenderTip() &&
 		this.groupingFieldId == g.getGroupingFieldId() &&
 		this.treeMasterFieldId == g.getTreeMasterFieldId() &&
 		this.insertEditModeFlag == g.getInsertEditModeFlag() &&

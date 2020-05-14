@@ -29,7 +29,14 @@ public class W5ConversionCol implements java.io.Serializable, W5Base {
 	private short fieldConversionTip;
 	private int formCellId;
 	private short synchFlag;
-
+	
+	public String toJson() {
+		StringBuilder s = new StringBuilder();
+		s.append("{\"conversionColId\":").append(conversionColId);
+		s.append("}");
+		return s.toString();
+	}
+	
 	@Id
 	@Column(name="conversion_col_id")
 	public int getConversionColId() {

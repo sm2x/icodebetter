@@ -28,6 +28,8 @@ public class W5VcsCommit  implements java.io.Serializable {
 	private int commitUserId;
 	
 
+	public W5VcsCommit() {
+	}
 	
 	
 	public W5VcsCommit(JSONObject o) {
@@ -45,11 +47,18 @@ public class W5VcsCommit  implements java.io.Serializable {
 			if(o.has("extra_sql"))extraSql=o.getString("extra_sql");
 			if(o.has("comment"))comment=o.getString("comment");
 			if(o.has("commit_tip"))commitTip=(short)o.getInt("commit_tip");
+			if(o.has("user_id"))commitUserId=o.getInt("user_id");
 			if(o.has("run_local_flag"))runLocalFlag=(short)o.getInt("run_local_flag");
 		} catch (JSONException e) {e.printStackTrace();}
 	}
 	
-	public W5VcsCommit() {
+	public W5VcsCommit(W5VcsObject vo, String comment2) {
+		this.vcsCommitId = vo.getVcsCommitId();
+		this.projectUuid = vo.getProjectUuid();
+		this.oprojectUuid = vo.getProjectUuid();
+		this.comment = comment2;
+		this.commitTip = (short)1;
+		this.commitUserId = vo.getVersionUserId();
 	}
 
 	@Id

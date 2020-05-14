@@ -11,7 +11,7 @@ public class GlobalFuncTrigger {
 	}
 	
 	public static void afterExec(W5GlobalFuncResult r, String paramSuffix){		
-		switch (r.getGlobalFunc().getDbFuncId()) {
+		switch (r.getGlobalFunc().getGlobalFuncId()) {
 		case -478:
 		case 925: // reload locale msg cache
 			LocaleMsgCache.set2((Integer) r.getScd().get("customizationId"),

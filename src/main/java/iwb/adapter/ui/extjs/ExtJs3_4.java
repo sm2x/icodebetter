@@ -134,7 +134,7 @@ public class ExtJs3_4 implements ViewAdapter {
 						if (z == null)
 							z = "";
 						buf.append("\"")
-								.append(f.getPostProcessTip() == 2 ? LocaleMsgCache
+								.append(f.getPostProcessType() == 2 ? LocaleMsgCache
 										.get2(customizationId, locale,
 												z.toString()).replaceAll(",",
 												"-") : GenericUtil.stringToJS2(
@@ -252,21 +252,21 @@ public class ExtJs3_4 implements ViewAdapter {
 		s.append("var _page_tab_id='").append(formResult.getUniqueId())
 				.append("';\n");
 		
-		if(GenericUtil.uInt(formResult.getRequestParams().get("_preview")) == 0 && formResult.getForm().getRenderTip()==4) {//wizard and insert
+		if(GenericUtil.uInt(formResult.getRequestParams().get("_preview")) == 0 && formResult.getForm().getRenderType()==4) {//wizard and insert
 			return SurveyJS.serializeForm4SurveyJS(formResult, 1).append("return new Ext.Panel({closable:!0, title:'").append(LocaleMsgCache.get2(formResult.getScd(), formResult.getForm().getLocaleMsgKey())).append("',html:'<div id=\"surveyElement-' + _page_tab_id + '\" style=\"width:100%;height:100%;overflow:auto\"></div>',listeners:{afterrender:()=>$('#surveyElement-' + _page_tab_id).Survey({ model: survey })}})");//extjs			
 		}
 		
 
 		boolean liveSyncRecord = FrameworkSetting.liveSyncRecord
 				&& formResult != null && formResult.getForm() != null
-				&& formResult.getForm().getObjectTip() == 2
+				&& formResult.getForm().getObjectType() == 2
 				&& formResult.getAction() == 1;
 		if (GenericUtil.uInt(formResult.getRequestParams().get("a")) != 5
-				&& formResult.getForm().getRenderTip() != 0) { // tabpanel ve
+				&& formResult.getForm().getRenderType() != 0) { // tabpanel ve
 																// icinde
 																// gridler varsa
 			for (W5FormModule m : formResult.getForm().get_moduleList()) {
-					switch (m.getModuleTip()) {
+					switch (m.getModuleType()) {
 					case 4:// form
 						if (formResult.getModuleFormMap() == null)
 							break;
@@ -281,9 +281,9 @@ public class ExtJs3_4 implements ViewAdapter {
 					case 5:// grid
 						if (formResult.getModuleGridMap() == null)
 							return null;
-						if (m.getModuleViewTip() == 0
+						if (m.getModuleViewType() == 0
 								|| formResult.getAction() == m
-										.getModuleViewTip()) {
+										.getModuleViewType()) {
 							W5GridResult gridResult = formResult
 									.getModuleGridMap().get(m.getObjectId());
 							gridResult.setAction(formResult.getAction());
@@ -357,7 +357,7 @@ public class ExtJs3_4 implements ViewAdapter {
 										formResult.getRequestParams(), null)
 								: formResult.getForm().get_renderTemplate()
 										.getCode());
-			} else if(formResult.getForm().getObjectTip()==2){
+			} else if(formResult.getForm().getObjectType()==2){
 				s.append("\nreturn iwb.ui.buildCRUDForm(getForm, callAttributes, _page_tab_id);\n");
 			}
 		}
@@ -377,7 +377,7 @@ public class ExtJs3_4 implements ViewAdapter {
 				.append(formResult.getFormId()).append(", \"a\":")
 				.append(formResult.getAction());
 		W5Table t = null;
-		if (f.getObjectTip() == 2) {
+		if (f.getObjectType() == 2) {
 			t = FrameworkCache.getTable(formResult.getScd(), f.getObjectId());
 			if (FrameworkCache.getAppSettingIntValue(formResult.getScd(),
 					"file_attachment_flag") != 0
@@ -396,10 +396,10 @@ public class ExtJs3_4 implements ViewAdapter {
 															// varsa
 			int cnt = 0;
 			for (W5FormSmsMail fsm : f.get_formSmsMailList())
-				if (((fsm.getSmsMailTip() == 0 && FrameworkSetting.sms) || (fsm
-						.getSmsMailTip() != 0 && FrameworkSetting.mail))
+				if (((fsm.getSmsMailType() == 0 && FrameworkSetting.sms) || (fsm
+						.getSmsMailType() != 0 && FrameworkSetting.mail))
 						&& fsm.getAlarmFlag() == 0
-						&& GenericUtil.hasPartInside2(fsm.getActionTips(),
+						&& GenericUtil.hasPartInside2(fsm.getActionTypes(),
 								formResult.getAction())
 						&& GenericUtil.hasPartInside2(fsm.getWebMobileTips(),
 								mobile ? "2" : "1")) {
@@ -410,10 +410,10 @@ public class ExtJs3_4 implements ViewAdapter {
 						.append(",\n\"smsMailTemplates\":[");
 				boolean b = false;
 				for (W5FormSmsMail fsm : f.get_formSmsMailList())
-					if (((fsm.getSmsMailTip() == 0 && FrameworkSetting.sms) || (fsm
-							.getSmsMailTip() != 0 && FrameworkSetting.mail))
+					if (((fsm.getSmsMailType() == 0 && FrameworkSetting.sms) || (fsm
+							.getSmsMailType() != 0 && FrameworkSetting.mail))
 							&& fsm.getAlarmFlag() == 0
-							&& GenericUtil.hasPartInside2(fsm.getActionTips(),
+							&& GenericUtil.hasPartInside2(fsm.getActionTypes(),
 									formResult.getAction())
 							&& GenericUtil.hasPartInside2(
 									fsm.getWebMobileTips(), mobile ? "2" : "1")) {
@@ -424,7 +424,7 @@ public class ExtJs3_4 implements ViewAdapter {
 						s.append("{\"xid\":")
 								.append(fsm.getFormSmsMailId())
 								.append(",\"text\":\"")
-								.append(fsm.getSmsMailTip() == 0 ? "[SMS] "
+								.append(fsm.getSmsMailType() == 0 ? "[SMS] "
 										: "["
 												+ (LocaleMsgCache.get2(
 														customizationId,
@@ -437,13 +437,13 @@ public class ExtJs3_4 implements ViewAdapter {
 												customizationId, xlocale,
 												"with_preview")) + ")" : "")
 								.append("\",\"checked\":")
-								.append(fsm.getSmsMailSentTip() == 1
-										|| fsm.getSmsMailSentTip() == 0)
+								.append(fsm.getSmsMailSentType() == 1
+										|| fsm.getSmsMailSentType() == 0)
 								.append(",\"smsMailTip\":")
-								.append(fsm.getSmsMailTip())
+								.append(fsm.getSmsMailType())
 								.append(",\"previewFlag\":")
 								.append(fsm.getPreviewFlag() != 0);
-						if (fsm.getSmsMailSentTip() == 0)
+						if (fsm.getSmsMailSentType() == 0)
 							s.append(",\"disabled\":true");
 						s.append("}");
 					}
@@ -452,10 +452,10 @@ public class ExtJs3_4 implements ViewAdapter {
 
 			cnt = 0;
 			for (W5FormSmsMail fsm : f.get_formSmsMailList())
-				if (((fsm.getSmsMailTip() == 0 && FrameworkSetting.sms) || (fsm
-						.getSmsMailTip() != 0 && FrameworkSetting.mail))
+				if (((fsm.getSmsMailType() == 0 && FrameworkSetting.sms) || (fsm
+						.getSmsMailType() != 0 && FrameworkSetting.mail))
 						&& fsm.getAlarmFlag() != 0
-						&& GenericUtil.hasPartInside2(fsm.getActionTips(),
+						&& GenericUtil.hasPartInside2(fsm.getActionTypes(),
 								formResult.getAction())
 						&& GenericUtil.hasPartInside2(fsm.getWebMobileTips(),
 								mobile ? "2" : "1")) {
@@ -471,10 +471,10 @@ public class ExtJs3_4 implements ViewAdapter {
 						.append(",\n\"alarmTemplates\":[");
 				boolean b = false;
 				for (W5FormSmsMail fsm : f.get_formSmsMailList())
-					if (((fsm.getSmsMailTip() == 0 && FrameworkSetting.sms) || (fsm
-							.getSmsMailTip() != 0 && FrameworkSetting.mail))
+					if (((fsm.getSmsMailType() == 0 && FrameworkSetting.sms) || (fsm
+							.getSmsMailType() != 0 && FrameworkSetting.mail))
 							&& fsm.getAlarmFlag() != 0
-							&& GenericUtil.hasPartInside2(fsm.getActionTips(),
+							&& GenericUtil.hasPartInside2(fsm.getActionTypes(),
 									formResult.getAction())
 							&& GenericUtil.hasPartInside2(
 									fsm.getWebMobileTips(), mobile ? "2" : "1")) {
@@ -487,7 +487,7 @@ public class ExtJs3_4 implements ViewAdapter {
 						s.append("{\"xid\":")
 								.append(fsm.getFormSmsMailId())
 								.append(",\"text\":\"")
-								.append(fsm.getSmsMailTip() == 0 ? "[SMS] "
+								.append(fsm.getSmsMailType() == 0 ? "[SMS] "
 										: "["
 												+ (LocaleMsgCache.get2(
 														customizationId,
@@ -500,14 +500,14 @@ public class ExtJs3_4 implements ViewAdapter {
 												"with_preview")) + ")" : "")
 								.append("\",\"checked\":")
 								.append(a != null
-										|| fsm.getSmsMailSentTip() == 1
-										|| fsm.getSmsMailSentTip() == 0)
+										|| fsm.getSmsMailSentType() == 1
+										|| fsm.getSmsMailSentType() == 0)
 								.append(",\"smsMailTip\":")
-								.append(fsm.getSmsMailTip());
+								.append(fsm.getSmsMailType());
 						s.append(",\"previewFlag\":").append(
 								fsm.getPreviewFlag() != 0);
 						if ((a != null && a.getStatus() != 1)
-								|| fsm.getSmsMailSentTip() == 0)
+								|| fsm.getSmsMailSentType() == 0)
 							s.append(",\"disabled\":true");
 						// s.append(",\"menu\":[");
 						// s.append("new Ext.ux.form.DateTime({\"width\":200");
@@ -569,8 +569,8 @@ public class ExtJs3_4 implements ViewAdapter {
 		boolean b = false, bb;
 		for (W5FormCellHelper fc : formResult.getFormCellResults())
 			if (fc.getFormCell().getActiveFlag() != 0
-					&& fc.getFormCell().getControlTip() != 102) {
-				if (fc.getFormCell().getControlTip() != 102) {// label'dan
+					&& fc.getFormCell().getControlType() != 102) {
+				if (fc.getFormCell().getControlType() != 102) {// label'dan
 																// farkli ise.
 																// label direk
 																// render
@@ -597,7 +597,7 @@ public class ExtJs3_4 implements ViewAdapter {
 								"\"");
 					} else
 						s.append("\"");
-					switch (fc.getFormCell().getControlTip()) {
+					switch (fc.getFormCell().getControlType()) {
 					case 10:// advanced select
 						if (!GenericUtil.isEmpty(fc.getValue())
 								&& fc.getLookupQueryResult() != null
@@ -656,7 +656,7 @@ public class ExtJs3_4 implements ViewAdapter {
 									if (z == null)
 										z = "";
 									s.append("\"")
-											.append(qf.getPostProcessTip() == 2 ? LocaleMsgCache
+											.append(qf.getPostProcessType() == 2 ? LocaleMsgCache
 													.get2(customizationId,
 															xlocale,
 															z.toString())
@@ -706,7 +706,7 @@ public class ExtJs3_4 implements ViewAdapter {
 				String dsc = cellResult.getFormCell().getDsc();
 				if(buf.length()==0) {
 					buf.append("\nmf._").append(dsc).append(".on('");
-					switch(cellResult.getFormCell().getControlTip()) {
+					switch(cellResult.getFormCell().getControlType()) {
 					case	5://checkbox
 						buf.append("check");break;
 					case	2://date
@@ -725,21 +725,21 @@ public class ExtJs3_4 implements ViewAdapter {
 					}
 					buf.append("', ()=>onChange_").append(dsc).append("());\nfunction onChange_").append(dsc).append("(){var ax = getFieldValue(_").append(dsc).append(");\n");
 				}
-				String localMsg = fcp.getLkpPropertyTip()!=0 ? "":LocaleMsgCache.get2(formResult.getScd(), fcr.getFormCell().getLocaleMsgKey());
-				if(cellResult.getFormCell().getControlTip()==5) {//checkbox
-					if(fcp.getLkpPropertyTip()!=0)
-						buf.append("if(").append(fcp.getLkpOperatorTip()==0?"!":"").append("ax)").append(getPropertyMethodName(fcr.getFormCell().getDsc(), fcp.getLkpPropertyTip(), true, "")).
-							append("; else ").append(getPropertyMethodName(fcr.getFormCell().getDsc(), fcp.getLkpPropertyTip(), false, ""));
-				} else if(fcp.getLkpOperatorTip()<0){//isEmpty
-					buf.append("if(").append(fcp.getLkpOperatorTip()==-2?"!":"").append("(ax=='' || typeof ax=='undefined'))").append(getPropertyMethodName(fcr.getFormCell().getDsc(), fcp.getLkpPropertyTip(), true, localMsg)).
-					append("; else ").append(getPropertyMethodName(fcr.getFormCell().getDsc(), fcp.getLkpPropertyTip(), false, localMsg));
-				} else buf.append("if(iwb.formElementProperty(").append(fcp.getLkpOperatorTip()).append(", ax, '")
-					.append(GenericUtil.stringToJS(fcp.getVal())).append("'))").append(getPropertyMethodName(fcr.getFormCell().getDsc(), fcp.getLkpPropertyTip(), true, localMsg)).
-				append("; else ").append(getPropertyMethodName(fcr.getFormCell().getDsc(), fcp.getLkpPropertyTip(), false, localMsg));
+				String localMsg = fcp.getLkpPropertyType()!=0 ? "":LocaleMsgCache.get2(formResult.getScd(), fcr.getFormCell().getLocaleMsgKey());
+				if(cellResult.getFormCell().getControlType()==5) {//checkbox
+					if(fcp.getLkpPropertyType()!=0)
+						buf.append("if(").append(fcp.getLkpOperatorType()==0?"!":"").append("ax)").append(getPropertyMethodName(fcr.getFormCell().getDsc(), fcp.getLkpPropertyType(), true, "")).
+							append("; else ").append(getPropertyMethodName(fcr.getFormCell().getDsc(), fcp.getLkpPropertyType(), false, ""));
+				} else if(fcp.getLkpOperatorType()<0){//isEmpty
+					buf.append("if(").append(fcp.getLkpOperatorType()==-2?"!":"").append("(ax=='' || typeof ax=='undefined'))").append(getPropertyMethodName(fcr.getFormCell().getDsc(), fcp.getLkpPropertyType(), true, localMsg)).
+					append("; else ").append(getPropertyMethodName(fcr.getFormCell().getDsc(), fcp.getLkpPropertyType(), false, localMsg));
+				} else buf.append("if(iwb.formElementProperty(").append(fcp.getLkpOperatorType()).append(", ax, '")
+					.append(GenericUtil.stringToJS(fcp.getVal())).append("'))").append(getPropertyMethodName(fcr.getFormCell().getDsc(), fcp.getLkpPropertyType(), true, localMsg)).
+				append("; else ").append(getPropertyMethodName(fcr.getFormCell().getDsc(), fcp.getLkpPropertyType(), false, localMsg));
 				
 				buf.append("\n");
 			}
-			if(fcr.getFormCell().getControlTip()==2 && fcr.getFormCell().getParentFormCellId()==cellResult.getFormCell().getFormCellId()) { //date and dependant
+			if(fcr.getFormCell().getControlType()==2 && fcr.getFormCell().getParentFormCellId()==cellResult.getFormCell().getFormCellId()) { //date and dependant
 				String dsc = cellResult.getFormCell().getDsc();
 				if(buf.length()==0) {
 					buf.append("\nmf._").append(dsc).append(".on('select', ()=>onChange_").append(dsc).append("());\nfunction onChange_").append(dsc).append("(){var ax = getFieldValue(_").append(dsc).append(");\n");
@@ -785,8 +785,8 @@ public class ExtJs3_4 implements ViewAdapter {
 				if (sx.getLocale().equals(xlocale)
 						&& (sx.getActionTips().contains(
 								"" + fr.getAction())
-								|| fr.getForm().getObjectTip() == 3 || fr
-								.getForm().getObjectTip() == 4)) {
+								|| fr.getForm().getObjectType() == 3 || fr
+								.getForm().getObjectType() == 4)) {
 					if (b)
 						s.append("\n,");
 					else {
@@ -805,9 +805,9 @@ public class ExtJs3_4 implements ViewAdapter {
 
 		boolean liveSyncRecord = false;
 		// form(table) fields
-		if (f.getObjectTip() == 2
+		if (f.getObjectType() == 2
 				&& FrameworkCache.getTable(scd, f.getObjectId()) != null) {
-			s.append(",\n renderTip:").append(fr.getForm().getRenderTip());
+			s.append(",\n renderTip:").append(fr.getForm().getRenderType());
 			W5Table t = FrameworkCache.getTable(scd, f.getObjectId());
 			liveSyncRecord = FrameworkSetting.liveSyncRecord
 					&& t.getLiveSyncFlag() != 0 && !fr.isViewMode();
@@ -907,11 +907,7 @@ public class ExtJs3_4 implements ViewAdapter {
 					&& FrameworkCache.roleAccessControl(scd,101))
 				s.append(",\n fileAttachFlag:true, fileAttachCount:").append(
 						fr.getFileAttachmentCount());
-			if (FrameworkCache.getAppSettingIntValue(scd,
-					"row_based_security_flag") != 0
-					&& ((Integer) scd.get("userTip") != 3 && t.getAccessTips() != null))
-				s.append(",\n accessControlFlag:true, accessControlCount:")
-						.append(fr.getAccessControlCount());
+
 			if (fr.isViewMode())
 				s.append(",\n viewMode:true");
 
@@ -920,11 +916,11 @@ public class ExtJs3_4 implements ViewAdapter {
 																// isleri varsa
 				int cnt = 0;
 				for (W5FormSmsMail fsm : f.get_formSmsMailList())
-					if (fsm.getSmsMailSentTip() != 3
-							&& ((fsm.getSmsMailTip() == 0 && FrameworkSetting.sms) || (fsm
-									.getSmsMailTip() != 0 && FrameworkSetting.mail))
+					if (fsm.getSmsMailSentType() != 3
+							&& ((fsm.getSmsMailType() == 0 && FrameworkSetting.sms) || (fsm
+									.getSmsMailType() != 0 && FrameworkSetting.mail))
 							&& fsm.getAlarmFlag() == 0
-							&& GenericUtil.hasPartInside2(fsm.getActionTips(),
+							&& GenericUtil.hasPartInside2(fsm.getActionTypes(),
 									fr.getAction())
 							&& GenericUtil.hasPartInside2(
 									fsm.getWebMobileTips(), mobile ? "2" : "1")) {
@@ -935,14 +931,14 @@ public class ExtJs3_4 implements ViewAdapter {
 							.append(",\n\"smsMailTemplates\":[");
 					boolean b = false;
 					for (W5FormSmsMail fsm : f.get_formSmsMailList())
-						if (fsm.getSmsMailSentTip() != 3
-								&& ((fsm.getSmsMailTip() == 0
+						if (fsm.getSmsMailSentType() != 3
+								&& ((fsm.getSmsMailType() == 0
 										&& FrameworkSetting.sms) || (fsm
-										.getSmsMailTip() != 0
+										.getSmsMailType() != 0
 										&& FrameworkSetting.mail))
 								&& fsm.getAlarmFlag() == 0
 								&& GenericUtil.hasPartInside2(
-										fsm.getActionTips(),
+										fsm.getActionTypes(),
 										fr.getAction())
 								&& GenericUtil
 										.hasPartInside2(fsm.getWebMobileTips(),
@@ -954,7 +950,7 @@ public class ExtJs3_4 implements ViewAdapter {
 							s.append("{\"xid\":")
 									.append(fsm.getFormSmsMailId())
 									.append(",\"text\":\"")
-									.append(fsm.getSmsMailTip() == 0 ? "[<b>SMS</b>] "
+									.append(fsm.getSmsMailType() == 0 ? "[<b>SMS</b>] "
 											: "[<b>"
 													+ (LocaleMsgCache.get2(
 															customizationId,
@@ -970,13 +966,13 @@ public class ExtJs3_4 implements ViewAdapter {
 													"with_preview")) + "</i>)"
 											: "")
 									.append("\",\"checked\":")
-									.append(fsm.getSmsMailSentTip() == 1
-											|| fsm.getSmsMailSentTip() == 0)
+									.append(fsm.getSmsMailSentType() == 1
+											|| fsm.getSmsMailSentType() == 0)
 									.append(",\"smsMailTip\":")
-									.append(fsm.getSmsMailTip())
+									.append(fsm.getSmsMailType())
 									.append(",\"previewFlag\":")
 									.append(fsm.getPreviewFlag() != 0);
-							if (fsm.getSmsMailSentTip() == 0)
+							if (fsm.getSmsMailSentType() == 0)
 								s.append(",\"disabled\":true");
 							s.append("}");
 						}
@@ -986,14 +982,14 @@ public class ExtJs3_4 implements ViewAdapter {
 				if (FrameworkSetting.alarm) {
 					cnt = 0;
 					for (W5FormSmsMail fsm : f.get_formSmsMailList())
-						if (fsm.getSmsMailSentTip() != 3
-								&& ((fsm.getSmsMailTip() == 0
+						if (fsm.getSmsMailSentType() != 3
+								&& ((fsm.getSmsMailType() == 0
 										&& FrameworkSetting.sms) || (fsm
-										.getSmsMailTip() != 0
+										.getSmsMailType() != 0
 										&& FrameworkSetting.mail))
 								&& fsm.getAlarmFlag() != 0
 								&& GenericUtil.hasPartInside2(
-										fsm.getActionTips(),
+										fsm.getActionTypes(),
 										fr.getAction())
 								&& GenericUtil
 										.hasPartInside2(fsm.getWebMobileTips(),
@@ -1011,13 +1007,13 @@ public class ExtJs3_4 implements ViewAdapter {
 								.append(",\n\"alarmTemplates\":[");
 						boolean b = false;
 						for (W5FormSmsMail fsm : f.get_formSmsMailList())
-							if (fsm.getSmsMailSentTip() != 3
-									&& ((fsm.getSmsMailTip() == 0
-											&& FrameworkSetting.sms) || (fsm.getSmsMailTip() != 0
+							if (fsm.getSmsMailSentType() != 3
+									&& ((fsm.getSmsMailType() == 0
+											&& FrameworkSetting.sms) || (fsm.getSmsMailType() != 0
 											&& FrameworkSetting.mail))
 									&& fsm.getAlarmFlag() != 0
 									&& GenericUtil.hasPartInside2(
-											fsm.getActionTips(),
+											fsm.getActionTypes(),
 											fr.getAction())
 									&& GenericUtil.hasPartInside2(fsm
 											.getWebMobileTips(), mobile ? "2"
@@ -1031,7 +1027,7 @@ public class ExtJs3_4 implements ViewAdapter {
 								s.append("{\"xid\":")
 										.append(fsm.getFormSmsMailId())
 										.append(",\"text\":\"")
-										.append(fsm.getSmsMailTip() == 0 ? "[<b>SMS</b>] "
+										.append(fsm.getSmsMailType() == 0 ? "[<b>SMS</b>] "
 												: "[<b>"
 														+ (LocaleMsgCache
 																.get2(customizationId,
@@ -1049,14 +1045,14 @@ public class ExtJs3_4 implements ViewAdapter {
 												: "")
 										.append("\",\"checked\":")
 										.append(a != null
-												|| fsm.getSmsMailSentTip() == 1
-												|| fsm.getSmsMailSentTip() == 0)
+												|| fsm.getSmsMailSentType() == 1
+												|| fsm.getSmsMailSentType() == 0)
 										.append(",\"smsMailTip\":")
-										.append(fsm.getSmsMailTip());
+										.append(fsm.getSmsMailType());
 								s.append(",\"previewFlag\":").append(
 										fsm.getPreviewFlag() != 0);
 								if ((a != null && a.getStatus() != 1)
-										|| fsm.getSmsMailSentTip() == 0)
+										|| fsm.getSmsMailSentType() == 0)
 									s.append(",\"disabled\":true");
 								// s.append(",\"menu\":[");
 								// s.append("new Ext.ux.form.DateTime({\"width\":200");
@@ -1093,8 +1089,8 @@ public class ExtJs3_4 implements ViewAdapter {
 					&& !f.get_conversionList().isEmpty()) {
 				int cnt = 0;
 				for (W5Conversion fsm : f.get_conversionList())
-					if (fsm.getConversionTip() != 3
-							&& GenericUtil.hasPartInside2(fsm.getActionTips(),
+					if (fsm.getConversionType() != 3
+							&& GenericUtil.hasPartInside2(fsm.getActionTypes(),
 									fr.getAction())) { // bu action ile
 																// ilgili var mi
 																// kayit
@@ -1108,9 +1104,9 @@ public class ExtJs3_4 implements ViewAdapter {
 							.append(",\nconversionForms:[");
 					boolean b = false;
 					for (W5Conversion fsm : f.get_conversionList())
-						if ((fsm.getConversionTip() != 3/* invisible-checked */
+						if ((fsm.getConversionType() != 3/* invisible-checked */
 								&& GenericUtil.hasPartInside2(
-										fsm.getActionTips(),
+										fsm.getActionTypes(),
 										fr.getAction()) || (fr
 								.getMapConvertedObject() != null && fr
 								.getMapConvertedObject().containsKey(
@@ -1140,9 +1136,9 @@ public class ExtJs3_4 implements ViewAdapter {
 								boolean check = false;
 								List<W5ConvertedObject> convertedObjects = null;
 								if (isConvertedBefore
-										&& fsm.getConversionTip() != 3
+										&& fsm.getConversionType() != 3
 										&& GenericUtil.hasPartInside2(
-												fsm.getActionTips(),
+												fsm.getActionTypes(),
 												fr.getAction())) {
 									convertedObjects = fr
 											.getMapConvertedObject().get(
@@ -1170,9 +1166,9 @@ public class ExtJs3_4 implements ViewAdapter {
 													: "")
 													: "")
 											.append("\",checked:")
-											.append(fsm.getConversionTip() == 1
-													|| fsm.getConversionTip() == 0);
-									if (fsm.getConversionTip() == 0)
+											.append(fsm.getConversionType() == 1
+													|| fsm.getConversionType() == 0);
+									if (fsm.getConversionType() == 0)
 										s.append(",disabled:true");
 									s.append("}");
 								}
@@ -1205,7 +1201,7 @@ public class ExtJs3_4 implements ViewAdapter {
 
 				cnt = 0;
 				for (W5Conversion fsm : f.get_conversionList())
-					if (GenericUtil.hasPartInside2(fsm.getActionTips(), 0)) { // manuel
+					if (GenericUtil.hasPartInside2(fsm.getActionTypes(), 0)) { // manuel
 																				// icin
 																				// var
 																				// mi
@@ -1328,10 +1324,10 @@ public class ExtJs3_4 implements ViewAdapter {
 						.getRequestParams()))
 				.append(",\nlabelAlign:'")
 				.append(FrameworkSetting.alignMap[fr.getForm()
-						.getLabelAlignTip()]).append("', labelWidth:")
+						.getLabelAlignType()]).append("', labelWidth:")
 				.append(fr.getForm().getLabelWidth());
-		if(fr.getForm().getObjectTip()<5 || fr.getForm().getObjectTip()==11)s.append(",url:'")
-				.append(postFormStr[fr.getForm().getObjectTip()])
+		if(fr.getForm().getObjectType()<5 || fr.getForm().getObjectType()==11)s.append(",url:'")
+				.append(postFormStr[fr.getForm().getObjectType()])
 				.append("'");
 		s.append("}\n");
 		/*
@@ -1343,7 +1339,7 @@ public class ExtJs3_4 implements ViewAdapter {
 		 */
 		
 		
-		for(W5FormCell fc:fr.getForm().get_formCells())if(fc.getControlTip()==99 && fc.get_sourceObjectDetail()!=null){//grid is
+		for(W5FormCell fc:fr.getForm().get_formCells())if(fc.getControlType()==99 && fc.get_sourceObjectDetail()!=null){//grid is
 			W5GridResult gr = fr.getModuleGridMap().get(fc.getLookupQueryId());
 			s.append(serializeGrid(gr)).append("\n");
 		}
@@ -1351,7 +1347,7 @@ public class ExtJs3_4 implements ViewAdapter {
 		StringBuilder s2 =new StringBuilder();
 		for (W5FormCellHelper fc : fr.getFormCellResults())
 			if (fc.getFormCell().getActiveFlag() != 0) {
-				if (fc.getFormCell().getControlTip() != 102) {// only if it is not label
+				if (fc.getFormCell().getControlType() != 102) {// only if it is not label
 					s.append("var _")
 							.append(fc.getFormCell().getDsc())
 							.append("=")
@@ -1403,16 +1399,16 @@ public class ExtJs3_4 implements ViewAdapter {
 		
 		
 		List<W5Grid> mdGrids = new ArrayList();
-		if (f.getObjectTip()==2 && f.get_moduleList() != null)
+		if (f.getObjectType()==2 && f.get_moduleList() != null)
 			for (W5FormModule m : f.get_moduleList())
-				if (m.getFormModuleId() != 0 && m.getModuleTip()==5 && (m.getModuleViewTip() == 0 || fr.getAction() == m
-							.getModuleViewTip())) {
+				if (m.getFormModuleId() != 0 && m.getModuleType()==5 && (m.getModuleViewType() == 0 || fr.getAction() == m
+							.getModuleViewType())) {
 					W5Table t = FrameworkCache.getTable(scd, f.getObjectId());
 					if(t!=null && !GenericUtil.isEmpty(t.get_tableChildList()) && 
 							(GenericUtil.isEmpty(fr.getForm().getJsCode()) || (!fr.getForm().getJsCode().contains("prepareDetailGridCRUDButtons") && !fr.getForm().getJsCode().contains("mf.componentWillPost")))) {
 						W5GridResult gr = fr.getModuleGridMap().get(m.getObjectId());
-						if(gr!=null && gr.getGrid().get_query()!=null && gr.getGrid().get_query().getMainTableId()!=0) {
-							W5Table dt = FrameworkCache.getTable(scd, gr.getGrid().get_query().getMainTableId());
+						if(gr!=null && gr.getGrid().get_query()!=null && gr.getGrid().get_query().getSourceObjectId()!=0) {
+							W5Table dt = FrameworkCache.getTable(scd, gr.getGrid().get_query().getSourceObjectId());
 							if(dt!=null)for(W5TableChild tc:t.get_tableChildList()) if(tc.getRelatedTableId() == dt.getTableId()){
 								s.append("prepareDetailGridCRUDButtons(").append(gr.getGrid().getDsc())
 								.append(", {").append(dt.get_tableParamList().get(0).getDsc()).append(": '").append(dt.get_tableParamList().get(0).getExpressionDsc())
@@ -1449,7 +1445,7 @@ public class ExtJs3_4 implements ViewAdapter {
 
 		
 		
-		switch (fr.getForm().getRenderTip()) {
+		switch (fr.getForm().getRenderType()) {
 		case 1:// fieldset
 		case	4://wizard
 			s.append(renderFormFieldset(fr));
@@ -1516,9 +1512,9 @@ public class ExtJs3_4 implements ViewAdapter {
 		buf.append(",{xtype:'tabpanel',id:_page_tab_id + '_").append(formResult.getFormId()).append("',cls:'iwb-detail-tab',activeTab: 0, border:false,deferredRender:false,defaults:{bodyStyle:'padding:0px'}, items:[");// defaults:{autoHeight:true, bodyStyle:'padding:10px'},
 		for (W5FormModule m : formResult.getForm().get_moduleList())
 			if (m.getFormModuleId() != 0) {
-				if ((m.getModuleViewTip() == 0 || formResult.getAction() == m
-						.getModuleViewTip())) {
-					switch (m.getModuleTip()) {
+				if ((m.getModuleViewType() == 0 || formResult.getAction() == m
+						.getModuleViewType())) {
+					switch (m.getModuleType()) {
 					case 4:// form
 						if (GenericUtil.uInt(formResult.getRequestParams().get(
 								"a")) == 5)
@@ -1613,7 +1609,7 @@ public class ExtJs3_4 implements ViewAdapter {
 							String extra = "{id:_page_tab_id+'_fm_"+m.getFormModuleId()+"',title:'"
 									+ LocaleMsgCache.get2(customizationId,
 											xlocale, m.getLocaleMsgKey()) + "'";
-							if(lfch.size()==1 && lfch.get(0).getFormCell().getControlTip()==41){
+							if(lfch.size()==1 && lfch.get(0).getFormCell().getControlType()==41){
 								extra+=",layout:'fit'";
 							} else extra+=",layout:'form',bodyStyle:'min-height:550px;padding-top:10px;',autoScroll:true";
 
@@ -1699,9 +1695,9 @@ public class ExtJs3_4 implements ViewAdapter {
 																																		// bodyStyle:'padding:10px'},
 		for (W5FormModule m : formResult.getForm().get_moduleList())
 			if (m.getFormModuleId() != 0) {
-				if ((m.getModuleViewTip() == 0 || formResult.getAction() == m
-						.getModuleViewTip())) {
-					switch (m.getModuleTip()) {
+				if ((m.getModuleViewType() == 0 || formResult.getAction() == m
+						.getModuleViewType())) {
+					switch (m.getModuleType()) {
 					case 4:// form
 						if (GenericUtil.uInt(formResult.getRequestParams().get(
 								"a")) == 5)
@@ -1810,7 +1806,7 @@ public class ExtJs3_4 implements ViewAdapter {
 							String extra = "{id:_page_tab_id+'_fm_"+m.getFormModuleId()+"',title:'"
 									+ LocaleMsgCache.get2(customizationId,
 											xlocale, m.getLocaleMsgKey()) + "'";
-							if(lfch.size()==1 && lfch.get(0).getFormCell().getControlTip()==41){
+							if(lfch.size()==1 && lfch.get(0).getFormCell().getControlType()==41){
 								extra+=",layout:'fit'";
 							} else extra+=",layout:'form',bodyStyle:'min-height:550px;padding-top:10px;',autoScroll:true";
 							
@@ -1904,8 +1900,8 @@ public class ExtJs3_4 implements ViewAdapter {
 		if (formResult.getForm().get_moduleList() != null)
 			for (W5FormModule m : formResult.getForm().get_moduleList())
 				if (m.getFormModuleId() != 0) {
-					if ((m.getModuleViewTip() == 0 || formResult.getAction() == m
-							.getModuleViewTip())) {
+					if ((m.getModuleViewType() == 0 || formResult.getAction() == m
+							.getModuleViewType())) {
 						if(snFlag) {
 							sn.append("<li><a href='#")
 							.append(formResult.getUniqueId())
@@ -1915,7 +1911,7 @@ public class ExtJs3_4 implements ViewAdapter {
 							.append(LocaleMsgCache.get2(formResult.getScd(), m.getLocaleMsgKey()))
 							.append("</a></li>");
 						}						
-						switch (m.getModuleTip()) {
+						switch (m.getModuleType()) {
 						case 4:// form
 							if (GenericUtil.uInt(formResult.getRequestParams()
 									.get("a")) == 5)
@@ -2022,7 +2018,7 @@ public class ExtJs3_4 implements ViewAdapter {
 										+ "||"
 										+ formResult.getForm().getLabelWidth()
 										+ ",";
-								if (m.getModuleTip() > 0)
+								if (m.getModuleType() > 0)
 									extra += "collapsible: true,";
 								extra += "title:'"
 										+ LocaleMsgCache.get2(customizationId,
@@ -2097,17 +2093,17 @@ public class ExtJs3_4 implements ViewAdapter {
 				W5FormCellHelper fc = formCells.get(i);
 				if (fc.getFormCell().getActiveFlag() == 0)
 					continue;
-				if (fc.getFormCell().getControlTip() == 102) {// displayField4info
+				if (fc.getFormCell().getControlType() == 102) {// displayField4info
 					if (b)
 						buf.append(",");
 					else
 						b = true;
 					buf.append(serializeFormCell(customizationId, xlocale, fc,
 							null));
-				} else if (fc.getFormCell().getControlTip() != 0) {
+				} else if (fc.getFormCell().getControlType() != 0) {
 					if (i < formCells.size() - 1
 							&& formCells.get(i + 1).getFormCell()
-									.getControlTip() != 0
+									.getControlType() != 0
 							&& formCells.get(i + 1).getFormCell()
 									.getActiveFlag() != 0
 							&& formCells.get(i + 1).getFormCell().getTabOrder() == fc
@@ -2134,7 +2130,7 @@ public class ExtJs3_4 implements ViewAdapter {
 						buf.append(", items: [_").append(fc.getFormCell().getDsc());
 						while (i < formCells.size() - 1
 								&& formCells.get(i + 1).getFormCell()
-										.getControlTip() != 0
+										.getControlType() != 0
 								&& formCells.get(i + 1).getFormCell()
 										.getTabOrder() == fc.getFormCell()
 										.getTabOrder()) {
@@ -2164,7 +2160,7 @@ public class ExtJs3_4 implements ViewAdapter {
 				W5FormCellHelper fc = formCells.get(i);
 				if (fc.getFormCell().getActiveFlag() == 0)
 					continue;
-				if (fc.getFormCell().getControlTip() != 0) {
+				if (fc.getFormCell().getControlType() != 0) {
 					if (fc.getFormCell().getTabOrder() / 1000 != columnOrder) {
 						columnOrder = fc.getFormCell().getTabOrder() / 1000;
 						if (columnBuf.length() > 0) {
@@ -2178,7 +2174,7 @@ public class ExtJs3_4 implements ViewAdapter {
 					}
 					if (i < formCells.size() - 1
 							&& formCells.get(i + 1).getFormCell()
-									.getControlTip() != 0
+									.getControlType() != 0
 							&& formCells.get(i + 1).getFormCell()
 									.getActiveFlag() != 0
 							&& formCells.get(i + 1).getFormCell().getTabOrder() == fc
@@ -2203,7 +2199,7 @@ public class ExtJs3_4 implements ViewAdapter {
 							columnBuf.append(fc.getFormCell().getExtraDefinition());
 						}*/
 						
-						if (fc.getFormCell().getControlTip() == 102)// displayField4info
+						if (fc.getFormCell().getControlType() == 102)// displayField4info
 							columnBuf.append(serializeFormCell(0, "tr", fc,
 									null));
 						else
@@ -2211,7 +2207,7 @@ public class ExtJs3_4 implements ViewAdapter {
 									fc.getFormCell().getDsc());
 						while (i < formCells.size() - 1
 								&& formCells.get(i + 1).getFormCell()
-										.getControlTip() != 0
+										.getControlType() != 0
 								&& formCells.get(i + 1).getFormCell()
 										.getActiveFlag() != 0
 								&& formCells.get(i + 1).getFormCell()
@@ -2220,7 +2216,7 @@ public class ExtJs3_4 implements ViewAdapter {
 							i++;
 							W5FormCellHelper fc2 = formCells.get(i);
 							// if(!fc2.getFormCell().getLocaleMsgKey().equals("."))buf.append(",{width:100, xtype: 'displayfield', value: _").append(fc2.getFormCell().getDsc()).append(".fieldLabel}");
-							if (fc2.getFormCell().getControlTip() == 102)// displayField4info
+							if (fc2.getFormCell().getControlType() == 102)// displayField4info
 								columnBuf.append(",").append(
 										serializeFormCell(customizationId,
 												xlocale, fc2, null));
@@ -2234,7 +2230,7 @@ public class ExtJs3_4 implements ViewAdapter {
 							columnBuf.append(",");
 						else
 							b = true;
-						if (fc.getFormCell().getControlTip() == 102)// displayField4info
+						if (fc.getFormCell().getControlType() == 102)// displayField4info
 							columnBuf.append(serializeFormCell(customizationId,
 									xlocale, fc, null));
 						else
@@ -2258,7 +2254,7 @@ public class ExtJs3_4 implements ViewAdapter {
 																		// olacak
 		if (moduleExtraInfo != null && !moduleExtraInfo.equals(key)) {
 			W5FormCell fc = new W5FormCell();
-			fc.setControlTip((short) 102);// displayField4info
+			fc.setControlType((short) 102);// displayField4info
 			fc.setTabOrder((short) -1);
 			fce = new W5FormCellHelper(fc);
 			fce.setValue(moduleExtraInfo);
@@ -2275,7 +2271,7 @@ public class ExtJs3_4 implements ViewAdapter {
 		// PromisUtil.uInt(formResult.getScd().get("customizationId"));
 		StringBuilder buf = new StringBuilder();
 		
-		if(fc.getControlTip()==99){//grid
+		if(fc.getControlType()==99){//grid
 			W5Grid g = (W5Grid)fc.get_sourceObjectDetail();
 			buf.append("new Ext.grid.EditorGridPanel(Ext.apply(").append(g.getDsc())
 				.append(",{title:'").append(LocaleMsgCache.get2(customizationId, xlocale, fc.getLocaleMsgKey()))
@@ -2292,7 +2288,7 @@ public class ExtJs3_4 implements ViewAdapter {
 		buf.append("new Ext.form.");
 		String fieldLabel = LocaleMsgCache.get2(customizationId, xlocale,
 				fc.getLocaleMsgKey());
-		if (fc.getControlTip() == 102) {// displayInfo(label)
+		if (fc.getControlType() == 102) {// displayInfo(label)
 			buf.append("Label({hideLabel:true,text:'")
 					.append(cellResult.getValue()).append("'").append(",cls:'")
 					.append(FrameworkSetting.labelMap[fc.getLookupQueryId()])
@@ -2305,13 +2301,13 @@ public class ExtJs3_4 implements ViewAdapter {
 				buf.append(",id:'").append(formResult.getUniqueId()).append("-").append(fc.getFormCellId()).append("'");
 			return buf.append("})");
 		}
-		if ((fc.getControlTip() == 101 || cellResult.getHiddenValue() != null)/* && (fc.getControlTip()!=9 && fc.getControlTip()!=16) */) {
+		if ((fc.getControlType() == 101 || cellResult.getHiddenValue() != null)/* && (fc.getControlTip()!=9 && fc.getControlTip()!=16) */) {
 			buf.append(
 					"DisplayField({labelSeparator:'', _controlTip:101, fieldLabel:'")
 					.append(fieldLabel).append("'")
 					.append(", id:_page_tab_id+'")
 					.append(cellResult.getFormCell().getDsc()).append("'");
-			if (fc.getControlTip() == 5) {
+			if (fc.getControlType() == 5) {
 				return buf.append(",value:'<img src=\"../images/custom/")
 						.append(GenericUtil.uInt(value) != 0 ? "" : "un")
 						.append("checked_big.gif\" border=0>',hiddenValue:")
@@ -2324,7 +2320,7 @@ public class ExtJs3_4 implements ViewAdapter {
 				buf.append(",anchor:'%").append(-fc.getControlWidth())
 						.append("'");
 			buf.append(",value:'");
-			switch (fc.getControlTip()) {// htmlEditor
+			switch (fc.getControlType()) {// htmlEditor
 			case 12:
 				String controlValue = value != null ? value.toLowerCase() : "";
 				if (value != null) {
@@ -2375,17 +2371,17 @@ public class ExtJs3_4 implements ViewAdapter {
 						.append("</b>");
 			}
 			buf.append("',hiddenValue:'")
-					.append(fc.getControlTip() == 101 ? GenericUtil
+					.append(fc.getControlType() == 101 ? GenericUtil
 							.stringToJS(value)
 							: (cellResult.getHiddenValue() != null
 									&& cellResult.getHiddenValue().equals("_") ? ""
 									: cellResult.getHiddenValue())).append("'");
-			if ((fc.getControlTip() == 101 || fc.getControlTip() == 12)
+			if ((fc.getControlType() == 101 || fc.getControlType() == 12)
 					&& fc.getExtraDefinition() != null
 					&& fc.getExtraDefinition().length() > 1) {
 				buf.append(fc.getExtraDefinition());
 			}
-			if (fc.getControlTip() == 9 && formResult != null
+			if (fc.getControlType() == 9 && formResult != null
 					&& fc.getLookupIncludedParams() != null
 					&& fc.getLookupIncludedParams().length() > 0
 					&& fc.getParentFormCellId() > 0) {
@@ -2393,10 +2389,10 @@ public class ExtJs3_4 implements ViewAdapter {
 					if (rfc.getFormCell().getFormCellId() == fc
 							.getParentFormCellId()) {
 						W5FormCell pfc = rfc.getFormCell();
-						if (pfc.getControlTip() == 6
-								|| pfc.getControlTip() == 7
-								|| pfc.getControlTip() == 9
-								|| pfc.getControlTip() == 10)
+						if (pfc.getControlType() == 6
+								|| pfc.getControlType() == 7
+								|| pfc.getControlType() == 9
+								|| pfc.getControlType() == 10)
 							buf.append(
 									",listeners:{render:function(){combo2combo(_")
 									.append(pfc.getDsc()).append(",_")
@@ -2419,17 +2415,17 @@ public class ExtJs3_4 implements ViewAdapter {
 		boolean notNull = fc.getNotNullFlag() != 0;
 		// if(notNull)fieldLabel+=" <span style=\"color:red;\">*</span>";
 		if (fc.getLocaleMsgKey() != null) {
-			if (notNull && fc.getControlTip() != 5 && fc.getControlTip() != 13)
+			if (notNull && fc.getControlType() != 5 && fc.getControlType() != 13)
 				fieldLabel += "<i class=\"label-required\"></i>',ctCls:'required";
 		} else {
 
 		}
-		int controlTip = fc.getControlTip();
+		int controlType = fc.getControlType();
 		String cellDsc = fc.getDsc();
 		boolean liveSyncRecord = FrameworkSetting.liveSyncRecord
 				&& formResult != null && formResult.getForm() != null
-				&& formResult.getForm().getObjectTip() == 2
-				&& formResult.getAction() == 1 && fc.getControlTip()!=41;
+				&& formResult.getForm().getObjectType() == 2
+				&& formResult.getAction() == 1 && fc.getControlType()!=41;
 		String liveSyncStr = null;
 		if (liveSyncRecord) {
 			W5Table t = FrameworkCache.getTable(formResult.getScd(), formResult
@@ -2451,11 +2447,12 @@ public class ExtJs3_4 implements ViewAdapter {
 				+ formResult.getUniqueId() + "-" + fc.getFormCellId() + "',"
 				: "";
 		boolean fadd = false;
-		switch (controlTip) {
+		switch (controlType) {
 		case 100:// button
 			buf.setLength(0);
 			buf.append("new Ext.Button({_controlTip:100,cls:'x-btn-fc',width:").append(
 					fc.getControlWidth());
+			if(fc.getxOrder()==1)buf.append(",style:'margin-left:").append(formResult != null && formResult.getForm() != null?formResult.getForm().getLabelWidth()+5:175).append("px;margin-bottom:10px'");
 			String text = "";
 			fieldLabel = fc.getLocaleMsgKey();
 			String icon = cellResult.getFormCell().getLookupIncludedParams();
@@ -2512,7 +2509,7 @@ public class ExtJs3_4 implements ViewAdapter {
 					&& fc.getDialogGridId() == 0
 					&& formResult.getForm() != null
 					&& formResult.getScd() != null
-					&& formResult.getForm().getObjectTip() == 2
+					&& formResult.getForm().getObjectType() == 2
 					&& FrameworkCache.getAppSettingIntValue(formResult.getScd(), "combobox_add_flag") != 0
 					&& (GenericUtil.isEmpty(cellResult.getFormCell().getExtraDefinition()) || cellResult.getFormCell().getExtraDefinition().indexOf("noInsertForm")<0)
 					&& ((cellResult.getLookupQueryResult() != null
@@ -2544,7 +2541,7 @@ public class ExtJs3_4 implements ViewAdapter {
 					"advanced_select_max_rows");
 			if (maxRows == 0)
 				maxRows = 100;
-			if(FrameworkSetting.lookupEditFormFlag && formResult!=null && formResult.getForm().getObjectTip()==2 && (controlTip == 10 )
+			if(FrameworkSetting.lookupEditFormFlag && formResult!=null && formResult.getForm().getObjectType()==2 && (controlType == 10 )
 					&& cellResult.getLookupQueryResult() != null
 					&& cellResult.getLookupQueryResult().getMainTable() != null && cellResult.getLookupQueryResult().getMainTable().getTableId() != 336 /*w5_user*/
 					&& (cellResult.getFormCell().getLookupEditFormId()!=0 || cellResult.getLookupQueryResult().getMainTable().getDefaultUpdateFormId()!=0)
@@ -2640,7 +2637,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			if (value != null && value.length() > 0)
 				buf.append(",value:'").append(GenericUtil.stringToJS(value))
 						.append("'");
-			if (fc.getNrdTip() != 0)
+			if (fc.getNrdType() != 0)
 				buf.append(",disabled:true");
 			if (notNull)
 				buf.append(",allowBlank:false");
@@ -2877,9 +2874,10 @@ public class ExtJs3_4 implements ViewAdapter {
 					buf.append(",listeners:{").append(liveSyncStr).append("}");
 				return buf.append("})");
 			}
+		case 42:// passWord
 		case 21:// localeMsgKey
 		case 1:// edit-string
-			if (controlTip == 21
+			if (controlType == 21
 					|| (cellDsc != null && cellDsc.equals("locale_msg_key")))
 				buf.append("LocaleMsgKey");
 			else
@@ -2905,6 +2903,9 @@ public class ExtJs3_4 implements ViewAdapter {
 			buf.append("TimeField");
 			break;
 		case 3:// edit-double
+			buf.setLength(0);
+			buf.append("new Ext.ux.NumericField");
+			break;			
 		case 4:// edit-integer
 			buf.append("NumberField");
 			break;
@@ -2914,8 +2915,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			break;
 		case 41:// edit js - codemirror
 			buf.setLength(0);
-			if(FrameworkSetting.monaco)buf.append("new Ext.ux.form.Monaco");
-			else buf.append("new Ext.ux.form.CodeMirror");
+			buf.append("new Ext.ux.form.Monaco");
 			break;
 		case 11: // textarea
 			buf.append("TextArea");
@@ -2959,7 +2959,7 @@ public class ExtJs3_4 implements ViewAdapter {
 				buf.append(",_oldValue:'").append(GenericUtil.stringToJS(value))
 						.append("'");
 			}
-			if (fc.getNrdTip() != 0)
+			if (fc.getNrdType() != 0)
 				buf.append(",disabled:true");
 			if (notNull)
 				buf.append(",allowBlank:false");
@@ -2977,12 +2977,12 @@ public class ExtJs3_4 implements ViewAdapter {
 					if (rfc.getFormCell().getFormCellId() == fc
 							.getParentFormCellId()) {
 						W5FormCell pfc = rfc.getFormCell();
-						if (pfc.getControlTip() == 6
-								|| pfc.getControlTip() == 7
-								|| pfc.getControlTip() == 9
-								|| pfc.getControlTip() == 10
-								|| pfc.getControlTip() == 51
-								|| pfc.getControlTip() == 15) {
+						if (pfc.getControlType() == 6
+								|| pfc.getControlType() == 7
+								|| pfc.getControlType() == 9
+								|| pfc.getControlType() == 10
+								|| pfc.getControlType() == 51
+								|| pfc.getControlType() == 15) {
 							buf.append(
 									",listeners:{render:function(){combo2combo(_")
 									.append(pfc.getDsc()).append(",_")
@@ -3030,7 +3030,7 @@ public class ExtJs3_4 implements ViewAdapter {
 				buf.append(",_oldValue:'").append(GenericUtil.stringToJS(value))
 						.append("'");
 			}
-			if (fc.getNrdTip() != 0)
+			if (fc.getNrdType() != 0)
 				buf.append(",disabled:true");
 			if (notNull)
 				buf.append(",allowBlank:false");
@@ -3048,11 +3048,11 @@ public class ExtJs3_4 implements ViewAdapter {
 					if (rfc.getFormCell().getFormCellId() == fc
 							.getParentFormCellId()) {
 						W5FormCell pfc = rfc.getFormCell();
-						if (pfc.getControlTip() == 6
-								|| pfc.getControlTip() == 7
-								|| pfc.getControlTip() == 9
-								|| pfc.getControlTip() == 10
-								|| pfc.getControlTip() == 51) {
+						if (pfc.getControlType() == 6
+								|| pfc.getControlType() == 7
+								|| pfc.getControlType() == 9
+								|| pfc.getControlType() == 10
+								|| pfc.getControlType() == 51) {
 							buf.append(
 									",listeners:{render:function(){combo2combo(_")
 									.append(pfc.getDsc()).append(",_")
@@ -3072,7 +3072,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			}
 			return buf.append("})");
 		case 14: //TODO. bu ne ????
-			if (fc.getNrdTip() == 0) {
+			if (fc.getNrdType() == 0) {
 				buf.append("Add");
 			}
 		case 9:// combo-query(remote)
@@ -3085,7 +3085,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			buf.append("ComboBox({")
 					.append(uniqeId)
 					.append("_controlTip:")
-					.append(controlTip)
+					.append(controlType)
 					.append(",labelSeparator:'',fieldLabel:'")
 					.append(fieldLabel)
 					.append("',hiddenName: '")
@@ -3111,7 +3111,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			if (value != null && value.length() > 0)
 				buf.append(",value:'").append(GenericUtil.stringToJS(value))
 						.append("'");
-			if (fc.getNrdTip() != 0)
+			if (fc.getNrdType() != 0)
 				buf.append(",disabled:true");
 			if (notNull)
 				buf.append(",allowBlank:false");
@@ -3128,11 +3128,11 @@ public class ExtJs3_4 implements ViewAdapter {
 					if (rfc.getFormCell().getFormCellId() == fc
 							.getParentFormCellId()) {
 						W5FormCell pfc = rfc.getFormCell();
-						if (pfc.getControlTip() == 6
-								|| pfc.getControlTip() == 7
-								|| pfc.getControlTip() == 9
-								|| pfc.getControlTip() == 10
-								|| pfc.getControlTip() == 51) {
+						if (pfc.getControlType() == 6
+								|| pfc.getControlType() == 7
+								|| pfc.getControlType() == 9
+								|| pfc.getControlType() == 10
+								|| pfc.getControlType() == 51) {
 							buf.append(
 									",listeners:{render:function(){combo2combo(_")
 									.append(pfc.getDsc()).append(",_")
@@ -3201,7 +3201,7 @@ public class ExtJs3_4 implements ViewAdapter {
 		case 52: // lovcombo-query(15:query+8:static), userdefined lov(52)
 			if(formResult != null && fc.getParentFormCellId()==1) {
 				buf.append("CheckboxGroup({").append(uniqeId).append("_controlTip:")
-					.append(controlTip)
+					.append(controlType)
 					.append(",_checkbox:!0, labelSeparator:'',columns: 2, fieldLabel: '")
 					.append(fieldLabel).append("',items: [");
 				
@@ -3251,7 +3251,7 @@ public class ExtJs3_4 implements ViewAdapter {
 								}
 
 								buf.append("'")
-										.append(f.getPostProcessTip() == 2 ? LocaleMsgCache
+										.append(f.getPostProcessType() == 2 ? LocaleMsgCache
 												.get2(customizationId, xlocale,
 														z.toString()).replaceAll(
 														",", "-") : GenericUtil
@@ -3279,10 +3279,10 @@ public class ExtJs3_4 implements ViewAdapter {
 						&& fc.getDialogGridId() == 0
 						&& formResult.getForm() != null
 						&& formResult.getScd() != null
-						&& formResult.getForm().getObjectTip() == 2
+						&& formResult.getForm().getObjectType() == 2
 						&& FrameworkCache.getAppSettingIntValue(formResult.getScd(),
 								"combobox_add_flag") != 0
-						&& ((controlTip == 15
+						&& ((controlType == 15
 								&& cellResult.getLookupQueryResult() != null
 								&& cellResult.getLookupQueryResult().getMainTable() != null
 								&& cellResult.getLookupQueryResult().getMainTable().getTableId() != 336 /*w5_user*/
@@ -3306,13 +3306,13 @@ public class ExtJs3_4 implements ViewAdapter {
 											.getAccessInsertRoles(), cellResult
 											.getLookupQueryResult().getMainTable()
 											.getAccessInsertUsers()))
-								|| (controlTip == 8
+								|| (controlType == 8
 										&& cellResult.getLookupListValues() != null
 										&& ((Integer) formResult.getScd().get(
 												"roleId") == 0) && FrameworkCache
 											.roleAccessControl(
 													formResult.getScd(),
-													 107)) || (controlTip == 52 && FrameworkCache
+													 107)) || (controlType == 52 && FrameworkCache
 								.roleAccessControl(
 										formResult.getScd(),
 										 107)))) {
@@ -3322,7 +3322,7 @@ public class ExtJs3_4 implements ViewAdapter {
 				if (fc.getDialogGridId() != 0)
 					buf.append("Dialog");
 				buf.append("LovCombo({").append(uniqeId).append("_controlTip:")
-						.append(controlTip)
+						.append(controlType)
 						.append(",labelSeparator:'',fieldLabel: '")
 						.append(fieldLabel).append("',hiddenName: '")
 						.append(cellDsc).append("'");
@@ -3362,11 +3362,11 @@ public class ExtJs3_4 implements ViewAdapter {
 						else
 							b = true;
 						buf.append("{name:'").append(f.getDsc()).append("'");
-						if (f.getFieldTip() > 2)
+						if (f.getFieldType() > 2)
 							buf.append(",type:'")
-									.append(FrameworkSetting.sortMap[f.getFieldTip()])
+									.append(FrameworkSetting.sortMap[f.getFieldType()])
 									.append("'");
-						if (f.getFieldTip() == 2)
+						if (f.getFieldType() == 2)
 							buf.append(",type:'date',dateFormat:'").append(dateFormatMulti[formResult.getScd()!=null ? GenericUtil.uInt(formResult.getScd().get("date_format")):0]).append(" h:i:s'");
 						// if(f.getPostProcessTip()>=10)buf.append("},{name:'").append(f.getDsc()).append("_qw_'");
 						buf.append("}");
@@ -3392,7 +3392,7 @@ public class ExtJs3_4 implements ViewAdapter {
 								if (z == null)
 									z = "";
 								buf.append("'")
-										.append(f.getPostProcessTip() == 2 ? LocaleMsgCache
+										.append(f.getPostProcessType() == 2 ? LocaleMsgCache
 												.get2(customizationId, xlocale,
 														z.toString()).replaceAll(
 														",", "-") : GenericUtil
@@ -3409,7 +3409,7 @@ public class ExtJs3_4 implements ViewAdapter {
 				if (value != null && value.length() > 0)
 					buf.append(",value:'").append(GenericUtil.stringToJS(value))
 							.append("'");
-				if (fc.getNrdTip() != 0)
+				if (fc.getNrdType() != 0)
 					buf.append(",disabled:true");
 				if (fc.getVtype() != null && fc.getVtype().length() > 0)
 					buf.append(",vtype:'").append(fc.getVtype()).append("'");
@@ -3421,7 +3421,7 @@ public class ExtJs3_4 implements ViewAdapter {
 								.getExtraDefinition() != null && fc
 								.getExtraDefinition().indexOf("onTrigger2Click") < 0))) {
 					buf.append(",onTrigger2Click:function(a,b,c){");
-					switch (controlTip) {
+					switch (controlType) {
 					case 8:
 						buf.append(
 								"mainPanel.loadTab({attributes:{_formCell:mf._").append(fc.getDsc()).append(",modalWindow:true,href:'showForm?a=2&look_up_id=")
@@ -3476,7 +3476,7 @@ public class ExtJs3_4 implements ViewAdapter {
 		case 59: // SuperBoxSelect-query(59:query+58:static)
 			buf.setLength(0);
 			buf.append("new Ext.ux.form.SuperBoxSelect({").append(uniqeId)
-					.append("_controlTip:").append(controlTip)
+					.append("_controlTip:").append(controlType)
 					.append(",labelSeparator:'',fieldLabel: '")
 					.append(fieldLabel).append("',hiddenName: '")
 					.append(cellDsc).append("'");
@@ -3516,11 +3516,11 @@ public class ExtJs3_4 implements ViewAdapter {
 					else
 						b1 = true;
 					buf.append("{name:'").append(f.getDsc()).append("'");
-					if (f.getFieldTip() > 2)
+					if (f.getFieldType() > 2)
 						buf.append(",type:'")
-								.append(FrameworkSetting.sortMap[f.getFieldTip()])
+								.append(FrameworkSetting.sortMap[f.getFieldType()])
 								.append("'");
-					if (f.getFieldTip() == 2)
+					if (f.getFieldType() == 2)
 						buf.append(",type:'date',dateFormat:'").append(dateFormatMulti[formResult.getScd()!=null ? GenericUtil.uInt(formResult.getScd().get("date_format")):0]).append(" h:i:s'");
 					// if(f.getPostProcessTip()>=10)buf.append("},{name:'").append(f.getDsc()).append("_qw_'");
 					buf.append("}");
@@ -3546,7 +3546,7 @@ public class ExtJs3_4 implements ViewAdapter {
 							if (z == null)
 								z = "";
 							buf.append("'")
-									.append(f.getPostProcessTip() == 2 ? LocaleMsgCache
+									.append(f.getPostProcessType() == 2 ? LocaleMsgCache
 											.get2(customizationId, xlocale,
 													z.toString()).replaceAll(
 													",", "-") : GenericUtil
@@ -3563,7 +3563,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			if (value != null && value.length() > 0)
 				buf.append(",value:'").append(GenericUtil.stringToJS(value))
 						.append("'");
-			if (fc.getNrdTip() != 0)
+			if (fc.getNrdType() != 0)
 				buf.append(",disabled:true");
 			if (fc.getVtype() != null && fc.getVtype().length() > 0)
 				buf.append(",vtype:'").append(fc.getVtype()).append("'");
@@ -3577,7 +3577,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			buf.append(" new Ext.ux.form.SuperBoxSelect({")
 					.append(uniqeId)
 					.append("_controlTip:")
-					.append(controlTip)
+					.append(controlType)
 					.append(",labelSeparator:'',fieldLabel: '")
 					.append(fieldLabel)
 					.append("',hiddenName: '")
@@ -3599,7 +3599,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			if (value != null && value.length() > 0)
 				buf.append(",value:'").append(GenericUtil.stringToJS(value))
 						.append("'");
-			if (fc.getNrdTip() != 0)
+			if (fc.getNrdType() != 0)
 				buf.append(",disabled:true");
 			if (notNull)
 				buf.append(",allowBlank:false");
@@ -3621,7 +3621,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			buf.append(" new Ext.ux.form.SuperBoxSelect({")
 					.append(uniqeId)
 					.append("_controlTip:")
-					.append(controlTip)
+					.append(controlType)
 					.append(",labelSeparator:'',fieldLabel: '")
 					.append(fieldLabel)
 					.append("',hiddenName: '")
@@ -3687,7 +3687,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			if (value != null && value.length() > 0)
 				buf.append(",value:'").append(GenericUtil.stringToJS(value))
 						.append("'");
-			if (fc.getNrdTip() != 0)
+			if (fc.getNrdType() != 0)
 				buf.append(",disabled:true");
 			if (notNull)
 				buf.append(",allowBlank:false");
@@ -3700,7 +3700,7 @@ public class ExtJs3_4 implements ViewAdapter {
 		case	23:// treecombo (query lookup) local
 			buf.setLength(0);
 			buf.append("new Ext.ux.TreeCombo({").append(uniqeId)
-					.append("_controlTip:").append(controlTip)
+					.append("_controlTip:").append(controlType)
 					.append(",labelSeparator:'',fieldLabel:'")
 					.append(fieldLabel).append("',hiddenName: '")
 					.append(cellDsc).append("'");
@@ -3708,7 +3708,7 @@ public class ExtJs3_4 implements ViewAdapter {
 					&& fc.getExtraDefinition().length() > 1) // ornegin ,tooltip:'ali' gibi
 				buf.append(fc.getExtraDefinition());
 			if (cellResult.getLookupQueryResult() != null) { // QueryResult'tan geliyor
-				int qtip = cellResult.getLookupQueryResult().getQuery().getQueryTip(); 
+				int qtip = cellResult.getLookupQueryResult().getQuery().getQueryType(); 
 				if (qtip == 12 || qtip == 13) {// lookup tree query
 					if (cellResult.getLookupQueryResult().getData() != null) {
 						buf.append(",\nchildren:").append(
@@ -3717,7 +3717,7 @@ public class ExtJs3_4 implements ViewAdapter {
 						// if(value!=null &&
 						// value.length()>0)buf.append(",listeners:{render:function(){this.setValue('").append(value).append("')}}");
 					}
-				} else {// TODO: hata olamaz, tree combo'da sadece queryTip==12
+				} else {// TODO: hata olamaz, tree combo'da sadece queryType==12
 						// icin olur
 				}
 			}
@@ -3727,7 +3727,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			if (value != null && value.length() > 0)
 				buf.append(",value:'").append(GenericUtil.stringToJS(value))
 						.append("'");
-			if (fc.getNrdTip() != 0)
+			if (fc.getNrdType() != 0)
 				buf.append(",disabled:true");
 			if (notNull)
 				buf.append(",allowBlank:false");
@@ -3742,7 +3742,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			buf.setLength(0);
 			buf.append("new Ext.ux.form.FileUploadField({fieldLabel:'").append(fieldLabel).append("', name: '").append(cellDsc).append("', buttonText: 'Browse'");
 			if (fc.getControlWidth() > 0)buf.append(",width:").append(fc.getControlWidth());
-			if (fc.getNrdTip() != 0)buf.append(",disabled:true");
+			if (fc.getNrdType() != 0)buf.append(",disabled:true");
 			if (notNull)buf.append(",allowBlank:false");
 			if (fc.getExtraDefinition() != null && fc.getExtraDefinition().length() > 1)buf.append(fc.getExtraDefinition());
 			if(formResult!=null && formResult.getUniqueId()!=null)
@@ -3755,7 +3755,7 @@ public class ExtJs3_4 implements ViewAdapter {
 					.append(fc.getFormCellId())
 					.append("&.t='+_page_tab_id+'&.p='+_scd.projectId+'&.w='+_webPageId+'&_qid=")
 					.append(cellResult.getLookupQueryResult().getQueryId())
-					.append("',_controlTip:").append(controlTip)
+					.append("',_controlTip:").append(controlType)
 					.append(",labelSeparator:'',fieldLabel:'")
 					.append(fieldLabel).append("',hiddenName: '")
 					.append(cellDsc).append("'");
@@ -3766,7 +3766,7 @@ public class ExtJs3_4 implements ViewAdapter {
 				buf.append(fc.getExtraDefinition());
 			if (cellResult.getLookupQueryResult() != null) { // QueryResult'tan
 																// geliyor
-				if (cellResult.getLookupQueryResult().getQuery().getQueryTip() == 14) {// lookup
+				if (cellResult.getLookupQueryResult().getQuery().getQueryType() == 14) {// lookup
 																						// tree
 																						// query
 					if (cellResult.getLookupQueryResult().getData() != null) {
@@ -3776,7 +3776,7 @@ public class ExtJs3_4 implements ViewAdapter {
 						// if(value!=null &&
 						// value.length()>0)buf.append(",listeners:{render:function(){this.setValue('").append(value).append("')}}");
 					}
-				} else {// TODO: hata olamaz, tree combo'da sadece queryTip==12
+				} else {// TODO: hata olamaz, tree combo'da sadece queryType==12
 						// icin olur
 				}
 			}
@@ -3786,7 +3786,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			if (value != null && value.length() > 0)
 				buf.append(",value:'").append(GenericUtil.stringToJS(value))
 						.append("'");
-			if (fc.getNrdTip() != 0)
+			if (fc.getNrdType() != 0)
 				buf.append(",disabled:true");
 			if (notNull)
 				buf.append(",allowBlank:false");
@@ -3818,7 +3818,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			buf.append(",root:{nodeType:'async',expanded:true,text:'root',id:'root',uiProvider:false");
 			if (cellResult.getLookupQueryResult() != null) { // QueryResult'tan
 																// geliyor
-				if (cellResult.getLookupQueryResult().getQuery().getQueryTip() == 12) {// lookup
+				if (cellResult.getLookupQueryResult().getQuery().getQueryType() == 12) {// lookup
 																						// tree
 																						// query
 					if (cellResult.getLookupQueryResult().getData() != null) {
@@ -3828,7 +3828,7 @@ public class ExtJs3_4 implements ViewAdapter {
 						// if(value!=null &&
 						// value.length()>0)buf.append(",listeners:{render:function(){this.setValue('").append(value).append("')}}");
 					}
-				} else {// TODO: hata olamaz, tree combo'da sadece queryTip==12
+				} else {// TODO: hata olamaz, tree combo'da sadece queryType==12
 						// icin olur
 				}
 
@@ -3848,7 +3848,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			// "''";
 			if(formResult != null && fc.getParentFormCellId()==1) {
 				buf.append("RadioGroup({").append(uniqeId).append("_controlTip:")
-					.append(controlTip)
+					.append(controlType)
 					.append(",_checkbox:!0, labelSeparator:'', fieldLabel: '")
 					.append(fieldLabel).append("',items: [");
 				
@@ -3902,7 +3902,7 @@ public class ExtJs3_4 implements ViewAdapter {
 								}
 
 								buf.append("'")
-										.append(f.getPostProcessTip() == 2 ? LocaleMsgCache
+										.append(f.getPostProcessType() == 2 ? LocaleMsgCache
 												.get2(customizationId, xlocale,
 														z.toString()).replaceAll(
 														",", "-") : GenericUtil
@@ -3928,7 +3928,7 @@ public class ExtJs3_4 implements ViewAdapter {
 				
 			} else {
 
-				if (controlTip == 7 && fc.getDialogGridId() != 0)
+				if (controlType == 7 && fc.getDialogGridId() != 0)
 					buf.append("Dialog");
 				else {
 					if (!notNull)
@@ -3936,10 +3936,10 @@ public class ExtJs3_4 implements ViewAdapter {
 					if (formResult != null
 							&& formResult.getForm() != null
 							&& formResult.getScd() != null
-							&& formResult.getForm().getObjectTip() == 2
+							&& formResult.getForm().getObjectType() == 2
 							&& FrameworkCache.getAppSettingIntValue(
 									formResult.getScd(), "combobox_add_flag") == 1
-							&& ((controlTip == 7
+							&& ((controlType == 7
 									&& cellResult.getLookupQueryResult() != null
 									&& cellResult.getLookupQueryResult().getMainTable() != null
 									&& cellResult.getLookupQueryResult().getMainTable().getTableId() != 336 /*w5_user*/
@@ -3954,18 +3954,18 @@ public class ExtJs3_4 implements ViewAdapter {
 												cellResult.getLookupQueryResult().getMainTable().getAccessInsertTip(),
 												cellResult.getLookupQueryResult().getMainTable().getAccessInsertRoles(),
 												cellResult.getLookupQueryResult().getMainTable().getAccessInsertUsers()))
-									|| (controlTip == 6
+									|| (controlType == 6
 											&& cellResult.getLookupListValues() != null
 											&& ((Integer) formResult.getScd().get(
 													"roleId") == 0) 
 													&& FrameworkCache.roleAccessControl(formResult.getScd(), 107)) 
-														|| (controlTip == 51 && FrameworkCache.roleAccessControl(formResult.getScd(), 107)))) {
+														|| (controlType == 51 && FrameworkCache.roleAccessControl(formResult.getScd(), 107)))) {
 						buf.append("Add");
 						fadd = true;
 					}
 				}
 	
-				if(FrameworkSetting.lookupEditFormFlag && formResult!=null && formResult.getForm().getObjectTip()==2 && (controlTip == 7 ||  controlTip == 10 )
+				if(FrameworkSetting.lookupEditFormFlag && formResult!=null && formResult.getForm().getObjectType()==2 && (controlType == 7 ||  controlType == 10 )
 						&& cellResult.getLookupQueryResult() != null
 						&& cellResult.getLookupQueryResult().getMainTable() != null && cellResult.getLookupQueryResult().getMainTable().getTableId() != 336 /*w5_user*/
 						&& (cellResult.getFormCell().getLookupEditFormId()!=0 || cellResult.getLookupQueryResult().getMainTable().getDefaultUpdateFormId()!=0)
@@ -3995,7 +3995,7 @@ public class ExtJs3_4 implements ViewAdapter {
 				}
 				
 				buf.append("ComboBox({").append(uniqeId).append("_controlTip:")
-						.append(controlTip)
+						.append(controlType)
 						.append(",labelSeparator:'',fieldLabel: '")
 						.append(fieldLabel).append("',hiddenName: '")
 						.append(cellDsc).append("'");
@@ -4040,11 +4040,11 @@ public class ExtJs3_4 implements ViewAdapter {
 						else
 							b1 = true;
 						buf.append("{name:'").append(f.getDsc()).append("'");
-						if (f.getFieldTip() > 2)
+						if (f.getFieldType() > 2)
 							buf.append(",type:'")
-									.append(FrameworkSetting.sortMap[f.getFieldTip()])
+									.append(FrameworkSetting.sortMap[f.getFieldType()])
 									.append("'");
-						if (f.getFieldTip() == 2)
+						if (f.getFieldType() == 2)
 							buf.append(",type:'date',dateFormat:'").append(dateFormatMulti[formResult.getScd()!=null ? GenericUtil.uInt(formResult.getScd().get("date_format")):0]).append(" h:i:s'");
 						// if(f.getPostProcessTip()>=10)buf.append("},{name:'").append(f.getDsc()).append("_qw_'");
 						buf.append("}");
@@ -4070,7 +4070,7 @@ public class ExtJs3_4 implements ViewAdapter {
 								if (z == null)
 									z = "";
 								buf.append("'")
-										.append(f.getPostProcessTip() == 2 ? LocaleMsgCache
+										.append(f.getPostProcessType() == 2 ? LocaleMsgCache
 												.get2(customizationId, xlocale,
 														z.toString()) : GenericUtil
 												.stringToJS(z.toString()))
@@ -4087,14 +4087,14 @@ public class ExtJs3_4 implements ViewAdapter {
 				if (value != null && value.length() > 0)
 					buf.append(",value:'").append(GenericUtil.stringToJS(value))
 							.append("'");
-				if (fc.getNrdTip() != 0)
+				if (fc.getNrdType() != 0)
 					buf.append(",disabled:true");
 				if (fc.getVtype() != null && fc.getVtype().length() > 0)
 					buf.append(",vtype:'").append(fc.getVtype()).append("'");
 				
 				if (notNull)
 					buf.append(",allowBlank:false");
-				if (controlTip == 7 && fc.getDialogGridId() != 0) {
+				if (controlType == 7 && fc.getDialogGridId() != 0) {
 					buf.append(
 							",onTrigger2Click:function(a,b,c){mainPanel.loadTab({attributes:{modalWindow:true,href:'showPage?_tid=178&_gid1=")
 							.append(fc.getDialogGridId())
@@ -4112,7 +4112,7 @@ public class ExtJs3_4 implements ViewAdapter {
 												+ "Click") < 1))) {
 					buf.append(",onTrigger").append(notNull ? 2 : 3)
 							.append("Click:function(a,b,c){");
-					switch (controlTip) {
+					switch (controlType) {
 					case 6:
 						buf.append(
 								"mainPanel.loadTab({attributes:{modalWindow:true,href:'showForm?a=2&look_up_id=")
@@ -4146,7 +4146,7 @@ public class ExtJs3_4 implements ViewAdapter {
 				.append("',name: '").append(cellDsc).append("'");
 
 
-		if (controlTip == 41 && fc.getLookupQueryId()>0 && fc.getLookupQueryId()<6) {//codemirror
+		if (controlType == 41 && fc.getLookupQueryId()>0 && fc.getLookupQueryId()<6) {//codemirror
 			if(FrameworkSetting.monaco)
 				buf.append(",value:'',language:'").append(new String[]{"javascript","html","xml","sql","css"}[fc.getLookupQueryId()-1]).append("'");
 			else 
@@ -4156,7 +4156,7 @@ public class ExtJs3_4 implements ViewAdapter {
 		if (fc.get_sourceObjectDetail() != null)
 			buf.append(",allowBlank:").append(!notNull);
 		
-		switch(controlTip) {
+		switch(controlType) {
 		case 2://date
 			buf.append(",format: '").append(dateFormatMulti[formResult!=null && formResult.getScd()!=null ? GenericUtil.uInt(formResult.getScd().get("date_format")):0]).append("'");
 			break;
@@ -4169,7 +4169,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			buf.append(",style: 'text-align: right',decimalPrecision:0");
 			break;
 		/*
-		 * if(controlTip==3 && fc.getLookupQueryId()>0 &&
+		 * if(controlType==3 && fc.getLookupQueryId()>0 &&
 		 * fc.getLookupQueryId()<10 ){
 		 * buf.append(",decimalPrecision:").append(fc.getLookupQueryId()); }
 		 */
@@ -4191,12 +4191,16 @@ public class ExtJs3_4 implements ViewAdapter {
 			}
 		break;		
 		
-		case 56:
-			buf.append(",CKConfig: {customConfig : '../scripts/ext3.3/ckeditor/config.js'}");
+		case 56://deprecated
+			buf.append(",CKConfig: {customConfig : '/scripts/ext3.3/ckeditor/config.js'}");
 		break;
 		
-		case 1:
+		case 1://text
 			buf.append(",cls:'x-icb-text'");
+			break;
+		case 42://password
+			buf.append(",inputType:'password'");
+			break;
 		}
 
 		if (fc.getMaxLength()!=null && fc.getMaxLength() > 0)
@@ -4206,7 +4210,7 @@ public class ExtJs3_4 implements ViewAdapter {
 		else if (fc.getControlWidth() < 0)
 			buf.append(",anchor:'%").append(-fc.getControlWidth()).append("'");
 		/*
-		 * if(controlTip==18)
+		 * if(controlType==18)
 		 * buf.append(",timeConfig:{altFormats:'H:i:s',allowBlank:"
 		 * ).append(!notNull
 		 * ).append("},dateConfig:{altFormats:'d/m/Y',allowBlank:"
@@ -4214,7 +4218,7 @@ public class ExtJs3_4 implements ViewAdapter {
 		 * buf.append(",timeFormat:'H:i:s',dateFormat:'d/m/Y'");
 		 */
 		if (value != null && value.length() > 0)
-			switch (controlTip) {
+			switch (controlType) {
 			case 18:// date time field
 				if (!"0".equals(value) && value.length() <= 10)
 					value = GenericUtil.uDateStr(value) + " 00:00:00";
@@ -4227,6 +4231,10 @@ public class ExtJs3_4 implements ViewAdapter {
 				buf.append(",value:'").append(GenericUtil.uDateStr(value))
 						.append("'");
 				break;
+			case	42://password
+				buf.append(",value:'").append(FrameworkSetting.defaultPasswordMask)
+				.append("'");
+				break;
 			default:
 				buf.append(",value:'").append(GenericUtil.stringToJS(value))
 						.append("'");
@@ -4234,16 +4242,16 @@ public class ExtJs3_4 implements ViewAdapter {
 		if (fc.getVtype() != null && fc.getVtype().length() > 0)
 			buf.append(",vtype:'").append(fc.getVtype()).append("'");
 		
-		if (controlTip == 11)
+		if (controlType == 11)
 			buf.append(",grow:true,preventScrollbars:true");
-		if (controlTip == 17)
+		if (controlType == 17)
 			buf.append(",triggerClass:'x-form-search-trigger'");
-		if (controlTip == 31)
+		if (controlType == 31)
 			buf.append(",formCellId:").append(fc.getFormCellId());
-		if (controlTip == 22)
+		if (controlType == 22)
 			buf.append(",format:'H:i:s'");
 
-		if (fc.getNrdTip() != 0)
+		if (fc.getNrdType() != 0)
 			buf.append(",disabled:true");
 		if (fc.getExtraDefinition() != null
 				&& fc.getExtraDefinition().length() > 1) // ornegin
@@ -4262,7 +4270,7 @@ public class ExtJs3_4 implements ViewAdapter {
 		}
 		if(formResult!=null && formResult.getUniqueId()!=null)
 			buf.append(",id:'").append(formResult.getUniqueId()).append("-").append(fc.getFormCellId()).append("'");
-		return buf.append(",labelSeparator:'',_controlTip:").append(controlTip)
+		return buf.append(",labelSeparator:'',_controlTip:").append(controlType)
 				.append("})");
 	}
 
@@ -4283,8 +4291,8 @@ public class ExtJs3_4 implements ViewAdapter {
 					buttons.append(",");
 				else
 					b = true;
-				if (toolbarItem.getItemTip() == 0
-						|| toolbarItem.getItemTip() == 100) { // yok(0): button
+				if (toolbarItem.getControlType() == 0
+						|| toolbarItem.getControlType() == 100) { // yok(0): button
 																// +
 																// tooltip;button(100)
 																// icon+text
@@ -4292,7 +4300,7 @@ public class ExtJs3_4 implements ViewAdapter {
 						buttons.append("'-'");
 					else if (toolbarItem.getDsc().equals("->"))
 						buttons.append("'->'");
-					else if (toolbarItem.getObjectTip() == 15) {// form toolbar
+					else if (toolbarItem.getObjectType() == 15) {// form toolbar
 																// ise
 						buttons.append("{text:'")
 								.append(LocaleMsgCache.get2(customizationId,
@@ -4310,7 +4318,7 @@ public class ExtJs3_4 implements ViewAdapter {
 					} else {
 						String icon = "<i class=\"icon-"+(GenericUtil.isEmpty(toolbarItem.getImgIcon())? "energy":toolbarItem.getImgIcon())+"\"></i>";
 						buttons.append("{text:'")
-								.append(toolbarItem.getItemTip() == 0 ? icon : (GenericUtil.isEmpty(toolbarItem.getImgIcon()) ? "":(icon + " &nbsp;")) + LocaleMsgCache.get2(scd, toolbarItem.getLocaleMsgKey()))
+								.append(toolbarItem.getControlType() == 0 ? icon : (GenericUtil.isEmpty(toolbarItem.getImgIcon()) ? "":(icon + " &nbsp;")) + LocaleMsgCache.get2(scd, toolbarItem.getLocaleMsgKey()))
 								.append("', tooltip:'").append(LocaleMsgCache.get2(scd, toolbarItem.getLocaleMsgKey()))
 								.append("', ref:'../")
 								.append(toolbarItem.getDsc())
@@ -4327,9 +4335,9 @@ public class ExtJs3_4 implements ViewAdapter {
 										toolbarItem.getCode())).append("\n}}");
 						itemCount++;
 					}
-				} else { // controlTip
+				} else { // controlType
 					W5FormCell cell = new W5FormCell();
-					cell.setControlTip(toolbarItem.getItemTip());
+					cell.setControlType(toolbarItem.getControlType());
 					cell.setLookupQueryId(toolbarItem.getLookupQueryId());
 					cell.setLocaleMsgKey(toolbarItem.getLocaleMsgKey());
 					cell.setDsc(toolbarItem.getDsc());
@@ -4343,9 +4351,9 @@ public class ExtJs3_4 implements ViewAdapter {
 						cell.setExtraDefinition(cell.getExtraDefinition() + ","
 								+ toolbarItem.getCode());
 					W5FormCellHelper cellResult = new W5FormCellHelper(cell);
-					if (toolbarItem.getItemTip() == 6
-							|| toolbarItem.getItemTip() == 8
-							|| toolbarItem.getItemTip() == 14) {
+					if (toolbarItem.getControlType() == 6
+							|| toolbarItem.getControlType() == 8
+							|| toolbarItem.getControlType() == 14) {
 						W5LookUp lu = FrameworkCache.getLookUp(scd,
 								toolbarItem.getLookupQueryId());
 						if(lu!=null){
@@ -4434,10 +4442,10 @@ public class ExtJs3_4 implements ViewAdapter {
 					b = true;
 				html.append("{name: '").append(gc.get_queryField().getDsc())
 						.append("'");
-				if (gc.get_queryField().getFieldTip() > 2)
+				if (gc.get_queryField().getFieldType() > 2)
 					html.append(",type:'")
 							.append(FrameworkSetting.sortMap[gc.get_queryField()
-									.getFieldTip()]).append("'");
+									.getFieldType()]).append("'");
 				html.append("}");
 			}
 		html.append("]),\n initRecord:{");
@@ -4446,7 +4454,7 @@ public class ExtJs3_4 implements ViewAdapter {
 				.get_gridColumnList())
 			if (gc.get_formCell() != null) {
 				Object obz = null;
-				switch (gc.get_formCell().getInitialSourceTip()) {
+				switch (gc.get_formCell().getInitialSourceType()) {
 				case 0:// yok-sabit
 					obz = gc.get_formCell().getInitialValue();
 					break;
@@ -4492,7 +4500,7 @@ public class ExtJs3_4 implements ViewAdapter {
 		buf.append("var ")
 				.append(c.getDsc())
 				.append("={dataViewId:")
-				.append(c.getDataViewId())
+				.append(c.getCardId())
 				.append(",name:'")
 				.append(LocaleMsgCache.get2(customizationId, xlocale,
 						c.getLocaleMsgKey()))
@@ -4507,7 +4515,7 @@ public class ExtJs3_4 implements ViewAdapter {
 		}		
 		buf.append(",store: new Ext.data.JsonStore({url:'ajaxQueryData?.w='+_webPageId+'&_qid=")
 				.append(c.getQueryId()).append("&_dvid=")
-				.append(c.getDataViewId());
+				.append(c.getCardId());
 
 		if (c.getDefaultPageRecordNumber() != 0)
 			buf.append("&firstLimit=").append(c.getDefaultPageRecordNumber())
@@ -4695,7 +4703,7 @@ public class ExtJs3_4 implements ViewAdapter {
 
 		buf.append("var ").append(g.getDsc()).append("_sm=new Ext.grid.");
 		if (!gridResult.isViewLogMode()) {
-			switch (g.getSelectionModeTip()) {// 0,1:single,2:multi,3:checkbox
+			switch (g.getSelectionModeType()) {// 0,1:single,2:multi,3:checkbox
 												// multi, 4:single + row
 												// expander, 5: single + detail
 												// dlg
@@ -4707,7 +4715,7 @@ public class ExtJs3_4 implements ViewAdapter {
 				break;
 			default:
 				buf.append("RowSelectionModel({singleSelect:")
-						.append(g.getSelectionModeTip() != 2).append("})\n");
+						.append(g.getSelectionModeType() != 2).append("})\n");
 				break;
 			}
 /*			if (g.getSelectionModeTip() == 4 && g.get_detailView() != null) {// rowexpander
@@ -4745,7 +4753,7 @@ public class ExtJs3_4 implements ViewAdapter {
 					FrameworkCache.getAppSettingIntValue(scd,
 							"log_default_grid_height"));
 		else {
-			if (g.getSelectionModeTip() == 2 || g.getSelectionModeTip() == 3) // multi Select
+			if (g.getSelectionModeType() == 2 || g.getSelectionModeType() == 3) // multi Select
 				buf.append(",\n multiSelect:true");
 /*			else if (g.getSelectionModeTip() == 5 && g.get_detailView() != null) // promis.js'de
 																					// halledilmek
@@ -4780,8 +4788,8 @@ public class ExtJs3_4 implements ViewAdapter {
 			buf.append(",\n formSmsMailList:[");
 			boolean b = false;
 			for (W5FormSmsMail fsm : g.get_crudFormSmsMailList())
-				if (((fsm.getSmsMailTip() == 0 && FrameworkSetting.sms) || (fsm
-						.getSmsMailTip() != 0 && FrameworkSetting.mail))
+				if (((fsm.getSmsMailType() == 0 && FrameworkSetting.sms) || (fsm
+						.getSmsMailType() != 0 && FrameworkSetting.mail))
 						&& fsm.getAlarmFlag() == 0
 						&& GenericUtil.hasPartInside2(fsm.getWebMobileTips(),
 								GenericUtil.uInt(scd.get("mobile")) != 0 ? "2"
@@ -4793,7 +4801,7 @@ public class ExtJs3_4 implements ViewAdapter {
 					buf.append("{xid:")
 							.append(fsm.getFormSmsMailId())
 							.append(",text:\"")
-							.append(fsm.getSmsMailTip() == 0 ? "[<b>SMS</b>] "
+							.append(fsm.getSmsMailType() == 0 ? "[<b>SMS</b>] "
 									: "[<b>"
 											+ (LocaleMsgCache.get2(
 													customizationId, xlocale,
@@ -4801,7 +4809,7 @@ public class ExtJs3_4 implements ViewAdapter {
 							.append(GenericUtil.stringToJS(LocaleMsgCache.get2(
 									customizationId, xlocale, fsm.getDsc())))
 							.append("\",smsMailTip:")
-							.append(fsm.getSmsMailTip()).append("}");
+							.append(fsm.getSmsMailType()).append("}");
 				}
 			buf.append("]");
 		}
@@ -4837,7 +4845,7 @@ public class ExtJs3_4 implements ViewAdapter {
 							.get_postProcessQueryFields(), (g.get_query()
 							.getShowParentRecordFlag() != 0 ? 2 : 0),
 							FrameworkCache.getTable(projectId, g.get_query()
-									.getMainTableId()), scd))
+									.getSourceObjectId()), scd))
 					.append("}),listeners:{loadexception:promisLoadException}}),\n master_column_id:'")
 					.append(g.get_queryFieldMap().get(g.getTreeMasterFieldId())
 							.getDsc()).append("'");
@@ -4863,7 +4871,7 @@ public class ExtJs3_4 implements ViewAdapter {
 									.get_postProcessQueryFields(), gridResult
 									.isViewLogMode() ? 1 : (g.get_query()
 									.getShowParentRecordFlag() != 0 ? 2 : 0),
-							FrameworkCache.getTable(projectId, g.get_query().getMainTableId()), scd)).append("})})");
+							FrameworkCache.getTable(projectId, g.get_query().getSourceObjectId()), scd)).append("})})");
 		} else {
 			buf.append(
 					",\n ds:new Ext.data.JsonStore({url:'"+ajaxUrl+"?.t='+_page_tab_id+'&.p='+_scd.projectId+'&.w='+_webPageId+'&_qid=")
@@ -4887,7 +4895,7 @@ public class ExtJs3_4 implements ViewAdapter {
 									.isViewLogMode() ? 1 : (g.get_query()
 									.getShowParentRecordFlag() != 0 ? 2 : 0),
 							FrameworkCache.getTable(projectId, g.get_query()
-									.getMainTableId()), scd)).append(
+									.getSourceObjectId()), scd)).append(
 					",listeners:{loadexception:promisLoadException}})");
 		}
 
@@ -4933,12 +4941,6 @@ public class ExtJs3_4 implements ViewAdapter {
 				int tableId = t.getTableId();
 				if (tableId != 0 && scd != null) {
 					if (FrameworkCache.getAppSettingIntValue(customizationId,
-							"row_based_security_flag") != 0
-							&& (Integer) scd.get("userTip") != 3
-							&& t.getAccessTips() != null
-							&& t.getAccessTips().length() > 0)
-						buf.append(",\n accessControlFlag:true");
-					if (FrameworkCache.getAppSettingIntValue(customizationId,
 							"file_attachment_flag") != 0
 							&& t.getFileAttachmentFlag() != 0
 							&& FrameworkCache.roleAccessControl(scd,
@@ -4952,11 +4954,7 @@ public class ExtJs3_4 implements ViewAdapter {
 							&& FrameworkCache.roleAccessControl(scd,
 									103))
 						buf.append(",\n makeCommentFlag:true");
-					if (FrameworkCache.roleAccessControl(scd, 11))
-						buf.append(",\n bulkUpdateFlag:true");
-					if (FrameworkCache
-							.roleAccessControl(scd, 104))
-						buf.append(",\n bulkEmailFlag:true");
+					
 				}
 			}
 
@@ -5021,7 +5019,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			buf.append("\n").append(g.getDsc()).append(".plugins.push(")
 					.append(g.getDsc()).append("_dv)");
 
-		switch (g.getRowColorFxTip()) {
+		switch (g.getRowColorFxType()) {
 		case 1:
 			if (!GenericUtil.isEmpty(g.get_listCustomGridColumnRenderer())
 					&& g.get_fxRowField() != null) {// lookup eslesme
@@ -5037,10 +5035,10 @@ public class ExtJs3_4 implements ViewAdapter {
 				for (W5CustomGridColumnRenderer ix : g
 						.get_listCustomGridColumnRenderer()) {
 					buf.append("\ncase ");
-					if (g.get_fxRowField().getFieldTip() == 1)
+					if (g.get_fxRowField().getFieldType() == 1)
 						buf.append("'");
 					buf.append(ix.getLookupDetayVal());
-					if (g.get_fxRowField().getFieldTip() == 1)
+					if (g.get_fxRowField().getFieldType() == 1)
 						buf.append("'");
 					buf.append(":return '").append("bgColor")
 							.append(ix.getCssVal().replace("#", ""))
@@ -5069,13 +5067,13 @@ public class ExtJs3_4 implements ViewAdapter {
 					buf.append("\nif(rec.data.")
 							.append(g.get_fxRowField().getDsc())
 							.append((FrameworkSetting.operatorMap[ix
-									.getOperatorTip()]).equals("=") ? "=="
+									.getOperatorType()]).equals("=") ? "=="
 									: FrameworkSetting.operatorMap[ix
-											.getOperatorTip()]);
-					if (g.get_fxRowField().getFieldTip() == 1)
+											.getOperatorType()]);
+					if (g.get_fxRowField().getFieldType() == 1)
 						buf.append("'");
 					buf.append(ix.getConditionVal());
-					if (g.get_fxRowField().getFieldTip() == 1)
+					if (g.get_fxRowField().getFieldType() == 1)
 						buf.append("'");
 					buf.append(")return '").append("bgColor")
 							.append(ix.getCssVal().replace("#", ""))
@@ -5141,11 +5139,11 @@ public class ExtJs3_4 implements ViewAdapter {
 			else
 				b = true;
 			html.append("{name:'").append(f.getDsc()).append("'");
-			if (f.getParamTip() > 2)
+			if (f.getParamType() > 2)
 				html.append(",type:'")
-						.append(FrameworkSetting.sortMap[f.getParamTip()])
+						.append(FrameworkSetting.sortMap[f.getParamType()])
 						.append("'");
-			if (f.getParamTip() == 2)
+			if (f.getParamType() == 2)
 				html.append(",type:'date',dateFormat:'").append(dateFormatMulti[scd!=null ? GenericUtil.uInt(scd.get("date_format")):0]).append(" h:i:s'");
 
 			html.append("}");
@@ -5178,7 +5176,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			else
 				b = true;
 			html.append("{name:'");
-			switch (f.getPostProcessTip()) {
+			switch (f.getPostProcessType()) {
 			case 9:
 				html.append("_").append(f.getDsc());
 				break;
@@ -5189,14 +5187,14 @@ public class ExtJs3_4 implements ViewAdapter {
 				html.append(f.getDsc());
 			}
 			html.append("'");
-			if (f.getFieldTip() > 2 && f.getFieldTip() < 7)
+			if (f.getFieldType() > 2 && f.getFieldType() < 7)
 				html.append(",type:'")
-						.append(FrameworkSetting.sortMap[f.getFieldTip()])
+						.append(FrameworkSetting.sortMap[f.getFieldType()])
 						.append("'");
-			if (f.getFieldTip() == 2)
+			if (f.getFieldType() == 2)
 				html.append(",type:'date',dateFormat:'").append(dateFormatMulti[scd!=null ? GenericUtil.uInt(scd.get("date_format")):0]).append(" h:i:s'");
 
-			if (f.getPostProcessTip() >= 10 && f.getPostProcessTip() <90)
+			if (f.getPostProcessType() >= 10 && f.getPostProcessType() <90)
 				html.append("},{name:'").append(f.getDsc()).append("_qw_'");
 			html.append("}");
 		}
@@ -5209,9 +5207,9 @@ public class ExtJs3_4 implements ViewAdapter {
 				
 				if(f.getDsc().equals(FieldDefinitions.queryFieldName_Comment) && FrameworkCache.getAppSettingIntValue(scd, "make_comment_summary_flag")!=0)
 					html.append(",{name:'").append(FieldDefinitions.queryFieldName_CommentExtra).append("'}");
-				if (f.getPostProcessTip() > 0)
+				if (f.getPostProcessType() > 0)
 					html.append(",{name:'").append(f.getDsc()).append("_qw_'}");
-				if (f.getPostProcessTip() == 49)
+				if (f.getPostProcessType() == 49)
 					html.append(",{name:'pkpkpk_arf_id',type:'int'},{name:'app_role_ids_qw_'},{name:'app_user_ids_qw_'}");
 			}
 		switch (processTip) {
@@ -5321,7 +5319,7 @@ public class ExtJs3_4 implements ViewAdapter {
 					.append("'")
 					.append(", sortable: ")
 					.append(c.getSortableFlag() != 0
-							&& c.get_queryField().getPostProcessTip() != 101); // post
+							&& c.get_queryField().getPostProcessType() != 101); // post
 																				// sql
 																				// select
 																				// tip==101
@@ -5409,7 +5407,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			for (W5QueryField f : grid.get_postProcessQueryFields()) {
 				if(!f.getDsc().equals("ar_version_no")){
 					if (viewTable != null)
-						switch (f.getFieldTip()) {
+						switch (f.getFieldType()) {
 						case 2:// file attachment
 						case 7:// picture attachment
 							if (!FrameworkCache.roleAccessControl(
@@ -5427,24 +5425,24 @@ public class ExtJs3_4 implements ViewAdapter {
 					W5GridColumn c = new W5GridColumn();
 					c.set_queryField(f);
 					c.setWidth(f.getTabOrder());
-					c.setAlignTip((short) 0);
-					c.setLocaleMsgKey(f.getFieldTip()==2?"<div class=\"ifile_attach\" style=\"background-position-x:center;\" border=\"0\"> &nbsp;</div>":"&nbsp;"); //<div class=\""+ FrameworkSetting.postQueryGridImgMap[f.getFieldTip()]+ "\"></div>
+					c.setAlignType((short) 0);
+					c.setLocaleMsgKey(f.getFieldType()==2?"<div class=\"ifile_attach\" style=\"background-position-x:center;\" border=\"0\"> &nbsp;</div>":"&nbsp;"); //<div class=\""+ FrameworkSetting.postQueryGridImgMap[f.getFieldTip()]+ "\"></div>
 					c.setVisibleFlag((short) 1);
-					String renderer = postQueryMap[f.getFieldTip()];
+					String renderer = postQueryMap[f.getFieldType()];
 					c.setRenderer(renderer);
 					if(f.getDsc().equals(FieldDefinitions.queryFieldName_Comment) && FrameworkCache.getAppSettingIntValue(scd, "make_comment_summary_flag")!=0){
 						c.setWidth((short) (f.getTabOrder() + 10));
 						c.setSortableFlag((short)1);
 					}
 					if (FrameworkSetting.vcs && f.getDsc().equals(FieldDefinitions.queryFieldName_Vcs)) {// vcs
-						c.setAlignTip((short) 1);
+						c.setAlignType((short) 1);
 //						c.setLocaleMsgKey("vcs_flag");
 						newColumns.add(x, c);
 						x++;
 						continue;
-					} else if (f.getDsc().equals(FieldDefinitions.queryFieldName_Approval)) {// approval_record_flag
+					} else if (f.getDsc().equals(FieldDefinitions.queryFieldName_Workflow)) {// approval_record_flag
 						c.setWidth((short) (f.getTabOrder() + 100));
-						c.setAlignTip((short) 1);
+						c.setAlignType((short) 1);
 						c.setLocaleMsgKey("approval_status");
 						newColumns.add(x, c);
 						x++;
@@ -5475,7 +5473,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			W5GridColumn c_dttm = new W5GridColumn();
 			c_dttm.set_queryField(qf_dttm);
 			c_dttm.setWidth((short) 120);
-			c_dttm.setAlignTip((short) 1);
+			c_dttm.setAlignType((short) 1);
 			c_dttm.setLocaleMsgKey("log_dttm");
 			c_dttm.setVisibleFlag((short) 1);
 			c_dttm.setRenderer("fmtDateTimeAgo");
@@ -5486,7 +5484,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			W5GridColumn c_user = new W5GridColumn();
 			c_user.set_queryField(qf_user);
 			c_user.setWidth((short) 80);
-			c_user.setAlignTip((short) 1);
+			c_user.setAlignType((short) 1);
 			c_user.setLocaleMsgKey("log_user");
 			c_user.setVisibleFlag((short) 1);
 			c_user.setRenderer("gridQwRenderer('log5_user_id')");
@@ -5548,7 +5546,7 @@ public class ExtJs3_4 implements ViewAdapter {
 							.append("=")
 							.append(serializeFormCell(customizationId, xlocale,
 									fcr, null));
-					if (f.getControlTip() == 9 || f.getControlTip() == 10) {
+					if (f.getControlType() == 9 || f.getControlType() == 10) {
 						buf.append("\n").append(grid.getDsc()).append("._")
 								.append(f.getDsc())
 								.append(".on('select',function(a,b,c){\n")
@@ -5577,7 +5575,7 @@ public class ExtJs3_4 implements ViewAdapter {
 
 		buf.append("\n").append(grid.getDsc()).append(".columns=[");
 		b = false;
-		if (grid.getSelectionModeTip() == 3) {
+		if (grid.getSelectionModeType() == 3) {
 			buf.append(grid.getDsc()).append("_sm"); // selectionmodel
 			b = true;
 		}
@@ -5627,13 +5625,13 @@ public class ExtJs3_4 implements ViewAdapter {
 					.append("'")
 					.append(", sortable: ")
 					.append(c.getSortableFlag() != 0
-							&& c.get_queryField().getPostProcessTip() != 101); // post
+							&& c.get_queryField().getPostProcessType() != 101); // post
 																				// sql
 																				// select
 																				// tip==101
-			if (c.getAlignTip() != 1)
+			if (c.getAlignType() != 1)
 				buf.append(", align: '")
-						.append(FrameworkSetting.alignMap[c.getAlignTip()])
+						.append(FrameworkSetting.alignMap[c.getAlignType()])
 						.append("'");// left'ten farkli ise
 			buf.append(", width: ").append(c.getWidth());
 			if (c.getRenderer() != null) {
@@ -5642,17 +5640,17 @@ public class ExtJs3_4 implements ViewAdapter {
 																	// ise
 				if (c.getRenderer().equals("disabledCheckBoxHtml"))
 					boolRendererFlag = true;
-			} else if (c.get_queryField().getPostProcessTip() >= 10
-					&& c.get_queryField().getPostProcessTip() <90) {
+			} else if (c.get_queryField().getPostProcessType() >= 10
+					&& c.get_queryField().getPostProcessType() <90) {
 				if (c.get_formCell() == null || !editableFlag) {
 					if (FrameworkSetting.chat
-							&& (c.get_queryField().getPostProcessTip() == 20 || c
-									.get_queryField().getPostProcessTip() == 53)) // user
+							&& (c.get_queryField().getPostProcessType() == 20 || c
+									.get_queryField().getPostProcessType() == 53)) // user
 																					// lookup
 																					// ise
 						buf.append(", renderer:gridUserRenderer('").append(qds)
 								.append("')");// browser renderer ise
-					else if (c.get_queryField().getPostProcessTip() == 12) // table
+					else if (c.get_queryField().getPostProcessType() == 12) // table
 																			// lookup
 																			// ise
 						buf.append(", renderer:gridQwRendererWithLink('")
@@ -5663,7 +5661,7 @@ public class ExtJs3_4 implements ViewAdapter {
 						buf.append(", renderer:gridQwRenderer('").append(qds)
 								.append("')");// browser renderer ise
 				} else
-					switch (c.get_formCell().getControlTip()) {
+					switch (c.get_formCell().getControlType()) {
 					case 6:
 					case 7:
 						buf.append(", renderer:editGridComboRenderer(")
@@ -5730,7 +5728,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			 */
 
 			if (c.getFilterFlag() != 0) {
-				if (c.get_queryField().getPostProcessTip() == 10
+				if (c.get_queryField().getPostProcessType() == 10
 						&& c.get_queryField().getLookupQueryId() != 0) {
 					bufFilters.append("{type:'list',dataIndex:'").append(qds)
 							.append("', options: [");
@@ -5743,10 +5741,10 @@ public class ExtJs3_4 implements ViewAdapter {
 						else
 							b2 = true;
 						bufFilters.append("[");
-						if (c.get_queryField().getFieldTip() == 1)
+						if (c.get_queryField().getFieldType() == 1)
 							bufFilters.append("'");
 						bufFilters.append(ld.getVal());
-						if (c.get_queryField().getFieldTip() == 1)
+						if (c.get_queryField().getFieldType() == 1)
 							bufFilters.append("'");
 						bufFilters
 								.append(",'")
@@ -5756,14 +5754,14 @@ public class ExtJs3_4 implements ViewAdapter {
 					}
 					bufFilters.append("]},");
 
-				} else if ((c.get_queryField().getPostProcessTip() == 0 || c
-						.get_queryField().getPostProcessTip() == 7)
+				} else if ((c.get_queryField().getPostProcessType() == 0 || c
+						.get_queryField().getPostProcessType() == 7)
 						&& !qwRendererFlag)
 					bufFilters
 							.append("{type: '")
 							.append(boolRendererFlag ? "boolean"
 									: FrameworkSetting.filterMap[c
-											.get_queryField().getFieldTip()])
+											.get_queryField().getFieldType()])
 							.append("', dataIndex: '").append(qds)
 							.append("'},");
 			}
@@ -5829,16 +5827,16 @@ public class ExtJs3_4 implements ViewAdapter {
 							else
 								b = true;
 							Object obj = o[f.getTabOrder() - 1];
-							if (f.getPostProcessTip() == 9)
+							if (f.getPostProcessType() == 9)
 								buf.append("_");
-							if (f.getFieldTip() == 5) {
+							if (f.getFieldType() == 5) {
 								buf.append(f.getDsc()).append(":")
 										.append(GenericUtil.uInt(obj) != 0);
 								continue;
 							}
-							buf.append(f.getPostProcessTip() == 6 ? f.getDsc().substring(1):f.getDsc()).append(":'");
+							buf.append(f.getPostProcessType() == 6 ? f.getDsc().substring(1):f.getDsc()).append(":'");
 							if (obj != null) {
-								switch (f.getPostProcessTip()) { // queryField
+								switch (f.getPostProcessType()) { // queryField
 																	// PostProcessTip
 								case 8:
 									buf.append(GenericUtil.stringToHtml(obj));
@@ -5911,7 +5909,7 @@ public class ExtJs3_4 implements ViewAdapter {
 										break;
 									buf.append("',").append(f.getDsc())
 											.append("_qw_:'");
-									String[] objs = f.getPostProcessTip() == 11 ? ((String) obj)
+									String[] objs = f.getPostProcessType() == 11 ? ((String) obj)
 											.split(",") : new String[] { obj
 											.toString() };
 									boolean bz = false;
@@ -6053,22 +6051,22 @@ public class ExtJs3_4 implements ViewAdapter {
 							else
 								b = true;
 							Object obj = o[f.getTabOrder() - 1];
-							if (f.getPostProcessTip() == 9)
+							if (f.getPostProcessType() == 9)
 								buf2.append("_");
-							if (f.getFieldTip() == 5) {
+							if (f.getFieldType() == 5) {
 								buf2.append(f.getDsc()).append(":")
 										.append(GenericUtil.uInt(obj) != 0);
 								continue;
 							}
 							
-							buf2.append(f.getPostProcessTip() == 6 ? f.getDsc().substring(1):f.getDsc()).append(":");
-							if (f.getFieldTip() != 8)
+							buf2.append(f.getPostProcessType() == 6 ? f.getDsc().substring(1):f.getDsc()).append(":");
+							if (f.getFieldType() != 8)
 								buf2.append("'");
 							else {
 								buf2.append("{");
 							} // JSON ise başka
 							if (obj != null) {
-								switch (f.getPostProcessTip()) { // queryField
+								switch (f.getPostProcessType()) { // queryField
 																	// PostProcessTip
 								case 8:
 									buf2.append(GenericUtil.stringToHtml(obj));
@@ -6141,7 +6139,7 @@ public class ExtJs3_4 implements ViewAdapter {
 										break;
 									buf2.append("',").append(f.getDsc())
 											.append("_qw_:'");
-									String[] objs = f.getPostProcessTip() == 11 ? ((String) obj)
+									String[] objs = f.getPostProcessType() == 11 ? ((String) obj)
 											.split(",") : new String[] { obj
 											.toString() };
 									boolean bz = false;
@@ -6190,7 +6188,7 @@ public class ExtJs3_4 implements ViewAdapter {
 											.toString()));
 								}
 							}
-							if (f.getFieldTip() != 8)
+							if (f.getFieldType() != 8)
 								buf2.append("'");
 							else {
 								buf2.append("}");
@@ -6247,9 +6245,9 @@ public class ExtJs3_4 implements ViewAdapter {
 	}
 
 	public StringBuilder serializeQueryData(W5QueryResult qr) {
-		if (qr.getQuery().getQueryTip() == 10)/* || (queryResult.getRequestParams()!=null && GenericUtil.uInt(queryResult.getRequestParams(), "_tqd")!=0)*/
+		if (qr.getQuery().getQueryType() == 10)/* || (queryResult.getRequestParams()!=null && GenericUtil.uInt(queryResult.getRequestParams(), "_tqd")!=0)*/
 			return serializeTreeQueryData(qr);
-		if (qr.getQuery().getQueryTip() == 14)
+		if (qr.getQuery().getQueryType() == 14)
 			return serializeTreeQueryRemoteData(qr);
 		int customizationId = (Integer) qr.getScd().get("customizationId");
 		String xlocale = (String) qr.getScd().get("locale");
@@ -6283,17 +6281,17 @@ public class ExtJs3_4 implements ViewAdapter {
 							buf.append(",");
 						else
 							b = true;
-						if (f.getPostProcessTip() == 9)
+						if (f.getPostProcessType() == 9)
 							buf.append("\"_");
 						else
 							buf.append("\"");
-						buf.append(f.getPostProcessTip() == 6 ? f.getDsc()
+						buf.append(f.getPostProcessType() == 6 ? f.getDsc()
 								.substring(1) : f.getDsc());
-						if (f.getFieldTip() == 5) {// boolean
+						if (f.getFieldType() == 5) {// boolean
 							buf.append("\":").append(GenericUtil.uInt(obj) != 0);
 							continue;
 						}
-						if (f.getFieldTip() == 6) {// auto
+						if (f.getFieldType() == 6) {// auto
 							buf.append("\":");
 							if (obj == null || obj.toString().equals("0"))
 								buf.append("null");
@@ -6302,7 +6300,7 @@ public class ExtJs3_4 implements ViewAdapter {
 							else
 								buf.append("\"").append(obj).append("\"");
 							continue;
-						} else if(f.getFieldTip() == 8) {
+						} else if(f.getFieldType() == 8) {
 							buf.append("\":");
 							if (obj == null)buf.append("null");
 							else if(obj instanceof Map)buf.append(GenericUtil.fromMapToJsonString2Recursive((Map)obj));
@@ -6313,7 +6311,7 @@ public class ExtJs3_4 implements ViewAdapter {
 						
 						buf.append("\":\"");
 						if (obj != null)
-							switch (f.getPostProcessTip()) { // queryField PostProcessTip
+							switch (f.getPostProcessType()) { // queryField PostProcessTip
 							case	15://convert to []
 								buf.setLength(buf.length()-1);
 								buf.append("[").append(obj).append("]");
@@ -6323,8 +6321,8 @@ public class ExtJs3_4 implements ViewAdapter {
 								if(obj==null)obj="";
 							case	4://data masking
 								int maskType = f.getLookupQueryId();
-								if(f.getMainTableFieldId()>0 && qr.getQuery().getMainTableId()>0 && qr.getQuery().getQuerySourceTip()==15) {
-									if(t == null) t = FrameworkCache.getTable(qr.getScd(), qr.getQuery().getMainTableId());
+								if(f.getMainTableFieldId()>0 && qr.getQuery().getSourceObjectId()>0 && qr.getQuery().getQuerySourceType()==15) {
+									if(t == null) t = FrameworkCache.getTable(qr.getScd(), qr.getQuery().getSourceObjectId());
 									W5TableField tf = t.get_tableFieldMap().get(f.getMainTableFieldId());
 									if(tf!=null && tf.getAccessMaskTip()>0 && GenericUtil.isEmpty(tf.getAccessMaskUserFields()) 
 											&& GenericUtil.accessControl(qr.getScd(), tf.getAccessMaskTip(), tf.getAccessMaskRoles(), tf.getAccessMaskUsers())) {
@@ -6332,7 +6330,7 @@ public class ExtJs3_4 implements ViewAdapter {
 												.toString()));
 										break;
 									}
-									if(tf!=null && f.getPostProcessTip()==14)maskType = tf.getAccessMaskTip();
+									if(tf!=null && f.getPostProcessType()==14)maskType = tf.getAccessMaskTip();
 								}
 								String strMask = FrameworkCache.getAppSettingStringValue(0, "data_mask", "**********");
 								String sobj = obj.toString();
@@ -6422,7 +6420,7 @@ public class ExtJs3_4 implements ViewAdapter {
 									break;
 								buf.append("\",\"").append(f.getDsc())
 										.append("_qw_\":\"");
-								String[] objs = f.getPostProcessTip() == 11 ? ((String) obj)
+								String[] objs = f.getPostProcessType() == 11 ? ((String) obj)
 										.split(",") : new String[] { obj
 										.toString() };
 								boolean bz = false;
@@ -6579,7 +6577,7 @@ public class ExtJs3_4 implements ViewAdapter {
 		boolean b = false;
 		if(!GenericUtil.isEmpty(pr.getRequestParams()) && !GenericUtil.isEmpty(pr.getRequestParams().get("_lookUps")))
 			b = true;
-		else if(!GenericUtil.isEmpty(pr.getPage().get_pageObjectList()))for(W5PageObject po :pr.getPage().get_pageObjectList()) if(po.getObjectTip()==6){
+		else if(!GenericUtil.isEmpty(pr.getPage().get_pageObjectList()))for(W5PageObject po :pr.getPage().get_pageObjectList()) if(po.getObjectType()==6){
 			b = true;
 			break;			
 		}
@@ -6594,7 +6592,7 @@ public class ExtJs3_4 implements ViewAdapter {
 					}
 				}
 			}
-			if(!GenericUtil.isEmpty(pr.getPage().get_pageObjectList()))for(W5PageObject po :pr.getPage().get_pageObjectList()) if(po.getObjectTip()==6){
+			if(!GenericUtil.isEmpty(pr.getPage().get_pageObjectList()))for(W5PageObject po :pr.getPage().get_pageObjectList()) if(po.getObjectType()==6){
 				ls.add(po.getObjectId());
 			}
 			if(!ls.isEmpty()) {
@@ -6641,7 +6639,7 @@ public class ExtJs3_4 implements ViewAdapter {
 		boolean dev = GenericUtil.uInt(pr.getRequestParams(),"_dev")!=0;
 		int customizationId = dev ? 0:(Integer) pr.getScd().get("customizationId");
 		String xlocale = (String) pr.getScd().get("locale");
-		if (page.getTemplateTip() != 0) { // html degilse
+		if (page.getPageType() != 0) { // html degilse
 			// notification Control
 			// masterRecord Control
 			if (pr.getMasterRecordList() != null
@@ -6664,10 +6662,10 @@ public class ExtJs3_4 implements ViewAdapter {
 
 			if(!GenericUtil.isEmpty(pr.getPage().getCssCode()) && pr.getPage().getCssCode().trim().length()>3){
 				buf.append("iwb.addCss(\"")
-				.append(GenericUtil.stringToJS2(pr.getPage().getCssCode().trim())).append("\",").append(pr.getTemplateId()).append(");\n");
+				.append(GenericUtil.stringToJS2(pr.getPage().getCssCode().trim())).append("\",").append(pr.getPageId()).append(");\n");
 			}
 			
-			if (page.getTemplateTip() != 8) { // wizard degilse
+			if (page.getPageType() != 8) { // wizard degilse
 				int customObjectCount = 1, tabOrder = 1;
 				for (Object i : pr.getPageObjectList()) {
 					if (i instanceof W5BIGraphDashboard) {
@@ -6677,11 +6675,11 @@ public class ExtJs3_4 implements ViewAdapter {
 								.append("=")
 								.append(serializeGraphDashboard(gd, pr.getScd()))
 								.append(";\n");
-					} else if (i instanceof W5GridResult) { // objectTip=1
+					} else if (i instanceof W5GridResult) { // objectType=1
 						W5GridResult gr = (W5GridResult) i;
 						buf.append(serializeGrid(gr));
 						buf.append("\n").append(gr.getGrid().getDsc()).append(".tabOrder=").append(tabOrder++).append(";\n") // template  grid sirasi icin.
-						.append(gr.getGrid().getDsc()).append(".tplInfo={id:").append(gr.getTplObj().getTemplateId()).append(", objId:").append(gr.getTplObj().getTemplateObjectId()).append("};"); // template  grid sirasi icin.
+						.append(gr.getGrid().getDsc()).append(".tplInfo={id:").append(gr.getTplObj().getPageId()).append(", objId:").append(gr.getTplObj().getPageObjectId()).append("};"); // template  grid sirasi icin.
 						
 						if (gr.getGridId() < 0) {
 							buf.append("\nvar _grid")
@@ -6692,16 +6690,16 @@ public class ExtJs3_4 implements ViewAdapter {
 							
 						}
 						// if(replacePostJsCode)
-					} else if (i instanceof W5CardResult) {// objectTip=2
+					} else if (i instanceof W5CardResult) {// objectType=2
 						W5CardResult dr = (W5CardResult) i;
 						buf.append(serializeCard(dr));
-						if (dr.getDataViewId() < 0) {
+						if (dr.getCardId() < 0) {
 							buf.append("\nvar _dataView")
 									.append(customObjectCount++).append("=")
 									.append(dr.getCard().getDsc())
 									.append("\n");
 						}
-					} else if (i instanceof W5ListViewResult) {// objectTip=7
+					} else if (i instanceof W5ListViewResult) {// objectType=7
 						W5ListViewResult lr = (W5ListViewResult) i;
 						buf.append(serializeListView(lr));
 						if (lr.getListId() < 0) {
@@ -6710,9 +6708,9 @@ public class ExtJs3_4 implements ViewAdapter {
 									.append(lr.getListView().getDsc())
 									.append("\n");
 						}
-					} else if (i instanceof W5FormResult) {// objectTip=3
+					} else if (i instanceof W5FormResult) {// objectType=3
 						W5FormResult fr = (W5FormResult) i;
-						if (Math.abs(fr.getObjectTip()) == 3) { // form
+						if (Math.abs(fr.getObjectType()) == 3) { // form
 							buf.append("\nvar ").append(fr.getForm().getDsc())
 									.append("=").append(serializeGetForm(fr));
 						}
@@ -6746,7 +6744,7 @@ public class ExtJs3_4 implements ViewAdapter {
 						buf.append(",\n");
 					else
 						b = true;
-					buf.append("{\"objTip\":").append(o.getObjectTip())
+					buf.append("{\"objTip\":").append(o.getObjectType())
 							.append(",\"objId\":").append(o.getObjectId());
 					if (!GenericUtil.isEmpty(o.getPostJsCode()))
 						buf.append(",").append(o.getPostJsCode()); // ornek
@@ -6818,15 +6816,15 @@ public class ExtJs3_4 implements ViewAdapter {
 				if (i instanceof W5GridResult) {
 					W5GridResult gr = (W5GridResult) i;
 					buf2.append(serializeGrid(gr));
-				} else if (i instanceof W5CardResult) {// objectTip=2
+				} else if (i instanceof W5CardResult) {// objectType=2
 					W5CardResult dr = (W5CardResult) i;
 					buf2.append(serializeCard(dr));
-				} else if (i instanceof W5ListViewResult) {// objectTip=7
+				} else if (i instanceof W5ListViewResult) {// objectType=7
 					W5ListViewResult lr = (W5ListViewResult) i;
 					buf2.append(serializeListView(lr));
 				} else if (i instanceof W5FormResult) {
 					W5FormResult fr = (W5FormResult) i;
-					if (fr.getObjectTip() == 3) { // form
+					if (fr.getObjectType() == 3) { // form
 						buf2.append("\nvar ").append(fr.getForm().getDsc())
 								.append("=").append(serializeGetForm(fr));
 					}
@@ -6880,8 +6878,8 @@ public class ExtJs3_4 implements ViewAdapter {
 							.append("{background-color:")
 							.append(d.getVal()).append(";}\n");
 				}
-				FrameworkCache.addPageCss(pr.getScd(), page.getTemplateId(), buf4.toString());
-				code = code.replace("${promis-css}", " <link rel=\"stylesheet\" type=\"text/css\" href=\"dyn-res/"+page.getTemplateId()+".css?.x="+page.getVersionNo()+"\" />");
+				FrameworkCache.addPageResource(pr.getScd(), "css-"+page.getPageId(), buf4.toString());
+				code = code.replace("${promis-css}", " <link rel=\"stylesheet\" type=\"text/css\" href=\"dyn-res/css-"+page.getPageId()+".css?.x="+page.getVersionNo()+"\" />");
 
 			}
 
@@ -6901,13 +6899,13 @@ public class ExtJs3_4 implements ViewAdapter {
 		 */
 		buf.append("\n");
 		if(!GenericUtil.isEmpty(code)){
-			if(page.getTemplateTip()==2 && FrameworkSetting.debug)buf.append("\n/*iwb:start:template:").append(page.getTemplateId()).append(":Code*/\n");
+			if(page.getPageType()==2 && FrameworkSetting.debug)buf.append("\n/*iwb:start:template:").append(page.getPageId()).append(":Code*/\n");
 			buf.append(code.startsWith("!") ? code.substring(1) : code);
-			if(page.getTemplateTip()==2 && !GenericUtil.isEmpty(code) && FrameworkSetting.debug)buf.append("\n/*iwb:end:template:").append(page.getTemplateId()).append(":Code*/");
+			if(page.getPageType()==2 && !GenericUtil.isEmpty(code) && FrameworkSetting.debug)buf.append("\n/*iwb:end:template:").append(page.getPageId()).append(":Code*/");
 		}
 //		short ttip= page.getTemplateTip();
 //		if((ttip==2 || ttip==4) && !GenericUtil.isEmpty(pr.getPageObjectList()))buf.append("\n").append(renderTemplateObject(pr));
-		if(!GenericUtil.isEmpty(pr.getPageObjectList()))switch(page.getTemplateTip()){
+		if(!GenericUtil.isEmpty(pr.getPageObjectList()))switch(page.getPageType()){
 		case	2:case	4://page, pop up
 			buf.append("\n").append(renderTemplateObject(pr));
 			break;
@@ -6928,7 +6926,7 @@ public class ExtJs3_4 implements ViewAdapter {
 		StringBuilder buf = new StringBuilder();
 		for(Object o:l)if(o instanceof W5GridResult){
 			W5GridResult gr = (W5GridResult)o;
-			if(gr.getTplObj().getTemplateObjectId()!=parentObjectId && gr.getTplObj().getParentObjectId()==parentObjectId){
+			if(gr.getTplObj().getPageObjectId()!=parentObjectId && gr.getTplObj().getParentObjectId()==parentObjectId){
 				if(buf.length()==0){
 					if(level>1)buf.append("region:'west',");
 					buf.append("detailGrids:[");
@@ -6945,7 +6943,7 @@ public class ExtJs3_4 implements ViewAdapter {
 					}
 					buf.append("}");
 				}
-				StringBuilder rbuf = recursiveTemplateObject(l, gr.getTplObj().getTemplateObjectId(), level+1);
+				StringBuilder rbuf = recursiveTemplateObject(l, gr.getTplObj().getPageObjectId(), level+1);
 				if(rbuf!=null && rbuf.length()>0)
 					buf.append(",").append(rbuf);
 				buf.append("},");
@@ -6969,7 +6967,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			buf.append(",pk:{").append(t.get_tableParamList().get(0).getDsc()).append(":'").append(t.get_tableParamList().get(0).getExpressionDsc()).append("'}");
 		}
 		if(pr.getPageObjectList().size()>1){
-			StringBuilder rbuf = recursiveTemplateObject(pr.getPageObjectList(), ((W5GridResult)pr.getPageObjectList().get(0)).getTplObj().getTemplateObjectId(), 1);
+			StringBuilder rbuf = recursiveTemplateObject(pr.getPageObjectList(), ((W5GridResult)pr.getPageObjectList().get(0)).getTplObj().getPageObjectId(), 1);
 			if(rbuf!=null && rbuf.length()>0)
 				buf.append(",").append(rbuf);
 		}
@@ -7379,95 +7377,12 @@ public class ExtJs3_4 implements ViewAdapter {
 				.append("}}");
 	}
 
-	public StringBuilder serializeException(Map<String, Object> scd,
-			IWBException ex) {
-		String locale = (scd == null) ? FrameworkCache.getAppSettingStringValue(0,
-				"locale") : (String) scd.get("locale");
-		int customizationId = (scd == null) ? FrameworkCache
-				.getAppSettingIntValue(0, "default_customization_id")
-				: GenericUtil.uInt(scd.get("customizationId"));
-		StringBuilder b = new StringBuilder();
-		b.append("{\"success\":false,\n\"errorType\":\"")
-				.append(ex.getErrorType()).append("\"");
-		String msg = ex.getMessage();
-		String cause = ex.getCause() == null ? null : ex.getCause()
-				.getMessage();
-		if (msg != null) {
-			if (FrameworkCache.getAppSettingIntValue(customizationId, "debug") != 1) {
-				if (msg.contains("ORA-")) {
-					String temp = msg.substring(0, 9);
-					if (!temp.equals("ORA-00001")) {
-						msg = LocaleMsgCache.get2(0, locale,
-								FrameworkCache.wExceptions.get(temp));
-					} else {
-						temp = msg.substring(msg.indexOf('(') + 1,
-								msg.indexOf(')'));
-						msg = LocaleMsgCache.get2(0, locale,
-								FrameworkCache.wExceptions.get(temp));
-					}
-				} else if (cause != null && cause.contains("ORA-")) {
-					String temp = cause.substring(0, 9);
-					if (temp.equals("ORA-02292")) // FOREIGN KEY
-					{
-						temp = cause.substring(cause.indexOf('(') + 1,
-								cause.indexOf(')'));
-						msg = LocaleMsgCache.get2(0, locale,
-								FrameworkCache.wExceptions.get(temp));
-					}
-				}
-			}
-
-			else {
-				int index = msg.indexOf("ORA-");
-				if (index != -1) {
-					int lastIndex = msg.indexOf(":", index + 4);
-					if (lastIndex == index + 9) {
-						String dbErrorCode = msg.substring(index, lastIndex);
-						String errorMsg = LocaleMsgCache.get2(0, locale,
-								dbErrorCode);
-						if (errorMsg != null)
-							msg = errorMsg + " (" + msg + ")";
-					}
-				}
-			}
-			if (msg == null) {
-				msg = ex.getMessage();
-				int index = msg.indexOf("ORA-");
-
-				if (index != -1) {
-					msg = LocaleMsgCache.filter2(0, locale, msg).toString();
-					int lastIndex = msg.indexOf("ORA-", index + 4);
-					msg = msg.substring(index + 10, lastIndex);
-				}
-			}
-
-			b.append(",\n\"error\":'").append(GenericUtil.stringToJS(msg))
-					.append("'");
-		}
-
-		if (ex.getObjectType() != null) {
-			b.append(",\n\"objectType\":'")
-					.append(GenericUtil.stringToJS(ex.getObjectType()))
-					.append("'");
-			if (ex.getObjectId() != 0) {
-				b.append(",\n\"objectId\":").append(ex.getObjectId());
-			}
-		}
-
-		if (FrameworkSetting.debug && ex.getSql() != null) {
-			b.append(",\n\"sql\":'").append(GenericUtil.stringToJS(ex.getSql()))
-					.append("'");
-		}
-
-		return b.append("}");
-	}
-
 	private StringBuilder serializeManualConversions(Map scd, List<W5Conversion> l, boolean dev) {
 		StringBuilder s = new StringBuilder();
 		int customizationId = dev ? 0 :(Integer) scd.get("customizationId");
 		boolean b = false;
 		for (W5Conversion fsm : l)
-			if (GenericUtil.hasPartInside2(fsm.getActionTips(), 0)) { // manuel
+			if (GenericUtil.hasPartInside2(fsm.getActionTypes(), 0)) { // manuel
 																		// icin
 																		// var
 																		// mi
@@ -7560,21 +7475,21 @@ public class ExtJs3_4 implements ViewAdapter {
 								buf2.append("\"");
 							}
 							Object obj = o[f.getTabOrder() - 1];
-							if (f.getPostProcessTip() == 9)
+							if (f.getPostProcessType() == 9)
 								buf2.append("_");
-							if (f.getFieldTip() == 5) {
+							if (f.getFieldType() == 5) {
 								buf2.append(f.getDsc()).append("\":").append(GenericUtil.uInt(obj) != 0);
 								continue;
 							}
 							
-							buf2.append(f.getPostProcessTip() == 6 ? f.getDsc().substring(1):f.getDsc()).append("\":");
-							if (f.getFieldTip() != 8)
+							buf2.append(f.getPostProcessType() == 6 ? f.getDsc().substring(1):f.getDsc()).append("\":");
+							if (f.getFieldType() != 8)
 								buf2.append("\"");
 							else {
 								buf2.append("{");
 							} // JSON ise başka
 							if (obj != null) {
-								switch (f.getPostProcessTip()) { // queryField
+								switch (f.getPostProcessType()) { // queryField
 																	// PostProcessTip
 								case 8:
 									buf2.append(GenericUtil.stringToHtml(obj));
@@ -7647,7 +7562,7 @@ public class ExtJs3_4 implements ViewAdapter {
 										break;
 									buf2.append("\",").append(f.getDsc())
 											.append("_qw_:\"");
-									String[] objs = f.getPostProcessTip() == 11 ? ((String) obj)
+									String[] objs = f.getPostProcessType() == 11 ? ((String) obj)
 											.split(",") : new String[] { obj
 											.toString() };
 									boolean bz = false;
@@ -7696,7 +7611,7 @@ public class ExtJs3_4 implements ViewAdapter {
 											.toString()));
 								}
 							}
-							if (f.getFieldTip() != 8)
+							if (f.getFieldType() != 8)
 								buf2.append("\"");
 							else {
 								buf2.append("}");
@@ -7763,7 +7678,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			} else if(o instanceof W5CardResult){
 				W5CardResult cr = (W5CardResult)o;
 				rbuf.append("{card:").append(cr.getCard().getDsc());
-				for(W5PageObject po2:pr.getPage().get_pageObjectList())if(po2.getObjectId()==cr.getDataViewId()){
+				for(W5PageObject po2:pr.getPage().get_pageObjectList())if(po2.getObjectId()==cr.getCardId()){
 					po = po2;
 					break;
 				}

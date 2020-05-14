@@ -13,23 +13,21 @@ import org.hibernate.annotations.Immutable;
 @Immutable
 @Table(name="w5_object_toolbar_item",schema="iwb")
 public class W5ObjectToolbarItem implements java.io.Serializable, W5Base {
+/*TABLE_ID: 229*/
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 9159238375651L;
 	private int toolbarItemId;
-	private short objectTip; // hangi tablodan geldigi: 2:table_id, 1:gridId, 3:dbFunc
+	private short objectType; // 2:table_id, 1:gridId, 3:dbFunc
 	private int objectId; //gelen table'in PK'si
 	private String dsc;
 	private String localeMsgKey;
 	private short tabOrder;
 	private String imgIcon;
-	private short accessViewTip; //0:kisitlama yok, 1:var
+	private short accessViewTip; //
 	private String accessViewRoles;
 	private String accessViewUsers;
-	private short itemTip; // duz icon, menu'lu vs.vs.
-	private short activeOnSelectionFlag; // duz icon, menu'lu vs.vs.
+	private short controlType; // flat icon, menu'lu vs.vs.
+	private short activeOnSelectionFlag;
 	private String code; 
 	private int lookupQueryId;
 
@@ -66,11 +64,11 @@ public class W5ObjectToolbarItem implements java.io.Serializable, W5Base {
 		this.tabOrder = tabOrder;
 	}
 	@Column(name="object_tip")
-	public short getObjectTip() {
-		return objectTip;
+	public short getObjectType() {
+		return objectType;
 	}
-	public void setObjectTip(short objectTip) {
-		this.objectTip = objectTip;
+	public void setObjectType(short objectType) {
+		this.objectType = objectType;
 	}
 	@Column(name="object_id")
 	public int getObjectId() {
@@ -114,11 +112,11 @@ public class W5ObjectToolbarItem implements java.io.Serializable, W5Base {
 		this.accessViewUsers = accessViewUsers;
 	}
 	@Column(name="item_tip")
-	public short getItemTip() {
-		return itemTip;
+	public short getControlType() {
+		return controlType;
 	}
-	public void setItemTip(short itemTip) {
-		this.itemTip = itemTip;
+	public void setControlType(short controlType) {
+		this.controlType = controlType;
 	}
 	@Column(name="code")
 	public String getCode() {

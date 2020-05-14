@@ -7,8 +7,11 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.Immutable;
+
 
 @Entity
+@Immutable
 @Table(name="w5_object_mail_setting",schema="iwb")
 public class W5ObjectMailSetting implements java.io.Serializable {
 

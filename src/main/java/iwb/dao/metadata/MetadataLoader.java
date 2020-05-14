@@ -8,7 +8,6 @@ import iwb.domain.db.W5LookUpDetay;
 import iwb.domain.db.W5ObjectMailSetting;
 import iwb.domain.db.W5Project;
 import iwb.domain.db.W5TableFieldCalculated;
-import iwb.domain.db.W5WsMethodParam;
 import iwb.domain.result.M5ListResult;
 import iwb.domain.result.W5CardResult;
 import iwb.domain.result.W5FormResult;
@@ -80,10 +79,6 @@ public interface MetadataLoader {
 	 */
 	void reloadLookUpCache(String projectId);
 
-	/* (non-Javadoc)
-	 * @see iwb.dao.metadata.rdbms.MetadataLoader#reloadRolesCache(java.lang.String)
-	 */
-	void reloadRolesCache(String projectId);
 
 	/* (non-Javadoc)
 	 * @see iwb.dao.metadata.postgresql.MetadataLoader#reloadMobileCache()
@@ -109,13 +104,6 @@ public interface MetadataLoader {
 	 */
 	void reloadWorkflowCache(String projectId);
 
-	/* (non-Javadoc)
-	 * @see iwb.dao.metadata.postgresql.MetadataLoader#reloadTableFiltersCache(java.lang.String)
-	 */
-	/* (non-Javadoc)
-	 * @see iwb.dao.metadata.rdbms.MetadataLoader#reloadTableFiltersCache(java.lang.String)
-	 */
-	void reloadTableFiltersCache(String projectId);
 
 	/* (non-Javadoc)
 	 * @see iwb.dao.metadata.postgresql.MetadataLoader#reloadDeveloperEntityKeys()
@@ -191,10 +179,7 @@ public interface MetadataLoader {
 	 */
 	W5ObjectMailSetting findObjectMailSetting(Map<String, Object> scd, int mailSettingId);
 
-	/* (non-Javadoc)
-	 * @see iwb.dao.metadata.rdbms.MetadataLoader#findWsMethodParams(int, java.lang.String)
-	 */
-	List<W5WsMethodParam> findWsMethodParams(int wsMethodId, String projectUuid);
+	
 
 	/* (non-Javadoc)
 	 * @see iwb.dao.metadata.rdbms.MetadataLoader#findLookUpDetay(int, java.lang.String)
@@ -220,5 +205,8 @@ public interface MetadataLoader {
 	public boolean changeActiveProject(Map<String, Object> scd, String projectUuid);
 	
 	public int getGlobalNextval(String id);
+	
+	public Map<String, Object> getProjectMetadata(String projectId);
+
 
 }

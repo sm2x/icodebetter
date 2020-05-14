@@ -41,6 +41,7 @@ import iwb.adapter.ui.ViewAdapter;
 import iwb.adapter.ui.ViewMobileAdapter;
 import iwb.adapter.ui.extjs.ExtJs3_4;
 import iwb.adapter.ui.f7.F7_4;
+import iwb.adapter.ui.react.GReact16;
 import iwb.adapter.ui.react.React16;
 import iwb.adapter.ui.vue.Vue2;
 import iwb.adapter.ui.webix.Webix3_3;
@@ -48,7 +49,6 @@ import iwb.cache.FrameworkCache;
 import iwb.cache.FrameworkSetting;
 import iwb.cache.LocaleMsgCache;
 import iwb.domain.db.Log5UserAction;
-import iwb.domain.db.W5BIGraphDashboard;
 import iwb.domain.db.W5FileAttachment;
 import iwb.domain.db.W5Project;
 import iwb.domain.db.W5Query;
@@ -86,6 +86,7 @@ public class PreviewController implements InitializingBean {
 	private ViewAdapter ext3_4;
 	private	ViewAdapter	webix3_3;
 	private	ViewAdapter	react16;
+	private	ViewAdapter	greact16;
 	private	ViewAdapter	vue2;
 	private ViewMobileAdapter f7;
 
@@ -95,6 +96,7 @@ public class PreviewController implements InitializingBean {
 		webix3_3 = new Webix3_3();
 		f7 = new F7_4();
 		react16 = new React16();
+		greact16 = new GReact16();
 		vue2 = new Vue2();
 	}
 
@@ -106,6 +108,7 @@ public class PreviewController implements InitializingBean {
 			if(renderer!=null && renderer.equals("ext3_4"))return ext3_4;
 			if(renderer!=null && renderer.startsWith("webix"))return webix3_3;
 			if(renderer!=null && renderer.equals("react16"))return react16;
+			if(renderer!=null && renderer.equals("greact16"))return greact16;
 			if(renderer!=null && renderer.equals("vue2"))return vue2;
 		}
 		if(scd!=null){
@@ -113,6 +116,7 @@ public class PreviewController implements InitializingBean {
 			if(renderer!=null && renderer.equals("ext3_4"))return ext3_4;
 			if(renderer!=null && renderer.startsWith("webix"))return webix3_3;			
 			if(renderer!=null && renderer.equals("react16"))return react16;
+			if(renderer!=null && renderer.equals("greact16"))return greact16;
 			if(renderer!=null && renderer.equals("vue2"))return vue2;
 		}
 		return defaultRenderer;
@@ -133,10 +137,18 @@ public class PreviewController implements InitializingBean {
     	if(uri.endsWith(".css")){
     		uri = uri.substring(uri.lastIndexOf('/')+1);
     		uri = uri.substring(0, uri.length()-4);
-        	String css = FrameworkCache.getPageCss(scd, GenericUtil.uInt(uri));
+        	String css = FrameworkCache.getPageResource(scd, uri);
         	if(css!=null){
         		response.setContentType("text/css; charset=UTF-8");
         		response.getWriter().write(css);
+        	}
+    	} else if(uri.endsWith(".js")){
+    		uri = uri.substring(uri.lastIndexOf('/')+1);
+    		uri = uri.substring(0, uri.length()-3);
+        	String js = FrameworkCache.getPageResource(scd, uri);
+        	if(js!=null){
+        		response.setContentType("text/javascript; charset=UTF-8");
+        		response.getWriter().write(js);
         	}
     	}
 //    	int pageId =  ;
@@ -217,7 +229,7 @@ public class PreviewController implements InitializingBean {
 				scd = UserUtil.getScd4Preview(request, "scd-dev", false);
 				W5QueryResult qr = new W5QueryResult(142);
 				W5Query q = new W5Query();
-				q.setQueryTip((short) 0);
+				q.setQueryType((short) 0);
 				qr.setQuery(q);
 				qr.setScd(scd);
 				qr.setErrorMap(new HashMap());
@@ -539,8 +551,8 @@ public class PreviewController implements InitializingBean {
 				
 			}
 
-		} else if (formId < 0) { // negatifse direk -dbFuncId
-			// int dbFuncId= GenericUtil.uInt(request, "_did");
+		} else if (formId < 0) { // negatifse direk -globalFuncId
+			// int globalFuncId= GenericUtil.uInt(request, "_did");
 			W5GlobalFuncResult dbFuncResult = service.postEditGridGlobalFunc(scd, -formId, dirtyCount,
 					requestMap, "");
 			response.getWriter().write(getViewAdapter(scd, request).serializeGlobalFunc(dbFuncResult).toString());
@@ -606,20 +618,20 @@ public class PreviewController implements InitializingBean {
 			scd.put("userName", "Demo User");
 			scd.put("email", "demo@icodebetter.com");scd.put("locale", "en");
 			scd.put("chat", 1);scd.put("chatStatusTip", 1);
-			scd.put("userTip",po.get_defaultUserTip());
+			scd.put("userTip",po.get_defaultRoleGroupId());
 			scd.put("path", "../");
 			accessType = (short) 6;
 		}
 
-		int dbFuncId = GenericUtil.uInt(request, "_did"); // +:dbFuncId,
+		int globalFuncId = GenericUtil.uInt(request, "_did"); // +:globalFuncId,
 															// -:formId
-		if (dbFuncId == 0) {
-			dbFuncId = -GenericUtil.uInt(request, "_fid"); // +:dbFuncId,
+		if (globalFuncId == 0) {
+			globalFuncId = -GenericUtil.uInt(request, "_fid"); // +:globalFuncId,
 															// -:formId
 		}
-		W5GlobalFuncResult dbFuncResult = GenericUtil.uInt(request, "_notran")==0 ? service.executeFunc(scd, dbFuncId, GenericUtil.getParameterMap(request),
+		W5GlobalFuncResult dbFuncResult = GenericUtil.uInt(request, "_notran")==0 ? service.executeFunc(scd, globalFuncId, GenericUtil.getParameterMap(request),
 				accessType): 
-					service.executeFuncNT(scd, dbFuncId, GenericUtil.getParameterMap(request),
+					service.executeFuncNT(scd, globalFuncId, GenericUtil.getParameterMap(request),
 							accessType);
 
 		response.setContentType("application/json");
@@ -940,7 +952,7 @@ public class PreviewController implements InitializingBean {
 			return;
 		}
 
-		int templateId = GenericUtil.uInt(scd.get("mainTemplateId")); // Login
+		int pageId = GenericUtil.uInt(scd.get("mainTemplateId")); // Login
 		
 		//if it exists then create new session
 		
@@ -948,7 +960,7 @@ public class PreviewController implements InitializingBean {
 		
 																		// Page
 																		// Template
-		W5PageResult pageResult = service.getPageResult(scd, templateId, GenericUtil.getParameterMap(request));
+		W5PageResult pageResult = service.getPageResult(scd, pageId, GenericUtil.getParameterMap(request));
 		response.setContentType("text/html; charset=UTF-8");
 		response.getWriter().write(getViewAdapter(scd, request).serializeTemplate(pageResult).toString());
 		response.getWriter().close();
@@ -959,20 +971,20 @@ public class PreviewController implements InitializingBean {
 	@RequestMapping("/*/showPage")
 	public void hndShowPage(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		int templateId = GenericUtil.uInt(request, "_tid");
-		logger.info("hndShowPage(" + templateId + ")");
+		int pageId = GenericUtil.uInt(request, "_tid");
+		logger.info("hndShowPage(" + pageId + ")");
 
 		Map<String, Object> scd = UserUtil.getScd4Preview(request, "scd-dev", true);
 
-		W5PageResult pageResult = service.getPageResult(scd, templateId, GenericUtil.getParameterMap(request));
-		// if(pageResult.getTemplate().getTemplateTip()!=2 && templateId!=218 &&
-		// templateId!=611 && templateId!=551 && templateId!=566){ //TODO:cok
+		W5PageResult pageResult = service.getPageResult(scd, pageId, GenericUtil.getParameterMap(request));
+		// if(pageResult.getTemplate().getTemplateTip()!=2 && pageId!=218 &&
+		// pageId!=611 && pageId!=551 && pageId!=566){ //TODO:cok
 		// amele
 		// throw new PromisException("security","Template",0,null, "Wrong
 		// Template Tip (must be page)", null);
 		// }
 
-		if(pageResult.getPage().getTemplateTip()!=0)
+		if(pageResult.getPage().getPageType()!=0)
 			response.setContentType("application/json");
 
 		response.getWriter().write(getViewAdapter(scd, request).serializeTemplate(pageResult).toString());
@@ -1002,15 +1014,15 @@ public class PreviewController implements InitializingBean {
 	public void hndShowMPage(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		
-		int templateId = GenericUtil.uInt(request, "_tid");
-		logger.info("hndShowMPage(" + templateId + ")");
+		int pageId = GenericUtil.uInt(request, "_tid");
+		logger.info("hndShowMPage(" + pageId + ")");
 
 		Map<String, Object> scd = UserUtil.getScd4Preview(request, "scd-dev", true);
 
-		W5PageResult pageResult = service.getPageResult(scd, templateId, GenericUtil.getParameterMap(request));
+		W5PageResult pageResult = service.getPageResult(scd, pageId, GenericUtil.getParameterMap(request));
 
 
-		if(pageResult.getPage().getTemplateTip()!=0)
+		if(pageResult.getPage().getPageType()!=0)
 			response.setContentType("application/json");
 
 		response.getWriter().write(f7.serializePage(pageResult).toString());
@@ -1150,19 +1162,17 @@ public class PreviewController implements InitializingBean {
 		}
 		InputStream stream = null;
 		String filePath = null;
+		
 
-		W5FileAttachment fa = service.loadFile(scd, fileAttachmentId);
-		if (fa == null) { // bulunamamis TODO
-			throw new IWBException("validation", "File Attachment", fileAttachmentId, null,
-					"Wrong Id: " + fileAttachmentId, null);
-		}
-
-		if (fa.getFileAttachmentId() == 1 || fa.getFileAttachmentId() == 2) { // bayan
-																				// veya
-																				// erkek
-																				// resmi
-			filePath = fa.getFileAttachmentId() == 2 ? AppController.womanPicPath : AppController.manPicPath;
+		if (fileAttachmentId == 1 || fileAttachmentId == 2) { // male or female
+			filePath = fileAttachmentId == 2 ? AppController.womanPicPath : AppController.manPicPath;
 		} else {
+			W5FileAttachment fa = fileAttachmentId>0?service.loadFile(scd, fileAttachmentId):null;
+			if (fa == null) { // not found TODO
+				throw new IWBException("validation", "File Attachment", fileAttachmentId, null,
+						"Wrong Id: " + fileAttachmentId, null);
+			}
+
 			if (scd == null)scd = UserUtil.getScd4Preview(request, "scd-dev", true);
 			
 			
@@ -1204,7 +1214,7 @@ public class PreviewController implements InitializingBean {
 				e.printStackTrace();
 			// bus.logException(e.getMessage(),GenericUtil.uInt(scd.get("customizationId")),GenericUtil.uInt(scd.get("userRoleId")));
 			throw new IWBException("generic", "File Attacment", fileAttachmentId, "Unknown Exception",
-					e.getMessage(), e.getCause());
+					e.getMessage(), e);
 		} finally {
 			out.close();
 			stream.close();

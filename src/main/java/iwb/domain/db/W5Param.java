@@ -9,11 +9,11 @@ public interface W5Param  {
 
 	public String getDsc();
 
-	public short getParamTip();
+	public short getParamType();
 	
 	public short getNotNullFlag();
 	
-	public short getSourceTip();
+	public short getSourceType();
 	
 
 	public String getDefaultValue();
@@ -24,7 +24,7 @@ public interface W5Param  {
 
 	public Short getMinLength();
 	
-	public Short getMaxLength();
+	public Integer getMaxLength();
 	
 	public short getTabOrder();
 	

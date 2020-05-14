@@ -19,7 +19,6 @@ import iwb.cache.LocaleMsgCache;
 import iwb.dao.metadata.MetadataLoader;
 import iwb.dao.rdbms_impl.BaseDAO;
 import iwb.dao.rdbms_impl.PostgreSQL;
-import iwb.domain.db.Log5GlobalNextval;
 import iwb.domain.db.M5List;
 import iwb.domain.db.W5Card;
 import iwb.domain.db.W5Component;
@@ -57,6 +56,7 @@ import iwb.domain.db.W5TableEvent;
 import iwb.domain.db.W5TableField;
 import iwb.domain.db.W5TableFieldCalculated;
 import iwb.domain.db.W5TableParam;
+import iwb.domain.db.W5VcsCommit;
 import iwb.domain.db.W5Workflow;
 import iwb.domain.db.W5WorkflowStep;
 import iwb.domain.db.W5Ws;
@@ -76,8 +76,8 @@ import iwb.domain.result.W5PageResult;
 import iwb.domain.result.W5QueryResult;
 import iwb.enums.FieldDefinitions;
 import iwb.exception.IWBException;
+import iwb.util.EncryptionUtil;
 import iwb.util.GenericUtil;
-import iwb.util.LogUtil;
 import iwb.util.UserUtil;
 
 @Repository
@@ -96,8 +96,6 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 		// int customizationId = (Integer)f.getScd().get("customizationId");
 		String projectId = FrameworkCache.getProjectId(fr.getScd(), "40." + fr.getFormId());
 
-		W5Form form = null;
-		if (FrameworkSetting.redisCache) {
 			/*
 			 * try { form = (W5Form) (redisGlobalMap.get(projectId + ":form:" +
 			 * fr.getFormId()));// rformMap.get(fr.getFormId()); if (form != null &&
@@ -106,30 +104,28 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 			 * fr.getFormId(), null, "Loading Form from Redis", e); }
 			 */
 
-		} else {
-			form = (W5Form) getMetadataObject("W5Form","formId", fr.getFormId(),
+		W5Form form = (W5Form) getMetadataObject("W5Form","formId", fr.getFormId(),
 					projectId, "Form"); // ozel bir client icin varsa
 
-			form.set_formCells(find(
-					"from W5FormCell t where t.formId=?0 AND t.projectUuid=?1 order by t.tabOrder, t.xOrder, t.dsc",
-					fr.getFormId(), projectId));
-			if (form.getRenderTip() != 0) { // eger baska turlu render
-											// edilecekse
-				form.set_moduleList(
-						find("from W5FormModule t where t.formId=?0 AND t.projectUuid=?1 order by t.tabOrder",
-								form.getFormId(), projectId));
-			}
-
-			form.set_toolbarItemList(find(
-					"from W5ObjectToolbarItem t where t.objectTip=?0 AND t.objectId=?1 AND t.projectUuid=?2 order by t.tabOrder",
-					(short) 40, fr.getFormId(), projectId));
-			form.set_formHintList(find(
-					"from W5FormHint h where h.activeFlag=1 AND h.formId=?0 AND h.projectUuid=?1 order by h.tabOrder",
-					fr.getFormId(), projectId));
-			if (form.get_formHintList().isEmpty())
-				form.set_formHintList(null);
-
+		form.set_formCells(find(
+				"from W5FormCell t where t.formId=?0 AND t.projectUuid=?1 order by t.tabOrder, t.xOrder, t.dsc",
+				fr.getFormId(), projectId));
+		if (form.getRenderType() != 0) { // eger baska turlu render
+										// edilecekse
+			form.set_moduleList(
+					find("from W5FormModule t where t.formId=?0 AND t.projectUuid=?1 order by t.tabOrder",
+							form.getFormId(), projectId));
 		}
+
+		form.set_toolbarItemList(find(
+				"from W5ObjectToolbarItem t where t.objectType=?0 AND t.objectId=?1 AND t.projectUuid=?2 order by t.tabOrder",
+				(short) 40, fr.getFormId(), projectId));
+		form.set_formHintList(find(
+				"from W5FormHint h where h.activeFlag=1 AND h.formId=?0 AND h.projectUuid=?1 order by h.tabOrder",
+				fr.getFormId(), projectId));
+		if (form.get_formHintList().isEmpty())
+			form.set_formHintList(null);
+
 
 		fr.setForm(form);
 
@@ -147,22 +143,15 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 			fc.get_formCellPropertyList().add(fcp);
 		}
 
-		if (form.getObjectTip() != 1 && form.getRenderTemplateId() > 0) { // grid(seachForm)
-																			// degilse
-																			// ve
-																			// templateId
-																			// varsa
+		if (form.getObjectType() != 1 && form.getRenderTemplateId() > 0) { //  if not grid(seachForm)
 			W5Page page = getPageResult(fr.getScd(), form.getRenderTemplateId()).getPage();
 			form.set_renderTemplate(page);
 		}
 		Map<Short, W5Workflow> mam = null;
 		W5Table mt = null;
-		switch (form.getObjectTip()) {
+		switch (form.getObjectType()) {
 		case 6: // conversion icin
 			W5Conversion c = FrameworkCache.getConversion(projectId, form.getObjectId());
-			W5Table srct = FrameworkCache.getTable(projectId, c.getSrcTableId());
-			W5Table dstt = FrameworkCache.getTable(projectId, c.getDstTableId());
-			// f.getForm().set_sourceTable(dstt);
 			for (W5FormCell fc : form.get_formCells())
 				if (fc.getObjectDetailId() != 0) {
 					fc.set_sourceObjectDetail(c.get_conversionColMap().get(fc.getObjectDetailId()));
@@ -189,7 +178,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 			if (FrameworkSetting.sms || FrameworkSetting.mail) {
 				if (!FrameworkSetting.redisCache)
 					form.set_formSmsMailList(find(
-							"from W5FormSmsMail t where t.projectUuid=?0 AND t.formId=?1 AND t.activeFlag=1 order by t.smsMailSentTip,t.tabOrder",
+							"from W5FormSmsMail t where t.projectUuid=?0 AND t.formId=?1 AND t.activeFlag=1 order by t.smsMailSentType,t.tabOrder",
 							projectId, fr.getFormId()));
 				if (GenericUtil.isEmpty(form.get_formSmsMailList()))
 					form.set_formSmsMailList(null);
@@ -206,12 +195,12 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 			break;
 		case 1: // grid icin ise
 			Object[] ooo = (Object[]) find(
-					"select t.queryId,(select q.mainTableId from W5Query q where q.queryId=t.queryId AND q.projectUuid=t.projectUuid) from W5Grid t where t.projectUuid=?0 AND t.gridId=?1",
+					"select t.queryId,(select q.sourceObjectId from W5Query q where q.queryId=t.queryId AND q.projectUuid=t.projectUuid) from W5Grid t where t.projectUuid=?0 AND t.gridId=?1",
 					projectId, form.getObjectId()).get(0);
 			int queryId = (Integer) ooo[0];
-			int mainTableId = (Integer) ooo[1];
-			if (mainTableId > 0)
-				mt = FrameworkCache.getTable(projectId, mainTableId); // f.getForm().set_sourceTable()
+			int sourceObjectId = (Integer) ooo[1];
+			if (sourceObjectId > 0)
+				mt = FrameworkCache.getTable(projectId, sourceObjectId); // f.getForm().set_sourceTable()
 			W5Query query = getQueryResult(fr.getScd(), queryId).getQuery();
 			form.set_sourceQuery(query);
 			Map<Integer, W5QueryParam> fieldMap2 = new HashMap();
@@ -236,7 +225,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 			W5GlobalFunc dbf = getGlobalFuncResult(fr.getScd(), form.getObjectId()).getGlobalFunc();
 			Map<Integer, W5GlobalFuncParam> fieldMap3 = new HashMap();
 			for (W5GlobalFuncParam tf : dbf.get_dbFuncParamList()) {
-				fieldMap3.put(tf.getDbFuncParamId(), tf);
+				fieldMap3.put(tf.getGlobalFuncParamId(), tf);
 			}
 			for (W5FormCell fc : form.get_formCells())
 				if (fc.getObjectDetailId() != 0) {
@@ -244,27 +233,6 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 				}
 		}
 
-		// StringBuilder autoExtraJSConstructor = new StringBuilder();
-		for (W5FormCell fc : form.get_formCells())
-			switch (fc.getControlTip()) {
-			case 99: // grid
-				W5GridResult gridResult = new W5GridResult(fc.getLookupQueryId());
-				gridResult.setRequestParams(fr.getRequestParams());
-				gridResult.setScd(fr.getScd());
-
-				W5Grid g = FrameworkCache.getGrid(projectId, fc.getLookupQueryId());
-				if (g != null) {
-					gridResult.setGrid(g);
-				} else {
-					loadGrid(gridResult);
-					g = gridResult.getGrid();
-					FrameworkCache.addGrid(projectId, g);
-				}
-				fc.set_sourceObjectDetail(g);
-				break;
-			case 31: // code_list: deprecated
-				break;
-			}
 
 		if (mam != null && !mam.isEmpty()) { // map of ApprovalManagement
 			int maxFirstColumnTabOrder = 0;
@@ -276,13 +244,13 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 				W5FormCell approvalCell = new W5FormCell();
 				approvalCell.setTabOrder((short) (-actionTip));
 				approvalCell.setDsc("_approval_step_ids" + actionTip);
-				approvalCell.setControlTip((short) 15); // low-combo query
+				approvalCell.setControlType((short) 15); // low-combo query
 				approvalCell.setLookupQueryId(606); // approval steps
-				approvalCell.setLookupIncludedParams("xapproval_id=" + mam.get(actionTip).getApprovalId());
+				approvalCell.setLookupIncludedParams("xapproval_id=" + mam.get(actionTip).getWorkflowId());
 				approvalCell.setControlWidth((short) 250);
 				approvalCell.setLocaleMsgKey("approval_status"); // mam.get(actionTip).getDsc()
-				approvalCell.setInitialSourceTip((short) 10); // approvalStates
-				// approvalCell.setInitialValue(""+mam.get(actionTip).getApprovalId());//approvalId
+				approvalCell.setInitialSourceType((short) 10); // approvalStates
+				// approvalCell.setInitialValue(""+mam.get(actionTip).getApprovalId());//workflowId
 				approvalCell.setActiveFlag((short) 1);
 				form.get_formCells().add(0, /* maxFirstColumnTabOrder, */ approvalCell);
 			}
@@ -341,7 +309,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 																// render
 																// edilecekse
 			for (W5FormModule m : formResult.getForm().get_moduleList()) { // form
-				switch (m.getModuleTip()) {
+				switch (m.getModuleType()) {
 				case 5: // grid
 					if (formResult.getModuleGridMap() == null)
 						formResult.setModuleGridMap(new HashMap());
@@ -391,14 +359,14 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 					qr.getQueryId(), projectId, "Query");
 
 			query.set_queryFields(find(
-					"from W5QueryField t where t.queryId=?0 AND t.tabOrder>0 AND t.postProcessTip!=99 AND t.projectUuid=?1 order by t.tabOrder",
+					"from W5QueryField t where t.queryId=?0 AND t.tabOrder>0 AND t.postProcessType!=99 AND t.projectUuid=?1 order by t.tabOrder",
 					qr.getQueryId(), projectId));
 			query.set_queryParams(
 					find("from W5QueryParam t where t.queryId=?0 AND t.projectUuid=?1 order by t.tabOrder",
 							qr.getQueryId(), projectId));
 
 			for (W5QueryField f : query.get_queryFields())
-				if (f.getPostProcessTip() == 31 && (f.getFieldTip() == 3 || f.getFieldTip() == 4)) {
+				if (f.getPostProcessType() == 31 && (f.getFieldType() == 3 || f.getFieldType() == 4)) {
 					if (query.get_aggQueryFields() == null)
 						query.set_aggQueryFields(new ArrayList());
 					query.get_aggQueryFields().add(f);
@@ -447,11 +415,11 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 			FrameworkCache.addQuery(projectId, queryResult.getQuery());
 		}
 
-		switch (queryResult.getQuery().getQuerySourceTip()) {
+		switch (queryResult.getQuery().getQuerySourceType()) {
 		case 0:
 		case 15:
-			if (queryResult.getQuery().getMainTableId() != 0) {
-				queryResult.setMainTable(FrameworkCache.getTable(projectId, queryResult.getQuery().getMainTableId()));
+			if (queryResult.getQuery().getSourceObjectId() != 0) {
+				queryResult.setMainTable(FrameworkCache.getTable(projectId, queryResult.getQuery().getSourceObjectId()));
 			}
 		}
 		return queryResult;
@@ -483,9 +451,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 
 	private void loadPage(W5PageResult pr) {
 
-		String projectId = FrameworkCache.getProjectId(pr.getScd(), "63." + pr.getTemplateId());
-		W5Page page = null;
-		if (FrameworkSetting.redisCache) {
+		String projectId = FrameworkCache.getProjectId(pr.getScd(), "63." + pr.getPageId());
 			/*
 			 * try { page = (W5Page) (redisGlobalMap.get(projectId + ":page:" +
 			 * pr.getTemplateId()));//
@@ -495,40 +461,38 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 			 * IWBException("framework", "Redis.Page", pr.getTemplateId(), null,
 			 * "Loading Page from Redis", e); }
 			 */
-		} else {
 
-			page = (W5Page) getMetadataObject("W5Page","templateId",
-					pr.getTemplateId(), projectId, "Page"); // ozel bir client
-															// icin
-															// varsa
-			page.set_pageObjectList(find(
-					"from W5PageObject t where t.activeFlag=1 AND t.templateId=?0 AND t.projectUuid=?1 order by t.tabOrder",
-					pr.getTemplateId(), projectId));
+		W5Page page = (W5Page) getMetadataObject("W5Page","pageId",
+					pr.getPageId(), projectId, "Page"); 
+		
+		page.set_pageObjectList(find(
+				"from W5PageObject t where t.activeFlag=1 AND t.pageId=?0 AND t.projectUuid=?1 order by t.tabOrder",
+				pr.getPageId(), projectId));
 
-			for (W5PageObject to : page.get_pageObjectList())
-				if (to.getSrcQueryFieldId() != null && to.getDstQueryParamId() != null) {
-					List p = new ArrayList();
+		for (W5PageObject to : page.get_pageObjectList())
+			if (to.getSrcQueryFieldId() != null && to.getDstQueryParamId() != null) {
+				List p = new ArrayList();
+				p.add(projectId);
+				p.add(to.getSrcQueryFieldId());
+				p.add(projectId);
+				p.add(to.getDstQueryParamId());
+				String sql = "select (select f1.dsc from iwb.w5_query_field f1 where f1.project_uuid=? AND f1.query_field_id=?) f_dsc, "
+						+ "(select p1.dsc from iwb.w5_query_param p1 where p1.project_uuid=? AND p1.query_param_id=?) p_dsc";
+				if (to.getDstStaticQueryParamId() != null && !GenericUtil.isEmpty(to.getDstStaticQueryParamVal())) {
 					p.add(projectId);
-					p.add(to.getSrcQueryFieldId());
-					p.add(projectId);
-					p.add(to.getDstQueryParamId());
-					String sql = "select (select f1.dsc from iwb.w5_query_field f1 where f1.project_uuid=? AND f1.query_field_id=?) f_dsc, "
-							+ "(select p1.dsc from iwb.w5_query_param p1 where p1.project_uuid=? AND p1.query_param_id=?) p_dsc";
-					if (to.getDstStaticQueryParamId() != null && !GenericUtil.isEmpty(to.getDstStaticQueryParamVal())) {
-						p.add(projectId);
-						p.add(to.getDstStaticQueryParamId());
-						sql += ",(select p1.dsc from iwb.w5_query_param p1 where p1.project_uuid=? AND p1.query_param_id=?) ps_dsc";
-					}
-					List l = executeSQLQuery2Map(sql, p);
-					if (!GenericUtil.isEmpty(l)) {
-						Map m = (Map) l.get(0);
-						to.set_srcQueryFieldName((String) m.get("f_dsc"));
-						to.set_dstQueryParamName((String) m.get("p_dsc"));
-						if (m.containsKey("ps_dsc"))
-							to.set_dstStaticQueryParamName((String) m.get("ps_dsc"));
-					}
+					p.add(to.getDstStaticQueryParamId());
+					sql += ",(select p1.dsc from iwb.w5_query_param p1 where p1.project_uuid=? AND p1.query_param_id=?) ps_dsc";
 				}
-		}
+				List l = executeSQLQuery2Map(sql, p);
+				if (!GenericUtil.isEmpty(l)) {
+					Map m = (Map) l.get(0);
+					to.set_srcQueryFieldName((String) m.get("f_dsc"));
+					to.set_dstQueryParamName((String) m.get("p_dsc"));
+					if (m.containsKey("ps_dsc"))
+						to.set_dstStaticQueryParamName((String) m.get("ps_dsc"));
+				}
+			}
+
 		pr.setPage(page);
 
 	}
@@ -565,14 +529,14 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 		return cr;
 	}
 
-	private Integer findFormId4Object(int objectTip, int objectId, String projectId) {
-		List<Integer> l = find("select t.formId from W5Form t where t.objectTip=?0 and t.objectId=?1 and t.projectUuid=?2",
-				(short)objectTip, objectId, projectId);
+	private Integer findFormId4Object(int objectType, int objectId, String projectId) {
+		List<Integer> l = find("select t.formId from W5Form t where t.objectType=?0 and t.objectId=?1 and t.projectUuid=?2",
+				(short)objectType, objectId, projectId);
 		return l.isEmpty() ? null : l.get(0);
 	}
 	
 	private void loadCard(W5CardResult cr) {
-		String projectId = FrameworkCache.getProjectId(cr.getScd(), "930." + cr.getDataViewId());
+		String projectId = FrameworkCache.getProjectId(cr.getScd(), "930." + cr.getCardId());
 		W5Card card = null;
 
 		if (FrameworkSetting.redisCache) {
@@ -583,17 +547,17 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 			 * null, "Loading Card from Redis", e); }
 			 */
 		} else {
-			card = (W5Card) getMetadataObject("W5Card","dataViewId",
-					cr.getDataViewId(), projectId, "Card"); // ozel bir client
+			card = (W5Card) getMetadataObject("W5Card","cardId",
+					cr.getCardId(), projectId, "Card"); // ozel bir client
 															// icin varsa
 
 			card.set_toolbarItemList(find(
-					"from W5ObjectToolbarItem t where t.objectTip=8 AND t.objectId=?0 AND t.projectUuid=?1 order by t.tabOrder",
-					card.getDataViewId(), projectId));
+					"from W5ObjectToolbarItem t where t.objectType=8 AND t.objectId=?0 AND t.projectUuid=?1 order by t.tabOrder",
+					card.getCardId(), projectId));
 			card.set_menuItemList(find(
-					"from W5ObjectMenuItem t where t.objectTip=8 AND t.objectId=?0 AND t.projectUuid=?1 order by t.tabOrder",
-					card.getDataViewId(), projectId));
-			Integer searchFormId = findFormId4Object(8, cr.getDataViewId(), projectId);
+					"from W5ObjectMenuItem t where t.objectType=8 AND t.objectId=?0 AND t.projectUuid=?1 order by t.tabOrder",
+					card.getCardId(), projectId));
+			Integer searchFormId = findFormId4Object(8, cr.getCardId(), projectId);
 			if (searchFormId != null)
 				card.set_searchFormId(searchFormId);
 		}
@@ -610,7 +574,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 
 		card.set_query(query);
 
-		card.set_crudTable(FrameworkCache.getTable(projectId, query.getMainTableId()));
+		card.set_crudTable(FrameworkCache.getTable(projectId, query.getSourceObjectId()));
 
 		Map<Integer, W5QueryField> fieldMap = new HashMap<Integer, W5QueryField>();
 		Map<String, W5QueryField> fieldMapDsc = new HashMap<String, W5QueryField>();
@@ -640,10 +604,10 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 				card.set_defaultCrudForm(defaultCrudForm);
 
 				card.set_crudFormSmsMailList(find(
-						"from W5FormSmsMail t where t.activeFlag=1 AND t.actionTips like '%0%' AND t.formId=?0 AND t.projectUuid=?1 order by t.tabOrder",
+						"from W5FormSmsMail t where t.activeFlag=1 AND t.actionTypes like '%0%' AND t.formId=?0 AND t.projectUuid=?1 order by t.tabOrder",
 						card.getDefaultCrudFormId(), projectId));
 				card.set_crudFormConversionList(find(
-						"from W5Conversion t where t.activeFlag=1 AND t.actionTips like '%0%' AND t.srcFormId=?0 AND t.projectUuid=?1 order by t.tabOrder",
+						"from W5Conversion t where t.activeFlag=1 AND t.actionTypes like '%0%' AND t.srcFormId=?0 AND t.projectUuid=?1 order by t.tabOrder",
 						card.getDefaultCrudFormId(), projectId));
 
 				organizeListPostProcessQueryFields(cr.getScd(), t, card);
@@ -705,7 +669,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 
 			if (!GenericUtil.isEmpty(gridResult.getGrid().get_toolbarItemList()))
 				for (W5ObjectToolbarItem ti : gridResult.getGrid().get_toolbarItemList()) {
-					if ((ti.getItemTip() == 7 || ti.getItemTip() == 15) && ti.getLookupQueryId() > 0) {
+					if ((ti.getControlType() == 7 || ti.getControlType() == 15) && ti.getLookupQueryId() > 0) {
 
 						W5QueryResult lookupQueryResult = getQueryResult(scd, ti.getLookupQueryId());
 						lookupQueryResult.setErrorMap(new HashMap());
@@ -752,10 +716,10 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 					find("from W5GridColumn t where t.projectUuid=?0 AND t.gridId=?1 order by t.tabOrder", projectId,
 							gr.getGridId()));
 			grid.set_toolbarItemList(find(
-					"from W5ObjectToolbarItem t where t.objectTip=?0 AND t.objectId=?1 AND t.projectUuid=?2 order by t.tabOrder",
+					"from W5ObjectToolbarItem t where t.objectType=?0 AND t.objectId=?1 AND t.projectUuid=?2 order by t.tabOrder",
 					(short) 5, gr.getGridId(), projectId));
 			grid.set_menuItemList(find(
-					"from W5ObjectMenuItem t where t.objectTip=?0 AND t.objectId=?1 AND t.projectUuid=?2 order by t.tabOrder",
+					"from W5ObjectMenuItem t where t.objectType=?0 AND t.objectId=?1 AND t.projectUuid=?2 order by t.tabOrder",
 					(short) 5, gr.getGridId(), projectId));
 
 			Integer searchFormId = findFormId4Object(
@@ -766,7 +730,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 		}
 
 		gr.setGrid(grid);
-		switch (grid.getRowColorFxTip()) {
+		switch (grid.getRowColorFxType()) {
 		case 1:
 			if (grid.getRowColorFxQueryFieldId() != 0) { // lookup eslesme
 				grid.set_listCustomGridColumnRenderer(find(
@@ -776,7 +740,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 			break;
 		case 2:
 		case 3:
-			if (grid.getRowColorFxQueryFieldId() != 0 || grid.getRowColorFxTip() == 3) { // kosul
+			if (grid.getRowColorFxQueryFieldId() != 0 || grid.getRowColorFxType() == 3) { // kosul
 				grid.set_listCustomGridColumnCondition(find(
 						"from W5CustomGridColumnCondition t where t.projectUuid=?0 AND t.gridId=?1 AND t.queryFieldId=?2 order by t.tabOrder",
 						projectId, gr.getGridId(), grid.getRowColorFxQueryFieldId()));
@@ -788,7 +752,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 
 		grid.set_query(query);
 
-		grid.set_viewTable(FrameworkCache.getTable(projectId, query.getMainTableId()));
+		grid.set_viewTable(FrameworkCache.getTable(projectId, query.getSourceObjectId()));
 
 		Map<Integer, W5QueryField> fieldMap = new HashMap<Integer, W5QueryField>();
 		Map<String, W5QueryField> fieldMapDsc = new HashMap<String, W5QueryField>();
@@ -827,7 +791,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 				}
 			} else if (column.getFormCellId() < 0) { // control
 				W5FormCell cell = new W5FormCell(-formCellCounter++);
-				cell.setControlTip((short) -column.getFormCellId());
+				cell.setControlType((short) -column.getFormCellId());
 				cell.setDsc(column.get_queryField().getDsc());
 				cell.setFormCellId(column.getQueryFieldId());
 				column.set_formCell(cell);
@@ -836,7 +800,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 
 		if (grid.get_toolbarItemList() != null)
 			for (W5ObjectToolbarItem c : grid.get_toolbarItemList())
-				switch (c.getItemTip()) { // TODO:toolbar icine bisey
+				switch (c.getControlType()) { // TODO:toolbar icine bisey
 											// konulacaksa
 				case 10:
 				case 7:
@@ -855,7 +819,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 					.getForm();
 			grid.set_defaultCrudForm(defaultCrudForm);
 
-			if (defaultCrudForm != null && defaultCrudForm.getObjectTip() == 2) {
+			if (defaultCrudForm != null && defaultCrudForm.getObjectType() == 2) {
 				// defaultCrudForm.set_sourceTable(PromisCache.getTable(customizationId,
 				// defaultCrudForm.getObjectId()));
 				W5Table t = FrameworkCache.getTable(projectId, defaultCrudForm.getObjectId()); // PromisCache.getTable(f.getScd(),
@@ -866,7 +830,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 				if (xcrudFormSmsList != null) {
 					List<W5FormSmsMail> crudFormSmsList = new ArrayList();
 					for (W5FormSmsMail x : xcrudFormSmsList)
-						if (GenericUtil.hasPartInside2(x.getActionTips(), 0)) {
+						if (GenericUtil.hasPartInside2(x.getActionTypes(), 0)) {
 							crudFormSmsList.add(x);
 						}
 					grid.set_crudFormSmsMailList(crudFormSmsList);
@@ -876,7 +840,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 				if (xcrudFormConversionList != null) {
 					List<W5Conversion> crudFormConversionList = new ArrayList();
 					for (W5Conversion x : xcrudFormConversionList)
-						if (GenericUtil.hasPartInside2(x.getActionTips(), 0)) {
+						if (GenericUtil.hasPartInside2(x.getActionTypes(), 0)) {
 							crudFormConversionList.add(x);
 						}
 					grid.set_crudFormConversionList(crudFormConversionList);
@@ -906,14 +870,14 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 			if (l.get_postProcessQueryFields() == null)
 				l.set_postProcessQueryFields(new ArrayList());
 			W5QueryField f = new W5QueryField();
-			f.setDsc(FieldDefinitions.queryFieldName_Approval);
-			f.setFieldTip((short) 5); // comment
+			f.setDsc(FieldDefinitions.queryFieldName_Workflow);
+			f.setFieldType((short) 5); // comment
 			f.setTabOrder((short) 22); // aslinda width
-			f.setPostProcessTip((short) 49); // approvalPostProcess
+			f.setPostProcessType((short) 49); // approvalPostProcess
 			l.get_postProcessQueryFields().add(f);
 			W5QueryField f2 = new W5QueryField();
 			f2.setDsc(FieldDefinitions.queryFieldName_ArVersionNo);
-			f2.setFieldTip((short) 4); // comment
+			f2.setFieldType((short) 4); // comment
 			f2.setTabOrder((short) 22); // aslinda width
 			l.get_postProcessQueryFields().add(f2);
 		}
@@ -923,7 +887,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 				l.set_postProcessQueryFields(new ArrayList());
 			W5QueryField f = new W5QueryField();
 			f.setDsc(FieldDefinitions.queryFieldName_FileAttachment);
-			f.setFieldTip((short) 2); // file attachment
+			f.setFieldType((short) 2); // file attachment
 			f.setTabOrder((short) 35); // aslinda width
 			l.get_postProcessQueryFields().add(f);
 		}
@@ -933,7 +897,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 				l.set_postProcessQueryFields(new ArrayList());
 			W5QueryField f = new W5QueryField();
 			f.setDsc(FieldDefinitions.queryFieldName_Comment);
-			f.setFieldTip((short) 3); // comment
+			f.setFieldType((short) 3); // comment
 			f.setTabOrder((short) 35); // aslinda width
 			// if(PromisSetting.commentSummary)f.set
 			l.get_postProcessQueryFields().add(f);
@@ -943,7 +907,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 				l.set_postProcessQueryFields(new ArrayList());
 			W5QueryField f = new W5QueryField();
 			f.setDsc(FieldDefinitions.queryFieldName_Vcs);
-			f.setFieldTip((short) 9); // vcs
+			f.setFieldType((short) 9); // vcs
 			f.setTabOrder((short) 35); // aslinda width
 			l.get_postProcessQueryFields().add(f);
 		}
@@ -973,18 +937,8 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 
 
 	private void reloadExternalDbsCache(String projectId) {
-		// Job Schedule
-		try {
-			Map<Integer, W5ExternalDb> myEDB = new HashMap();
-			for (W5ExternalDb j : (List<W5ExternalDb>) find(
-					"from W5ExternalDb x where x.activeFlag=1 and x.projectUuid=?0", projectId)) {
-				myEDB.put(j.getExternalDbId(), j);
-			}
-
-			FrameworkCache.wExternalDbs.put(projectId, myEDB);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		FrameworkCache.addExternalDbs2Cache(projectId, (List<W5ExternalDb>) find(
+				"from W5ExternalDb x where x.activeFlag=1 and x.projectUuid=?0", projectId));
 	}
 
 
@@ -1035,8 +989,10 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 	}
 
 
-	private void reloadErrorMessagesCache(int customizationId) { // TODO
-		FrameworkCache.wExceptions.clear();
+	private void reloadErrorMessagesCache(String projectId) { // TODO
+//		FrameworkCache.wExceptions.clear();
+		FrameworkCache.wExceptions.put(projectId, dao.find("from W5Exception t where t.projectUuid=?0 order by t.tabOrder", projectId));
+		
 		/*
 		 * List l = executeSQLQuery(
 		 * "select exc_code, locale_msg_key from iwb.w5_exception_filter order by exc_id"
@@ -1094,7 +1050,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 						"select min(t.user_tip) from iwb.w5_user_tip t where t.user_tip!=122 AND t.active_flag=1 AND t.project_uuid=?::text",
 						p.getProjectUuid());
 				if (!GenericUtil.isEmpty(ll))
-					p.set_defaultUserTip(GenericUtil.uInt(ll.get(0)));
+					p.set_defaultRoleGroupId(GenericUtil.uInt(ll.get(0)));
 				FrameworkCache.addProject(p);
 				FrameworkSetting.projectSystemStatus.put(p.getProjectUuid(), 0);
 
@@ -1124,9 +1080,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 	public void setApplicationSettingsValues() {
 		FrameworkSetting.debug = FrameworkCache.getAppSettingIntValue(0, "debug") != 0;
 
-		// preload olmamasinin sebebi: approval'da herkesin farkli kayitlarinin
-		// gelmesi search formlarda
-		FrameworkSetting.monaco = FrameworkCache.getAppSettingIntValue(0, "monaco") != 0;
+
 		FrameworkSetting.mq = FrameworkCache.getAppSettingIntValue(0, "mq_flag") != 0;
 		// FrameworkSetting.preloadWEngine =
 		// FrameworkCache.getAppSettingIntValue(0, "preload_engine");
@@ -1155,8 +1109,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 		FrameworkSetting.cacheTimeoutRecord = FrameworkCache.getAppSettingIntValue(0, "cache_timeout_record") * 1000;
 		FrameworkSetting.crudLogSchema = FrameworkCache.getAppSettingStringValue(0, "log_crud_schema",
 				FrameworkSetting.crudLogSchema);
-		FrameworkSetting.mailSchema = FrameworkCache.getAppSettingStringValue(0, "mail_schema",
-				FrameworkSetting.mailSchema);
+
 		FrameworkSetting.asyncTimeout = FrameworkCache.getAppSettingIntValue(0, "async_timeout", 100);
 		//
 		// if(MVAUtil.appSettings.get("file_local_path")!=null)MVAUtil.localPath=MVAUtil.appSettings.get("file_local_path");
@@ -1195,59 +1148,15 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 	 */
 	@Override
 	public void reloadLookUpCache(String projectId) {
-		Map<Integer, W5LookUp> lookUpMap = null;
-		new HashMap<Integer, W5LookUp>();
-
-		if (FrameworkSetting.redisCache) {
-			/*
-			 * try { lookUpMap = (Map) ((Map)
-			 * (redisGlobalMap.get(projectId))).get("lookUp");//
-			 * FrameworkCache.getRedissonClient().getMap(String.format(
-			 * "icb-cache2:%s:lookUp", // projectId)); } catch (Exception e) { throw new
-			 * IWBException("framework", "Redis.LookUps", 0, null,
-			 * "Loading LookUps from Redis", e); }
-			 */
-		} else {
-			lookUpMap = new HashMap<Integer, W5LookUp>();
-			for (W5LookUp lookUp : (List<W5LookUp>) find("from W5LookUp t where t.projectUuid=?0 order by  t.lookUpId",
-					projectId)) {
-				lookUp.set_detayList(new ArrayList());
-				lookUp.set_detayMap(new HashMap());
-				lookUpMap.put(lookUp.getLookUpId(), lookUp);
-			}
-
-			for (W5LookUpDetay lookUpDetay : (List<W5LookUpDetay>) find(
-					"from W5LookUpDetay t where t.projectUuid=?0 order by t.lookUpId, t.tabOrder", projectId)) {
-				W5LookUp lookUp = lookUpMap.get(lookUpDetay.getLookUpId());
-				if (lookUp == null)
-					continue;
-				lookUp.get_detayList().add(lookUpDetay);
-				lookUp.get_detayMap().put(lookUpDetay.getVal(), lookUpDetay);
-			}
-		}
-		FrameworkCache.setLookUpMap(projectId, lookUpMap);
-
+		
+		List<W5LookUp> lookUps = (List<W5LookUp>) find("from W5LookUp t where t.projectUuid=?0 order by  t.lookUpId",
+				projectId);
+		List<W5LookUpDetay> lookUpDetays = (List<W5LookUpDetay>) find(
+				"from W5LookUpDetay t where t.projectUuid=?0 order by t.lookUpId, t.tabOrder", projectId);
+		
+		FrameworkCache.addLookUps2Cache(projectId, lookUps, lookUpDetays);
 	}
 
-
-	/* (non-Javadoc)
-	 * @see MetadataLoader#reloadRolesCache(java.lang.String)
-	 */
-	/* (non-Javadoc)
-	 * @see MetadataLoader#reloadRolesCache(java.lang.String)
-	 */
-	@Override
-	public void reloadRolesCache(String projectId) { // deprecated
-		/*
-		 * if(FrameworkCache.wRoles.get(customizationId)!=null)FrameworkCache.
-		 * wRoles.get(customizationId).clear(); Map<Integer, String> subRoleMap = new
-		 * HashMap<Integer, String>(); FrameworkCache.wRoles.put(customizationId,
-		 * subRoleMap); List l = executeSQLQuery(
-		 * "select r.role_id, r.dsc from iwb.w5_role r where customization_id=?" ,
-		 * customizationId); if(l!=null)for(Object[] o:(List<Object[]>)l){ int roleId =
-		 * GenericUtil.uInt(o[0]); subRoleMap.put(roleId, (String)o[1]); }
-		 */
-	}
 
 	/* (non-Javadoc)
 	 * @see iwb.dao.metadata.postgresql.MetadataLoader#reloadMobileCache()
@@ -1284,121 +1193,19 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 	 */
 	@Override
 	public void reloadTablesCache(String projectId) {
-		// if (PromisCache.wTables.get(customizationId)!=null)
-		// PromisCache.wTables.get(customizationId).clear();
-		Map<Integer, W5Table> tableMap = null;
-
-		tableMap = new HashMap<Integer, W5Table>();
-		List<W5Table> lt = (List<W5Table>) find("from W5Table t where t.projectUuid=?0 order by t.tableId", projectId);
-		for (W5Table t : lt) {
-			// t.set_cachedObjectMap(new HashMap());
-			t.set_tableFieldList(null);
-			t.set_tableFieldMap(null);
-			t.set_tableParamList(null);
-			t.set_tableChildList(null);
-			t.set_tableParamList(null);
-			tableMap.put(t.getTableId(), t);
-		}
-		List<W5TableField> tfl = (List<W5TableField>) find(
+		List<W5Table> tables = (List<W5Table>) find("from W5Table t where t.projectUuid=?0 order by t.tableId", projectId);
+		List<W5TableField> tableFields = (List<W5TableField>) find(
 				"from W5TableField t where t.projectUuid=?0 AND t.tableFieldId>0 AND t.tabOrder>0 order by t.tableId, t.tabOrder",
 				projectId);
-		W5Table t = null;
-		for (W5TableField tf : tfl) {
-			if (t == null || tf.getTableId() != t.getTableId())
-				t = tableMap.get(tf.getTableId()); // tableMap.get(tf.getTableId());
-			if (t != null) {
-				if (t.get_tableFieldList() == null) {
-					t.set_tableFieldList(new ArrayList<W5TableField>());
-					t.set_tableFieldMap(new HashMap<Integer, W5TableField>());
-					/*
-					 * t.set_tableParamList(FrameworkCache.tableParamListMap .get
-					 * (tf.getTableId())); t.set_tableChildList(FrameworkCache.tableChildListMap
-					 * .get (tf.getTableId())); t.set_tableParentList(FrameworkCache.
-					 * tableParentListMap. get(tf.getTableId()));
-					 */
-				}
-				t.get_tableFieldList().add(tf);
-				t.get_tableFieldMap().put(tf.getTableFieldId(), tf);
-			}
-		}
-
-		List<W5TableParam> tplAll = (List<W5TableParam>) find(
+		List<W5TableParam> tableParams = (List<W5TableParam>) find(
 				"from W5TableParam t where t.projectUuid=?0 order by t.tableId, t.tabOrder", projectId);
-		// Map<Integer, List<W5TableParam>> tplMap = new HashMap<Integer,
-		// List<W5TableParam>>();
-		int lastTableId = -1;
-		List<W5TableParam> x = null;
-		for (W5TableParam tp : tplAll) {
-			if (lastTableId != tp.getTableId()) {
-				if (x != null) {
-					W5Table tx = tableMap.get(lastTableId);
-					if (tx != null)
-						tx.set_tableParamList(x);
-					// FrameworkCache.tableParamListMap.put(lastTableId, x);
-				}
-				x = new ArrayList();
-				lastTableId = tp.getTableId();
-			}
-			x.add(tp);
-		}
-		if (x != null) {
-			W5Table tx = tableMap.get(lastTableId);
-			if (tx != null)
-				tx.set_tableParamList(x);
-		}
-
-		List<W5TableChild> tcAll = (List<W5TableChild>) find(
-				"from W5TableChild t where t.projectUuid=?0 order by t.tableId", projectId);
-		// Map<Integer, List<W5TableChild>> tcMap = new HashMap<Integer,
-		// List<W5TableChild>>();//copy
-		// Map<Integer, List<W5TableChild>> tpMap = new HashMap<Integer,
-		// List<W5TableChild>>();//watch,feed
-		lastTableId = -1;
-		List<W5TableChild> ltc = null, tpx = null;
-		for (W5TableChild tc : tcAll) {
-			W5Table tx = tableMap.get(tc.getTableId());
-			if (tx == null)
-				continue;
-			W5Table pr = tableMap.get(tc.getRelatedTableId());
-			if (pr == null)
-				continue;
-
-			ltc = tx.get_tableChildList();
-			if (ltc == null) {
-				ltc = new ArrayList<W5TableChild>();
-				tx.set_tableChildList(ltc);
-			}
-
-			ltc.add(tc);
-
-			tpx = pr.get_tableParentList();
-			if (tpx == null) {
-				tpx = new ArrayList<W5TableChild>();
-				pr.set_tableParentList(tpx);
-			}
-			tpx.add(tc);
-
-		}
-
-		FrameworkCache.setTableMap(projectId, tableMap);
-
-		Map<Integer, List<W5TableEvent>> tableEventMap = null;
-
-		tableEventMap = new HashMap<Integer, List<W5TableEvent>>();
-		List<W5TableEvent> l = find(
+		List<W5TableEvent> tableEvents = find(
 				"from W5TableEvent r where r.projectUuid=?0 AND r.activeFlag=1 order by r.tableId, r.tabOrder, r.tableTriggerId",
 				projectId);
-		for (W5TableEvent r : l) {
-			List<W5TableEvent> l2 = tableEventMap.get(r.getTableId());
-			if (l2 == null) {
-				l2 = new ArrayList();
-				tableEventMap.put(r.getTableId(), l2);
-			}
-			l2.add(r);
-		}
-		FrameworkCache.setTableEventMap(projectId, tableEventMap);
+		List<W5TableChild> tableChilds = (List<W5TableChild>) find(
+				"from W5TableChild t where t.projectUuid=?0 order by t.tableId", projectId);
 
-		// reloadTableFiltersCache(projectId);
+		FrameworkCache.addTables2Cache(projectId, tables, tableFields, tableParams, tableEvents, null, tableChilds);
 
 	}
 
@@ -1432,8 +1239,8 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 			}
 			t.get_approvalMap().put(ta.getActionTip(), ta);
 			ta.set_approvalStepList((List<W5WorkflowStep>) find(
-					"from W5WorkflowStep t where t.projectUuid=?0 and t.approvalId=?1 order by approvalStepId",
-					projectId, ta.getApprovalId()));
+					"from W5WorkflowStep t where t.projectUuid=?0 and t.workflowId=?1 order by approvalStepId",
+					projectId, ta.getWorkflowId()));
 
 			if (ta.getApprovalRequestTip() != 1) {// automatic degilse
 				W5WorkflowStep approvedStep = new W5WorkflowStep();
@@ -1464,26 +1271,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see iwb.dao.metadata.postgresql.MetadataLoader#reloadTableFiltersCache(java.lang.String)
-	 */
-	/* (non-Javadoc)
-	 * @see MetadataLoader#reloadTableFiltersCache(java.lang.String)
-	 */
-	/* (non-Javadoc)
-	 * @see MetadataLoader#reloadTableFiltersCache(java.lang.String)
-	 */
-	@Override
-	public void reloadTableFiltersCache(String projectId) { // customizationID
-															// ??
-		/*
-		 * for(W5TableFilter tf:(List<W5TableFilter>)find(
-		 * "from W5TableFilter t where t.projectUuid=?", projectId)){ W5Table t =
-		 * FrameworkCache.getTable(tf.getCustomizationId(), tf.getTableId());
-		 * if(t!=null){ if(t.get_tableFilterList()==null)t.set_tableFilterList(new
-		 * ArrayList()); t.get_tableFilterList().add(tf); } }
-		 */
-	}
+	
 
 	/* (non-Javadoc)
 	 * @see iwb.dao.metadata.postgresql.MetadataLoader#reloadDeveloperEntityKeys()
@@ -1499,9 +1287,9 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 		Set<String> m = new HashSet();
 		m.add("20.1"); // login form
 		for (Object[] x : (List<Object[]>) executeSQLQuery(
-				"select x.table_id, x.dsc, (select tp.expression_dsc from iwb.w5_table_param tp where tp.table_id=x.table_id AND x.project_uuid=tp.project_uuid AND tp.tab_order=1) tp_dsc from iwb.w5_table x where x.project_uuid='067e6162-3b6f-4ae2-a221-2470b63dff00' AND x.vcs_flag=1 AND x.table_id in (4,5,8,9,10,13,14,15,16,20,40,41,42,63,64,230,231,254,707,930,936,1345,3351,4658,1376)")) {
+				"select x.table_id, x.dsc, (select tp.expression_dsc from iwb.w5_table_param tp where tp.table_id=x.table_id AND x.project_uuid=tp.project_uuid AND tp.tab_order=1) tp_dsc from iwb.w5_table x where x.project_uuid='"+FrameworkSetting.devUuid+"' AND x.vcs_flag=1 AND x.table_id in (4,5,8,9,10,13,14,15,16,20,40,41,42,63,64,230,231,254,707,930,936,1345,3351,4658,1376)")) {
 			List<Object> lo = executeSQLQuery("select t." + x[2] + " from " + x[1]
-					+ " t where t.project_uuid='067e6162-3b6f-4ae2-a221-2470b63dff00'");
+					+ " t where t.project_uuid='"+FrameworkSetting.devUuid+"'");
 			if (lo != null)
 				for (Object o : lo) {
 					m.add(x[0] + "." + o);
@@ -1522,8 +1310,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 	@Override
 	public void reloadFrameworkCaches(int customizationId) {
 		// if (FrameworkSetting.redisCache && redisGlobalMap == null)redisGlobalMap =
-		// FrameworkCache.getRedissonClient().getMap("icb-cache5");
-		reloadErrorMessagesCache(customizationId);
+
 		// Application Settings
 		List<W5Project> lp = reloadProjectsCache(customizationId);
 
@@ -1539,7 +1326,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 			reloadMobileCache();
 			setApplicationSettingsValues();
 			FrameworkCache.cachedOnlineQueryFields = (List<W5QueryField>) find(
-					"from W5QueryField f where f.queryId=142 AND f.projectUuid='067e6162-3b6f-4ae2-a221-2470b63dff00' order by f.tabOrder");
+					"from W5QueryField f where f.queryId=142 AND f.projectUuid='"+FrameworkSetting.devUuid+"' order by f.tabOrder");
 			reloadDeveloperEntityKeys();
 		} else
 			customizationList = (List<W5Customization>) find("from W5Customization t where t.customizationId=?0",
@@ -1603,80 +1390,27 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 			// Table Params
 			// if(cid==-1 ||
 			// cid==0)reloadTableParamListChildListParentListCache();
-			if (FrameworkSetting.redisCache) {
-				/*
-				 * Map xx = (Map) (redisGlobalMap.get(projectId));
-				 * 
-				 * Map<String, W5LookUp> xlookUpMap = (Map) xx.get("lookUp"); Map<Integer,
-				 * W5LookUp> lookUpMap = new HashMap(); if (xlookUpMap != null) for (String k :
-				 * xlookUpMap.keySet()) { lookUpMap.put(Integer.parseInt(k), xlookUpMap.get(k));
-				 * } FrameworkCache.setLookUpMap(projectId, lookUpMap);
-				 * 
-				 * Map<String, W5Table> xtableMap = (Map) xx.get("table"); Map<Integer, W5Table>
-				 * tableMap = new HashMap(); if (xtableMap != null) for (String k :
-				 * xtableMap.keySet()) { tableMap.put(Integer.parseInt(k), xtableMap.get(k));
-				 * 
-				 * } FrameworkCache.setTableMap(projectId, tableMap);
-				 * 
-				 * Map<String, List<W5TableEvent>> xtableEventMap = (Map) xx.get("tableEvent");
-				 * Map<Integer, List<W5TableEvent>> tableEventMap = new HashMap(); if
-				 * (xtableEventMap != null) for (String k : xtableEventMap.keySet()) {
-				 * tableEventMap.put(Integer.parseInt(k), xtableEventMap.get(k));
-				 * 
-				 * } FrameworkCache.setTableEventMap(projectId, tableEventMap);
-				 * 
-				 * Map<String, W5Ws> xwsMap = (Map) xx.get("ws"); Map<String, W5Ws> wsMap = new
-				 * HashMap(); if (xwsMap != null) { for (String key : xwsMap.keySet()) { W5Ws ws
-				 * = xwsMap.get(key); wsMap.put(ws.getDsc(), ws); if (ws.get_methods() == null)
-				 * ws.set_methods(new ArrayList()); else for (W5WsMethod wsm : ws.get_methods())
-				 * FrameworkCache.addWsMethod(projectId, wsm); }
-				 * FrameworkCache.setWsClientsMap(projectId, wsMap); }
-				 * 
-				 * Map<String, W5WsServer> xwssMap = (Map) xx.get("wss"); Map<String,
-				 * W5WsServer> wssMap = new HashMap(); if (xwssMap != null) { for (String key :
-				 * xwssMap.keySet()) { W5WsServer wss = xwssMap.get(key);
-				 * wssMap.put(wss.getWsUrl(), wss); if (wss.get_methods() == null)
-				 * wss.set_methods(new ArrayList());
-				 * 
-				 * wss.get_methods().add(0, new W5WsServerMethod("login", (short) 4, 3)); //
-				 * o.get_methods().add(1,new W5WsServerMethod("logout", (short)4, // 5)); for
-				 * (W5WsServerMethod wsm : wss.get_methods()) if (wsm.getObjectTip() == 19) { //
-				 * QueryResult if (wsm.get_params().isEmpty()) wsm.set_params(null); else {
-				 * W5WsServerMethodParam tokenKey = new W5WsServerMethodParam(-998, "tokenKey",
-				 * (short) 1); tokenKey.setOutFlag((short) 0); tokenKey.setNotNullFlag((short)
-				 * 1); wsm.get_params().add(0, tokenKey); } }
-				 * 
-				 * } FrameworkCache.setWsServersMap(projectId, wssMap); }
-				 * 
-				 * Map<String, W5Component> xcomponentMap = (Map) xx.get("component");
-				 * Map<Integer, W5Component> componentMap = new HashMap(); if (xcomponentMap !=
-				 * null) for (String k : xcomponentMap.keySet()) {
-				 * componentMap.put(Integer.parseInt(k), xcomponentMap.get(k));
-				 * 
-				 * } FrameworkCache.setComponentMap(projectId, componentMap);
-				 * 
-				 * Map<String, W5Conversion> xconversionMap = (Map) xx.get("conversion");
-				 * Map<Integer, W5Conversion> conversionMap = new HashMap(); if (xconversionMap
-				 * != null) for (String k : xconversionMap.keySet()) {
-				 * conversionMap.put(Integer.parseInt(k), xconversionMap.get(k)); }
-				 * FrameworkCache.setConversionMap(projectId, conversionMap);
-				 */
-			} else {
-				reloadLookUpCache(projectId);
-				reloadTablesCache(projectId);
-				if (FrameworkSetting.workflow)
-					reloadWorkflowCache(projectId);
-				// reloadTableAccessConditionSQLs(projectId);
-				reloadWsServersCache(projectId);
-				reloadWsClientsCache(projectId);
-				reloadComponentCache(projectId);
-				reloadJobsCache(projectId);
-				if (FrameworkSetting.externalDb)
-					reloadExternalDbsCache(projectId);
-				if (FrameworkSetting.mq)
-					reloadMqsCache(projectId);
 
+			reloadLookUpCache(projectId);
+			reloadTablesCache(projectId);
+			if (FrameworkSetting.workflow)
+				reloadWorkflowCache(projectId);
+			// reloadTableAccessConditionSQLs(projectId);
+			reloadWsServersCache(projectId);
+			reloadWsClientsCache(projectId);
+			reloadComponentCache(projectId);
+			reloadJobsCache(projectId);
+			if (FrameworkSetting.externalDb)
+				reloadExternalDbsCache(projectId);
+			if (FrameworkSetting.mq)
+				reloadMqsCache(projectId);
+			// FrameworkCache.getRedissonClient().getMap("icb-cache5");
+			reloadErrorMessagesCache(projectId);
+			W5Project po = FrameworkCache.getProject(projectId);
+			if(po.getUiWebFrontendTip()==8) {//google AppMaker React
+				reloadCacheLevel2(projectId);
 			}
+
 
 			FrameworkSetting.projectSystemStatus.put(projectId, 0); // working
 			FrameworkCache.clearReloadCache(projectId);
@@ -1689,6 +1423,48 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 		}
 
 		logger.info("Cache Loaded.");
+	}
+
+	private void reloadCacheLevel2(String projectId) {
+	
+		List menuItems = dao.find("from W5ObjectMenuItem t where t.projectUuid=?0 order by t.objectType, t.objectId, t.tabOrder", projectId);
+		List toolbarItems = dao.find("from W5ObjectToolbarItem t where t.projectUuid=?0 order by t.objectType, t.objectId, t.tabOrder", projectId);
+
+		FrameworkCache.addFuncs2Cache(projectId, dao.find("from W5GlobalFunc t where t.projectUuid=?0 order by t.globalFuncId", projectId), 
+				dao.find("from W5GlobalFuncParam t where t.projectUuid=?0 order by t.globalFuncId, t.tabOrder", projectId));
+		
+		FrameworkCache.addQueries2Cache(projectId, dao.find("from W5Query t where t.projectUuid=?0 or (t.queryId=2822 AND t.projectUuid=?1) order by t.queryId", projectId, FrameworkSetting.devUuid), 
+				dao.find("from W5QueryField t where t.projectUuid=?0 or (t.queryId=2822 AND t.projectUuid=?1) order by t.queryId, t.tabOrder", projectId, FrameworkSetting.devUuid), 
+				dao.find("from W5QueryParam t where t.projectUuid=?0 or (t.queryId=2822 AND t.projectUuid=?1) order by t.queryId, t.tabOrder", projectId, FrameworkSetting.devUuid));
+
+		List formCells = dao.find("from W5FormCell t where t.activeFlag=1 and t.projectUuid=?0 order by t.formId, t.tabOrder", projectId);
+		FrameworkCache.addForms2Cache(projectId, dao.find("from W5Form t where t.projectUuid=?0 order by t.formId", projectId), 
+				formCells, 
+				dao.find("from W5FormModule t where t.projectUuid=?0 order by t.formId, t.tabOrder", projectId), 
+				dao.find("from W5FormCellProperty t where t.projectUuid=?0 order by t.formCellId, t.formCellPropertyId", projectId), 
+				dao.find("from W5FormSmsMail t where t.activeFlag=1 and t.projectUuid=?0 order by t.formId, t.tabOrder", projectId), 
+				dao.find("from W5FormHint t where t.activeFlag=1 and t.projectUuid=?0 order by t.formId, t.tabOrder", projectId), 
+				toolbarItems);
+
+		
+		FrameworkCache.addGrids2Cache(projectId, dao.find("from W5Grid t where t.projectUuid=?0 order by t.gridId", projectId), 
+				dao.find("from W5GridColumn t where t.projectUuid=?0 order by t.gridId, t.tabOrder", projectId), 
+				dao.find("from W5CustomGridColumnCondition t where t.projectUuid=?0 order by t.gridId, t.tabOrder", projectId), 
+				dao.find("from W5CustomGridColumnRenderer t where t.projectUuid=?0 order by t.gridId, t.customGridColumnRendererId", projectId), toolbarItems, menuItems, formCells);
+
+
+		FrameworkCache.addMobileLists2Cache(projectId, dao.find("from M5List t where t.projectUuid=?0 order by t.listId", projectId));
+		
+		FrameworkCache.addCards2Cache(projectId, dao.find("from W5Card t where t.projectUuid=?0 order by t.cardId", projectId), toolbarItems, menuItems);
+		
+
+		FrameworkCache.addConversions2Cache(projectId, dao.find("from W5Conversion t where t.activeFlag=1 and t.projectUuid=?0 order by t.conversionId", projectId), 
+				dao.find("from W5ConversionCol t where t.projectUuid=?0 order by t.conversionId, t.tabOrder", projectId));
+		
+		FrameworkCache.addPages2Cache(projectId, dao.find("from W5Page t where t.projectUuid=?0 order by t.pageId", projectId), 
+				dao.find("from W5PageObject t where t.activeFlag=1 AND t.projectUuid=?0 order by t.pageId, t.tabOrder", projectId));
+
+		
 	}
 
 	private void reloadComponentCache(String projectId) {
@@ -1724,7 +1500,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 			// o.get_methods().add(1,new W5WsServerMethod("logout", (short)4,
 			// 5));
 			for (W5WsServerMethod wsm : o.get_methods())
-				if (wsm.getObjectTip() == 19) { // QueryResult
+				if (wsm.getObjectType() == 19) { // QueryResult
 					wsm.set_params((List<W5WsServerMethodParam>) find(
 							"from W5WsServerMethodParam t where t.projectUuid=?0 AND t.wsServerMethodId=?1 order by t.tabOrder",
 							projectId, wsm.getWsServerMethodId()));
@@ -1750,7 +1526,6 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 	@Override
 	public void reloadWsClientsCache(String projectId) {
 		// if(true)return;
-		Map<String, W5Ws> wsMap = new HashMap();
 		/*
 		 * if (FrameworkSetting.redisCache) try { RMap<Integer, W5Ws> rwsMap =
 		 * FrameworkCache.getRedissonClient() .getMap(String.format("icb-cache2:%s:ws",
@@ -1762,48 +1537,30 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 		 * (Exception e) { throw new IWBException("framework", "Redis.Ws", 0, null,
 		 * "Loading Ws from Redis", e); }
 		 */
-		if (wsMap.isEmpty()) {
-			List<W5Ws> l = find("from W5Ws x where x.projectUuid=?0", projectId);
-			Map<Integer, W5Ws> mm = new HashMap();
-			for (W5Ws w : l) {
-				mm.put(w.getWsId(), w);
-				wsMap.put(w.getDsc(), w);
-			}
-			FrameworkCache.setWsClientsMap(projectId, wsMap);
+		List<W5Ws> wss = find("from W5Ws x where x.projectUuid=?0", projectId);
+		List<W5WsMethod> wsMethods = find("from W5WsMethod x where x.activeFlag=1 AND x.projectUuid=?0 order by x.wsId, x.wsMethodId",
+				projectId);
+		List<W5WsMethodParam> wsMethodParams = find("from W5WsMethodParam t where t.projectUuid=?0 order by t.wsMethodId, t.parentWsMethodParamId, t.tabOrder",
+				projectId);
+		
+		FrameworkCache.addWss2Cache(projectId, wss, wsMethods, wsMethodParams);
 
-			List<W5WsMethod> lm = find("from W5WsMethod x where x.projectUuid=?0 order by x.wsId, x.wsMethodId",
-					projectId);
-			for (W5WsMethod m : lm) {
-				W5Ws c = mm.get(m.getWsId());
-				if (c != null) {
-					m.set_ws(c);
-					if (c.get_methods() == null)
-						c.set_methods(new ArrayList());
-					FrameworkCache.addWsMethod(projectId, m);
-					c.get_methods().add(m);
-				}
-			}
-		}
 	}
 
 	private void loadGlobalFunc(W5GlobalFuncResult gfr) {
 		String projectId = FrameworkCache.getProjectId(gfr.getScd(), "20." + gfr.getGlobalFuncId());
-		W5GlobalFunc func = null;
 
-		if (FrameworkSetting.redisCache) {
-			/*
-			 * try { func = (W5GlobalFunc) (redisGlobalMap.get(projectId + ":func:" +
-			 * gfr.getGlobalFuncId()));// rfuncMap.get(gfr.getGlobalFuncId()); } catch
-			 * (Exception e) { throw new IWBException("framework", "Redis.GlobalFunc",
-			 * gfr.getGlobalFuncId(), null, "Loading GlobalFunc from Redis", e); }
-			 */
-		} else {
-			func = ((W5GlobalFunc) getMetadataObject("W5GlobalFunc","dbFuncId",
-					gfr.getGlobalFuncId(), projectId, "GlobalFunc"));
-			func.set_dbFuncParamList(
-					find("from W5GlobalFuncParam t where t.projectUuid=?0 AND t.dbFuncId=?1 order by t.tabOrder",
-							projectId, gfr.getGlobalFuncId()));
-		}
+		/*
+		 * try { func = (W5GlobalFunc) (redisGlobalMap.get(projectId + ":func:" +
+		 * gfr.getGlobalFuncId()));// rfuncMap.get(gfr.getGlobalFuncId()); } catch
+		 * (Exception e) { throw new IWBException("framework", "Redis.GlobalFunc",
+		 * gfr.getGlobalFuncId(), null, "Loading GlobalFunc from Redis", e); }
+		 */
+		W5GlobalFunc func = ((W5GlobalFunc) getMetadataObject("W5GlobalFunc","globalFuncId",
+				gfr.getGlobalFuncId(), projectId, "GlobalFunc"));
+		func.set_dbFuncParamList(
+				find("from W5GlobalFuncParam t where t.projectUuid=?0 AND t.globalFuncId=?1 order by t.tabOrder",
+						projectId, gfr.getGlobalFuncId()));
 
 		gfr.setGlobalFunc(func);
 	}
@@ -1821,7 +1578,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 				globalFuncId < -1 ? ("40." + (-globalFuncId)) : ("20." + globalFuncId));
 		if (globalFuncId < -1) {
 			globalFuncId = (Integer) find(
-					"select t.objectId from W5Form t where t.objectTip in (3,4) AND t.projectUuid=?0 AND t.formId=?1",
+					"select t.objectId from W5Form t where t.objectType in (3,4) AND t.projectUuid=?0 AND t.formId=?1",
 					projectId, -globalFuncId).get(0);
 		}
 
@@ -1860,11 +1617,11 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 					projectId, mlr.getListId()));
 			for (M5List dl : ml.get_detailMLists()) {
 				dl.set_toolbarItemList(find(
-						"from W5ObjectToolbarItem t where t.objectTip=1345 AND t.objectId=?0 AND t.projectUuid=?1 order by t.tabOrder",
+						"from W5ObjectToolbarItem t where t.objectType=1345 AND t.objectId=?0 AND t.projectUuid=?1 order by t.tabOrder",
 						dl.getListId(), projectId));
 
 				dl.set_menuItemList(find(
-						"from W5ObjectMenuItem t where t.objectTip=1345 AND t.objectId=?0 AND t.projectUuid=?1 order by t.tabOrder",
+						"from W5ObjectMenuItem t where t.objectType=1345 AND t.objectId=?0 AND t.projectUuid=?1 order by t.tabOrder",
 						dl.getListId(), projectId));
 
 				W5Query q2 = getQueryResult(mlr.getScd(), dl.getQueryId()).getQuery();
@@ -1876,18 +1633,18 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 								+ ml.getOrderQueryFieldIds() + ") order by qf.tabOrder",
 						ml.getQueryId(), projectId));
 			ml.set_toolbarItemList(find(
-					"from W5ObjectToolbarItem t where t.objectTip=1345 AND t.objectId=?0 AND t.projectUuid=?1 order by t.tabOrder",
+					"from W5ObjectToolbarItem t where t.objectType=1345 AND t.objectId=?0 AND t.projectUuid=?1 order by t.tabOrder",
 					mlr.getListId(), projectId));
 
 			ml.set_menuItemList(find(
-					"from W5ObjectMenuItem t where t.objectTip=1345 AND t.objectId=?0 AND t.projectUuid=?1 order by t.tabOrder",
+					"from W5ObjectMenuItem t where t.objectType=1345 AND t.objectId=?0 AND t.projectUuid=?1 order by t.tabOrder",
 					mlr.getListId(), projectId));
 		}
 		W5Query q = getQueryResult(mlr.getScd(), ml.getQueryId()).getQuery();
 		ml.set_query(q);
 
-		if (q.getMainTableId() != 0)
-			ml.set_mainTable(FrameworkCache.getTable(projectId, q.getMainTableId()));
+		if (q.getSourceObjectId() != 0)
+			ml.set_mainTable(FrameworkCache.getTable(projectId, q.getSourceObjectId()));
 		mlr.setList(ml);
 	}
 
@@ -1974,13 +1731,13 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 					d.getQueryId(), projectId);
 			d.set_query(query);
 			query.set_queryFields(queryFields); // dataReader icin gerekli
-			query.setMainTableId(
-					(Integer) find("select t.mainTableId from W5Query t where t.queryId=?0 and t.projectUuid=?1",
+			query.setSourceObjectId(
+					(Integer) find("select t.sourceObjectId from W5Query t where t.queryId=?0 and t.projectUuid=?1",
 							d.getQueryId(), projectId).get(0));
 		} else
 			d.set_query(query);
 
-		d.set_mainTable(FrameworkCache.getTable(projectId, query.getMainTableId()));
+		d.set_mainTable(FrameworkCache.getTable(projectId, query.getSourceObjectId()));
 		d.set_listColumnList(find("from W5ListColumn t where t.projectUuid=?0 AND t.listId=?1 order by t.tabOrder",
 				projectId, lr.getListId()));
 
@@ -2003,16 +1760,16 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 		d.set_totalWidth(totalWidth);
 
 		List<Integer> formIdz = find(
-				"select t.formId from W5Form t where t.projectUuid=?0 AND t.objectTip=7 and t.objectId=?1", projectId,
+				"select t.formId from W5Form t where t.projectUuid=?0 AND t.objectType=7 and t.objectId=?1", projectId,
 				lr.getListId());
 		if (formIdz.size() > 0 && formIdz.get(0) != null)
 			d.set_searchFormId(formIdz.get(0));
 
 		d.set_toolbarItemList(find(
-				"from W5ObjectToolbarItem t where t.objectTip=8 AND t.objectId=?0 AND t.projectUuid=?1 order by t.tabOrder",
+				"from W5ObjectToolbarItem t where t.objectType=8 AND t.objectId=?0 AND t.projectUuid=?1 order by t.tabOrder",
 				lr.getListId(), projectId));
 		for (W5ObjectToolbarItem c : d.get_toolbarItemList())
-			switch (c.getItemTip()) { // TODO:toolbar icine bisey konulacaksa
+			switch (c.getControlType()) { // TODO:toolbar icine bisey konulacaksa
 			case 10:
 			case 7:
 			case 15:
@@ -2043,7 +1800,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 				"select min(t.user_tip) from iwb.w5_user_tip t where t.user_tip!=122 AND t.active_flag=1 AND t.project_uuid=?",
 				projectId);
 		if (!GenericUtil.isEmpty(ll))
-			p.set_defaultUserTip(GenericUtil.uInt(ll.get(0)));
+			p.set_defaultRoleGroupId(GenericUtil.uInt(ll.get(0)));
 		FrameworkCache.addProject(p);
 	}
 	
@@ -2091,12 +1848,20 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 		if (ms == 0)
 			ms = 1;
 		int cusId = ms != 1 ? (Integer) scd.get("customizationId") : 0;
+		if(mailSettingId==0) mailSettingId = GenericUtil.uInt(scd.get("mailSettingId"));
 		List<W5ObjectMailSetting> oms = find(
-				"from W5ObjectMailSetting w where w.mailSettingId=?0 AND w.customizationId=?1",
-				mailSettingId != 0 ? mailSettingId
-						: GenericUtil.uInt(scd.get("mailSettingId")),
+				"from W5ObjectMailSetting w where w.customizationId=?0 order by w.mailSettingId",
 				cusId);
-		if(!oms.isEmpty())return oms.get(0);
+		W5ObjectMailSetting r = null; 
+		if(!oms.isEmpty()) {
+			if(mailSettingId!=0)for(W5ObjectMailSetting o:oms)if(o.getMailSettingId()==mailSettingId) {
+				r = o;
+				break;
+			}
+			if(r==null)r = oms.get(0);
+			r.setOutboxServerPassWord(EncryptionUtil.decryptAES(r.getOutboxServerPassWord()));
+			return r;
+		}
 		
 		if(ms != 1) {
 			throw new IWBException("framework", "MailSetting", mailSettingId, null, "Wrong MailSetting ID: " + mailSettingId, null);
@@ -2105,22 +1870,13 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 		if(oms.isEmpty()) {
 			throw new IWBException("framework", "MailSetting", 1, null, "Wrong MailSetting ID: " + 1, null);
 		}
-
-		return oms.get(0);
+		
+		r = oms.get(0);
+		r.setOutboxServerPassWord(EncryptionUtil.decryptAES(r.getOutboxServerPassWord()));
+		return r;
 	}
 	
-	/* (non-Javadoc)
-	 * @see MetadataLoader#findWsMethodParams(int, java.lang.String)
-	 */
-	/* (non-Javadoc)
-	 * @see MetadataLoader#findWsMethodParams(int, java.lang.String)
-	 */
-	@Override
-	public List<W5WsMethodParam> findWsMethodParams(int wsMethodId, String projectUuid){
-		return find(
-				"from W5WsMethodParam t where t.wsMethodId=?0 AND t.projectUuid=?1 order by t.tabOrder",
-				wsMethodId, projectUuid);
-	}
+	
 	
 	/* (non-Javadoc)
 	 * @see MetadataLoader#findLookUpDetay(int, java.lang.String)
@@ -2171,7 +1927,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 	@Override
 	public int findFirstCRUDForm4Table(int tableId, String projectUuid) {
 		List<Integer> ll = find(
-			"select min(f.formId) from W5Form f where f.projectIuid=?0 AND f.objectTip=2 AND f.objectId=?1",
+			"select min(f.formId) from W5Form f where f.projectIuid=?0 AND f.objectType=2 AND f.objectId=?1",
 			projectUuid, tableId);
 		return ll.isEmpty() ? 0 : ll.get(0);
 	}
@@ -2206,4 +1962,113 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 
 		return GenericUtil.uInt(l.get(0));
 	}
+	
+	public Map<String, Object> getProjectMetadata(String projectId){
+		List<W5Project> lpo = dao.find("from W5Project t where t.projectUuid=?0", projectId);
+		if(lpo.isEmpty()) 
+			throw new IWBException("framework", "Project", 0, null,
+					"Project not Found: " + projectId, null);
+		W5Project po = (W5Project)lpo.get(0);
+		Map<String, Object> m = new HashMap();
+		m.put("project", po);
+		m.put("roleGroups", dao.find("from W5RoleGroup t where t.projectUuid=?0 order by t.roleGroupId", projectId));
+		
+		
+		List<Object[]> appSettingList = (List<Object[]>) executeSQLQuery("select dsc, val from iwb.w5_app_setting where customization_id=?", po.getCustomizationId());
+		if(appSettingList!=null) {
+			Map mm = new HashMap();
+			for(Object[] oo:appSettingList)
+				mm.put(oo[0], oo[1]);
+			m.put("appSettings", mm);
+		}
+
+		if(po.getLocaleMsgKeyFlag()!=0) for(String locale:po.getLocales().split(",")){
+			List<Object[]> localeMsgs = (List<Object[]>) executeSQLQuery("select locale_msg_key, dsc from iwb.w5_locale_msg where customization_id=? AND locale=?", po.getCustomizationId(), locale);
+			if(localeMsgs!=null) {
+				Map mm = new HashMap();
+				for(Object[] oo:localeMsgs)
+					mm.put(oo[0], oo[1]);
+				m.put("localeMsgs_"+locale, mm);
+			}
+		}
+		
+		if(projectId.equals(FrameworkSetting.devUuid)) { //just tables, funcs and sequences
+			StringBuilder ddl = new StringBuilder();
+			for(Object o:dao.executeSQLQuery("select * from iwb.generate_create_table_statement('"+po.getRdbmsSchema()+"',null) ")) {
+				ddl.append(o).append("\n");
+			}
+			List lm = dao.find("select max(t.vcsCommitId) from W5VcsCommit t where t.projectUuid=?0", projectId);
+			W5VcsCommit commit = new W5VcsCommit();
+			commit.setVcsCommitId((Integer)lm.get(0));
+			commit.setExtraSql(ddl.toString());
+			commit.setComment("initial DDL");
+			List vcsCommits = new ArrayList();
+			vcsCommits.add(commit);
+			m.put("vcsCommits", vcsCommits);
+		} else {
+			m.put("vcsCommits", dao.find("from W5VcsCommit t where t.projectUuid=?0 AND t.vcsCommitId>0 AND length(t.extraSql)>2 order by t.vcsCommitId", projectId));
+			m.put("vcsCommits2", dao.find("from W5VcsCommit t where t.projectUuid=?0 AND t.vcsCommitId<0 AND t.runLocalFlag>0 AND length(t.extraSql)>2 order by -t.vcsCommitId", projectId));
+		}
+
+		
+		m.put("lookUps", dao.find("from W5LookUp t where t.projectUuid=?0 order by t.lookUpId", projectId));
+		m.put("lookUpDetays", dao.find("from W5LookUpDetay t where t.projectUuid=?0 order by t.lookUpId, t.tabOrder", projectId));
+		
+		m.put("tables", dao.find("from W5Table t where t.projectUuid=?0 order by t.tableId", projectId));
+		m.put("tableFields", dao.find("from W5TableField t where t.projectUuid=?0 order by t.tableId, t.tabOrder", projectId));
+		m.put("tableParams", dao.find("from W5TableParam t where t.projectUuid=?0 order by t.tableId, t.tabOrder", projectId));
+		m.put("tableEvents", dao.find("from W5TableEvent t where t.activeFlag=1 and t.projectUuid=?0 order by t.tableId, t.tabOrder", projectId));
+		m.put("tableFieldCalculateds", dao.find("from W5TableFieldCalculated t where t.projectUuid=?0 order by t.tableId, t.tabOrder", projectId));
+		m.put("tableChilds", dao.find("from W5TableChild t where t.projectUuid=?0 order by t.tableId, t.tableChildId", projectId));
+		
+		m.put("wss", dao.find("from W5Ws t where t.activeFlag=1 and t.projectUuid=?0 order by t.wsId", projectId));
+		m.put("wsMethods", dao.find("from W5WsMethod t where t.activeFlag=1 and t.projectUuid=?0 order by t.wsId", projectId));
+		m.put("wsMethodParams", dao.find("from W5WsMethodParam t where t.projectUuid=?0 order by t.wsMethodId, t.parentWsMethodParamId, t.tabOrder", projectId));
+		
+		m.put("funcs", dao.find("from W5GlobalFunc t where t.projectUuid=?0 order by t.globalFuncId", projectId));
+		m.put("funcParams", dao.find("from W5GlobalFuncParam t where t.projectUuid=?0 order by t.globalFuncId, t.tabOrder", projectId));
+
+		m.put("queries", dao.find("from W5Query t where t.projectUuid=?0 or (t.queryId=2822 AND t.projectUuid=?1) order by t.queryId", projectId, FrameworkSetting.devUuid));
+		m.put("queryFields", dao.find("from W5QueryField t where t.tabOrder>0 AND t.projectUuid=?0 or (t.queryId=2822 AND t.projectUuid=?1) order by t.queryId, t.tabOrder", projectId, FrameworkSetting.devUuid));
+		m.put("queryParams", dao.find("from W5QueryParam t where t.projectUuid=?0 or (t.queryId=2822 AND t.projectUuid=?1) order by t.queryId, t.tabOrder", projectId, FrameworkSetting.devUuid));
+		
+		m.put("forms", dao.find("from W5Form t where t.projectUuid=?0 order by t.formId", projectId));
+		m.put("formCells", dao.find("from W5FormCell t where t.activeFlag=1 and t.projectUuid=?0 order by t.formId, t.tabOrder, t.xOrder", projectId));
+		m.put("formModules", dao.find("from W5FormModule t where t.projectUuid=?0 order by t.formId, t.tabOrder", projectId));
+		m.put("formCellProperties", dao.find("from W5FormCellProperty t where t.projectUuid=?0 order by t.formCellId, t.formCellPropertyId", projectId));
+		m.put("formSmsMails", dao.find("from W5FormSmsMail t where t.activeFlag=1 and t.projectUuid=?0 order by t.formId, t.tabOrder", projectId));
+		m.put("formHints", dao.find("from W5FormHint t where t.projectUuid=?0 order by t.formId, t.tabOrder", projectId));
+		
+		m.put("grids", dao.find("from W5Grid t where t.projectUuid=?0 order by t.gridId", projectId));
+		m.put("gridColumns", dao.find("from W5GridColumn t where t.projectUuid=?0 order by t.gridId, t.tabOrder", projectId));
+		m.put("gridColumnCustomConditions", dao.find("from W5CustomGridColumnCondition t where t.projectUuid=?0 order by t.gridId, t.tabOrder", projectId));
+		m.put("gridColumnCustomRenderers", dao.find("from W5CustomGridColumnRenderer t where t.projectUuid=?0 order by t.gridId, t.customGridColumnRendererId", projectId));
+
+		m.put("mobileLists", dao.find("from M5List t where t.projectUuid=?0 order by t.listId", projectId));
+		
+		m.put("cards", dao.find("from W5Card t where t.projectUuid=?0 order by t.cardId", projectId));
+		
+		m.put("menuItems", dao.find("from W5ObjectMenuItem t where t.projectUuid=?0 order by t.objectType, t.objectId, t.tabOrder", projectId));
+		m.put("toolbarItems", dao.find("from W5ObjectToolbarItem t where t.projectUuid=?0 order by t.objectType, t.objectId, t.tabOrder", projectId));
+
+		m.put("workflows", dao.find("from W5Workflow t where t.activeFlag=1 and t.projectUuid=?0 order by t.workflowId", projectId));
+		m.put("workflowSteps", dao.find("from W5WorkflowStep t where t.projectUuid=?0 order by t.workflowId, t.approvalStepId", projectId));
+
+		m.put("conversions", dao.find("from W5Conversion t where t.activeFlag=1 and t.projectUuid=?0 order by t.conversionId", projectId));
+		m.put("conversionCols", dao.find("from W5ConversionCol t where t.projectUuid=?0 order by t.conversionId, t.tabOrder", projectId));
+		
+		m.put("pages", dao.find("from W5Page t where t.projectUuid=?0 order by t.pageId", projectId));
+		m.put("pageObjects", dao.find("from W5PageObject t where t.activeFlag=1 AND t.projectUuid=?0 order by t.pageId, t.tabOrder", projectId));
+
+		m.put("menus", dao.find("from W5Menu t where t.projectUuid=?0 order by t.roleGroupId, t.parentMenuId, t.tabOrder", projectId));
+		m.put("mmenus", dao.find("from M5Menu t where t.projectUuid=?0 order by t.roleGroupId, t.parentMenuId, t.tabOrder", projectId));
+
+		m.put("externalDbs", dao.find("from W5ExternalDb t where t.activeFlag=1 and t.projectUuid=?0", projectId));
+		m.put("exceptions", dao.find("from W5Exception t where t.projectUuid=?0 order by t.tabOrder", projectId));
+		
+
+		return m;
+
+	}
+
 }

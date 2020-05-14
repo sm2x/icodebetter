@@ -14,7 +14,8 @@ import org.hibernate.annotations.Immutable;
 @Entity
 @Immutable
 @Table(name="w5_query_param",schema="iwb")
-public class W5QueryParam implements java.io.Serializable, W5Param {
+public class W5QueryParam implements java.io.Serializable, W5Param, W5Base {
+/*TABLE_ID: 10*/
 
 	private static final long serialVersionUID = 12226666333L;
 
@@ -30,13 +31,13 @@ public class W5QueryParam implements java.io.Serializable, W5Param {
 
 	private short tabOrder;
 	
-	private short paramTip;
+	private short paramType;
 
-	private short operatorTip;
+	private short operatorType;
 
 	private short notNullFlag;
 
-	private short sourceTip;
+	private short sourceType;
 
 	private String defaultValue;
 
@@ -46,7 +47,7 @@ public class W5QueryParam implements java.io.Serializable, W5Param {
 	private	BigDecimal	maxValue;
 	
 	private	Short	minLength;
-	private	Short	maxLength;
+	private	Integer	maxLength;
 	public W5QueryParam() {
 	}
 
@@ -79,18 +80,18 @@ public class W5QueryParam implements java.io.Serializable, W5Param {
 	}
 
 	@Column(name="param_tip")
-	public short getParamTip() {
-		return paramTip;
+	public short getParamType() {
+		return paramType;
 	}
 
 	@Column(name="operator_tip")
-	public short getOperatorTip() {
-		return operatorTip;
+	public short getOperatorType() {
+		return operatorType;
 	}
 
 	@Column(name="source_tip")
-	public short getSourceTip() {
-		return sourceTip;
+	public short getSourceType() {
+		return sourceType;
 	}
 
 	@Column(name="default_value")
@@ -114,7 +115,7 @@ public class W5QueryParam implements java.io.Serializable, W5Param {
 	}
 
 	@Column(name="max_length")
-	public Short getMaxLength() {
+	public Integer getMaxLength() {
 		return maxLength;
 	}
 
@@ -144,20 +145,20 @@ public class W5QueryParam implements java.io.Serializable, W5Param {
 		this.tabOrder = tabOrder;
 	}
 
-	public void setParamTip(short paramTip) {
-		this.paramTip = paramTip;
+	public void setParamType(short paramType) {
+		this.paramType = paramType;
 	}
 
-	public void setOperatorTip(short operatorTip) {
-		this.operatorTip = operatorTip;
+	public void setOperatorType(short operatorType) {
+		this.operatorType = operatorType;
 	}
 
 	public void setNotNullFlag(short notNullFlag) {
 		this.notNullFlag = notNullFlag;
 	}
 
-	public void setSourceTip(short sourceTip) {
-		this.sourceTip = sourceTip;
+	public void setSourceType(short sourceType) {
+		this.sourceType = sourceType;
 	}
 
 	public void setDefaultValue(String defaultValue) {
@@ -176,7 +177,7 @@ public class W5QueryParam implements java.io.Serializable, W5Param {
 		this.minLength = minLength;
 	}
 
-	public void setMaxLength(Short maxLength) {
+	public void setMaxLength(Integer maxLength) {
 		this.maxLength = maxLength;
 	}
 
@@ -218,5 +219,10 @@ public class W5QueryParam implements java.io.Serializable, W5Param {
 		return 0;
 	}
 	
-	
+
+	@Transient
+	public boolean safeEquals(W5Base q) {
+
+			return false;
+	}	
 }

@@ -19,7 +19,7 @@ import iwb.util.GenericUtil;
 @Entity
 @Immutable
 @Table(name="w5_conversion",schema="iwb")
-public class W5Conversion implements java.io.Serializable {
+public class W5Conversion implements java.io.Serializable, W5Base {
 
 	/**
 	 * 
@@ -31,13 +31,13 @@ public class W5Conversion implements java.io.Serializable {
 	private int dstTableId;
 	private int srcFormId;
 	private int dstFormId;
-	private short rowErrorStrategyTip;
+	private short rowErrorStrategyType;
 	private short previewFlag;
 	private short synchOnUpdateFlag;
-	private short conversionTip;
+	private short conversionType;
 	private short tabOrder;
 	private short srcDstTip;
-	private String actionTips;
+	private String actionTypes;
 	private short activeFlag;
 	private short maxNumofConversion;
 	private short onSynchConditionAction;
@@ -47,6 +47,8 @@ public class W5Conversion implements java.io.Serializable {
 	
 	private	List<W5ConversionCol> _conversionColList;
 	private	Map<Integer,W5ConversionCol> _conversionColMap;
+	
+
 	
 	@Id
 	@Column(name="conversion_id")
@@ -74,11 +76,11 @@ public class W5Conversion implements java.io.Serializable {
 	}
 	
 	@Column(name="row_error_strategy_tip")
-	public short getRowErrorStrategyTip() {
-		return rowErrorStrategyTip;
+	public short getRowErrorStrategyType() {
+		return rowErrorStrategyType;
 	}
-	public void setRowErrorStrategyTip(short rowErrorStrategyTip) {
-		this.rowErrorStrategyTip = rowErrorStrategyTip;
+	public void setRowErrorStrategyType(short rowErrorStrategyType) {
+		this.rowErrorStrategyType = rowErrorStrategyType;
 	}
 	@Transient
 	public List<W5ConversionCol> get_conversionColList() {
@@ -125,11 +127,11 @@ public class W5Conversion implements java.io.Serializable {
 		this.dstFormId = dstFormId;
 	}
 	@Column(name="conversion_tip")
-	public short getConversionTip() {
-		return conversionTip;
+	public short getConversionType() {
+		return conversionType;
 	}
-	public void setConversionTip(short conversionTip) {
-		this.conversionTip = conversionTip;
+	public void setConversionType(short conversionType) {
+		this.conversionType = conversionType;
 	}
 	@Column(name="tab_order")
 	public short getTabOrder() {
@@ -147,11 +149,11 @@ public class W5Conversion implements java.io.Serializable {
 	}
 	
 	@Column(name="action_tips")
-	public String getActionTips() {
-		return actionTips;
+	public String getActionTypes() {
+		return actionTypes;
 	}
-	public void setActionTips(String actionTips) {
-		this.actionTips = actionTips;
+	public void setActionTypes(String actionTypes) {
+		this.actionTypes = actionTypes;
 	}
 	@Column(name="active_flag")
 	public short getActiveFlag() {
@@ -180,12 +182,12 @@ public class W5Conversion implements java.io.Serializable {
 			this.dstTableId == c.getDstTableId() &&
 			this.srcFormId == c.getSrcFormId() &&
 			this.dstFormId == c.getDstFormId() &&
-			this.rowErrorStrategyTip == c.getRowErrorStrategyTip() &&
+			this.rowErrorStrategyType == c.getRowErrorStrategyType() &&
 			this.previewFlag == c.getPreviewFlag() &&
 			this.synchOnUpdateFlag == c.getSynchOnUpdateFlag() &&
-			this.conversionTip == c.getConversionTip() &&
+			this.conversionType == c.getConversionType() &&
 			this.tabOrder == c.getTabOrder() &&
-			this.actionTips == c.getActionTips() &&
+			this.actionTypes == c.getActionTypes() &&
 			this.activeFlag == c.getActiveFlag() &&
 			this.maxNumofConversion == c.getMaxNumofConversion();
 		if(!b)return false;

@@ -13,12 +13,12 @@ import org.hibernate.annotations.Immutable;
 @Entity
 @Immutable
 @Table(name="w5_ws_server_method",schema="iwb")
-public class W5WsServerMethod  implements java.io.Serializable {
+public class W5WsServerMethod  implements java.io.Serializable, W5Base {
 
 	private int wsServerMethodId;
 	private int wsServerId;
 	private String dsc;
-	private short objectTip;
+	private short objectType;
 	private int objectId;
 	private W5WsServer _ws;
 	private short tabOrder;
@@ -31,10 +31,10 @@ public class W5WsServerMethod  implements java.io.Serializable {
 	private List<W5WsServerMethodParam> _params;
 	private Object _sourceObject;
 	
-	public W5WsServerMethod(String dsc, short objectTip, int objectId) {
+	public W5WsServerMethod(String dsc, short objectType, int objectId) {
 		super();
 		this.dsc = dsc;
-		this.objectTip = objectTip;
+		this.objectType = objectType;
 		this.objectId = objectId;
 		this.dataAcceptTip = (short)1;
 	}
@@ -51,11 +51,11 @@ public class W5WsServerMethod  implements java.io.Serializable {
 	}
 	
 	@Column(name="object_tip")
-	public short getObjectTip() {
-		return objectTip;
+	public short getObjectType() {
+		return objectType;
 	}
-	public void setObjectTip(short objectTip) {
-		this.objectTip = objectTip;
+	public void setObjectType(short objectType) {
+		this.objectType = objectType;
 	}
 	
 	@Column(name="ws_server_id")
@@ -175,5 +175,12 @@ public class W5WsServerMethod  implements java.io.Serializable {
 	
 	public int hashCode() {
 		return projectUuid.hashCode() + 100*getWsServerMethodId();
+	}
+	
+
+	@Transient
+	public boolean safeEquals(W5Base q) {
+
+			return false;
 	}
 }

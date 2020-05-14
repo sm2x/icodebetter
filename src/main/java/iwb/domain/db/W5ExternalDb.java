@@ -29,6 +29,7 @@ import com.zaxxer.hikari.HikariDataSource;
 @Immutable
 @Table(name="w5_external_db",schema="iwb")
 public class W5ExternalDb implements java.io.Serializable, W5Base{
+/*TABLE_ID: 4658*/
 
 
 	private static final long serialVersionUID = 2255112231121L;
@@ -45,7 +46,7 @@ public class W5ExternalDb implements java.io.Serializable, W5Base{
 
 	private String defaultSchema;
 
-	private short activeFlag;// //oracle, postgre, mssql
+	private short activeFlag;
 	private int poolSize;// //oracle, postgre, mssql
 	 
 
@@ -55,6 +56,8 @@ public class W5ExternalDb implements java.io.Serializable, W5Base{
 	private HikariDataSource _hikariDS;
 //	private RedissonClient _redissonClient;
 //	private MongoDatabase _mongoDb;
+	
+
 	
 	@Id
 	@Column(name="project_uuid")

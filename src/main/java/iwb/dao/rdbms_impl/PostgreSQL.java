@@ -65,7 +65,6 @@ import iwb.domain.db.W5Workflow;
 import iwb.domain.db.W5WorkflowStep;
 import iwb.domain.db.W5WsMethod;
 import iwb.domain.db.W5WsMethodParam;
-import iwb.domain.helper.W5AccessControlHelper;
 import iwb.domain.helper.W5FormCellHelper;
 import iwb.domain.helper.W5TableChildHelper;
 import iwb.domain.helper.W5TableRecordHelper;
@@ -90,7 +89,7 @@ public class PostgreSQL extends BaseDAO {
 
 	@Lazy
 	@Autowired
-	private MetadataLoader metaDataDao;
+	private MetadataLoader metadataLoader;
 
 	private static Logger logger = Logger.getLogger(PostgreSQL.class);
 	@Autowired
@@ -112,9 +111,9 @@ public class PostgreSQL extends BaseDAO {
 	 */
 
 	public W5QueryResult executeQuery(Map<String, Object> scd, int queryId, Map<String, String> requestParams) {
-		W5QueryResult queryResult = metaDataDao.getQueryResult(scd, queryId);
+		W5QueryResult queryResult = metadataLoader.getQueryResult(scd, queryId);
 		if (queryId != 1 && queryId != 824 && queryResult.getMainTable() != null && (!FrameworkSetting.debug
-				|| (scd.get("roleId") != null && GenericUtil.uInt(scd.get("roleId")) != 0)) && queryResult.getQuery().getQuerySourceTip()!=4658) {
+				|| (scd.get("roleId") != null && GenericUtil.uInt(scd.get("roleId")) != 0)) && queryResult.getQuery().getQuerySourceType()!=4658) {
 			W5Table t = queryResult.getMainTable();
 			if (t.getAccessViewUserFields() == null && !GenericUtil.accessControl(scd, t.getAccessViewTip(),
 					t.getAccessViewRoles(), t.getAccessViewUsers())) {
@@ -135,7 +134,7 @@ public class PostgreSQL extends BaseDAO {
 				queryResult.setOrderBy(queryResult.getOrderBy() + " " + requestParams.get("dir"));
 		} else
 			queryResult.setOrderBy(queryResult.getQuery().getSqlOrderby());
-		switch (queryResult.getQuery().getQueryTip()) {
+		switch (queryResult.getQuery().getQueryType()) {
 		case 9:
 		case 10:
 			queryResult.prepareTreeQuery(null);
@@ -148,7 +147,7 @@ public class PostgreSQL extends BaseDAO {
 					GenericUtil.uIntNvl(requestParams, "limit", GenericUtil.uInt(requestParams, "firstLimit")));
 			queryResult.setStartRowNumber(GenericUtil.uInt(requestParams, "start"));
 			
-			if(queryResult.getQuery().getQuerySourceTip()!=4658) {
+			if(queryResult.getQuery().getQuerySourceType()!=4658) {
 				runQuery(queryResult);
 				if (queryResult.getQuery().getShowParentRecordFlag() != 0 && queryResult.getData() != null) {
 					for (Object[] oz : queryResult.getData()) {
@@ -253,7 +252,7 @@ public class PostgreSQL extends BaseDAO {
 				try {
 					if (schemaCount == 0) {
 						PreparedStatement s = conn
-								.prepareStatement("CREATE SCHEMA " + po.getRdbmsSchema() + "_log AUTHORIZATION iwb");
+								.prepareStatement("CREATE SCHEMA IF NOT EXISTS " + po.getRdbmsSchema() + "_log AUTHORIZATION iwb");
 						s.execute();
 						s.close();
 					}
@@ -302,10 +301,10 @@ public class PostgreSQL extends BaseDAO {
 	private void prepareLookupTableQuery(W5QueryResult queryResult, StringBuilder sql2, AtomicInteger paramIndex) { // TODO
 		List<Object> preParams = new ArrayList<Object>();
 		for (W5QueryField qf : queryResult.getQuery().get_queryFields())
-			if (qf.getPostProcessTip() == 12 && qf.getLookupQueryId() != 0 && (queryResult.getQueryColMap() == null
+			if (qf.getPostProcessType() == 12 && qf.getLookupQueryId() != 0 && (queryResult.getQueryColMap() == null
 					|| queryResult.getQueryColMap().containsKey(qf.getDsc()))) { // queryField'da
-																					// postProcessTip=lookupTable
-																					// olanlar
+																					// postProcessType=lookupTable
+																					// 
 				// saptaniyor
 				W5Table tqf = FrameworkCache.getTable(queryResult.getScd(), qf.getLookupQueryId());
 				if (tqf != null && tqf.getSummaryRecordSql() != null) {
@@ -334,11 +333,11 @@ public class PostgreSQL extends BaseDAO {
 						queryResult.setPostProcessQueryFields(new ArrayList());
 					queryResult.getPostProcessQueryFields().add(field);
 				}
-			} else if (qf.getPostProcessTip() == 13 && qf.getLookupQueryId() != 0
+			} else if (qf.getPostProcessType() == 13 && qf.getLookupQueryId() != 0
 					&& (queryResult.getQueryColMap() == null
 							|| queryResult.getQueryColMap().containsKey(qf.getDsc()))) { // queryField'da
-																							// postProcessTip=lookupTable
-																							// olanlar
+																							// postProcessType=lookupTable
+																							// 
 				// saptaniyor
 				W5Table tqf = FrameworkCache.getTable(queryResult.getScd(), qf.getLookupQueryId());
 				if (tqf != null && tqf.getSummaryRecordSql() != null) {
@@ -432,36 +431,22 @@ public class PostgreSQL extends BaseDAO {
 							queryResult.getSqlParams().add(queryResult.getStartRowNumber());
 
 						sql2.append("select z.*");
-						if (query.getSqlPostSelect() != null && query.getSqlPostSelect().trim().length() > 2) {
-							if (query.getSqlPostSelect().contains("${")) {
-								Object[] oz = DBUtil.filterExt4SQL(query.getSqlPostSelect(), queryResult.getScd(),
-										queryResult.getRequestParams(), null);
-								sql2.append(", ").append(oz[0]);
-								if (oz[1] != null) {
-									queryResult.getSqlParams().addAll(0, (List) oz[1]);
-									paramIndex.getAndAdd(((List) oz[1]).size());
-								}
-
-							} else
-								sql2.append(", ").append(query.getSqlPostSelect());
-							sql2.append(" ");
-						}
 						if (queryResult.getPostProcessQueryFields() != null && mainTable != null
 								&& queryResult.getViewLogModeTip() == 0) {
 							addPostQueryFields(queryResult, sql2, paramIndex);
 						}
 
 						for (W5QueryField qf : queryResult.getQuery().get_queryFields())
-							if ((qf.getPostProcessTip() == 12 || qf.getPostProcessTip() == 13)
+							if ((qf.getPostProcessType() == 12 || qf.getPostProcessType() == 13)
 									&& qf.getLookupQueryId() != 0) { // queryField'da
-																		// postProcessTip=lookupTable
-																		// olanlar
+																		// postProcessType=lookupTable
+																		// 
 																		// saptaniyor
 								prepareLookupTableQuery(queryResult, sql2, paramIndex);
 								break;
 							}
 						for (W5QueryField qf : queryResult.getQuery().get_queryFields())
-							if (qf.getPostProcessTip() == 71) { // fileAttach
+							if (qf.getPostProcessType() == 71) { // fileAttach
 								sql2.append(
 										",(select q.original_file_name from iwb.w5_file_attachment q where q.project_uuid='")
 										.append(queryResult.getScd().get("projectId"))
@@ -469,7 +454,7 @@ public class PostgreSQL extends BaseDAO {
 										.append("::integer) ").append(qf.getDsc()).append("_qw_ ");
 								W5QueryField field = new W5QueryField();
 								field.setDsc(qf.getDsc() + "_qw_");
-								field.setFieldTip((short) 10);
+								field.setFieldType((short) 10);
 								field.setMainTableFieldId(qf.getMainTableFieldId());
 								if (queryResult.getPostProcessQueryFields() == null)
 									queryResult.setPostProcessQueryFields(new ArrayList());
@@ -477,12 +462,12 @@ public class PostgreSQL extends BaseDAO {
 
 							}
 						for (W5QueryField qf : queryResult.getQuery().get_queryFields())
-							if ((qf.getPostProcessTip() == 16 || qf.getPostProcessTip() == 17)
+							if ((qf.getPostProcessType() == 16 || qf.getPostProcessType() == 17)
 									&& qf.getLookupQueryId() != 0) { // queryField'da
-																		// postProcessTip=lookupQuery
-																		// olanlar
+																		// postProcessType=lookupQuery
+																		// 
 																		// saptaniyor
-								W5QueryResult queryFieldLookupQueryResult = metaDataDao
+								W5QueryResult queryFieldLookupQueryResult = metadataLoader
 										.getQueryResult(queryResult.getScd(), qf.getLookupQueryId());
 								if (queryFieldLookupQueryResult != null
 										&& queryFieldLookupQueryResult.getQuery() != null) {
@@ -493,7 +478,7 @@ public class PostgreSQL extends BaseDAO {
 									if (queryResult.getPostProcessQueryFields() == null)
 										queryResult.setPostProcessQueryFields(new ArrayList());
 									queryResult.getPostProcessQueryFields().add(field);
-									if (qf.getPostProcessTip() == 16
+									if (qf.getPostProcessType() == 16
 											&& queryFieldLookupQueryResult.getQuery().get_queryFields().size() > 2)
 										for (int qi = 2; qi < queryFieldLookupQueryResult.getQuery().get_queryFields()
 												.size(); qi++) {
@@ -541,42 +526,25 @@ public class PostgreSQL extends BaseDAO {
 						if (queryResult.getPostProcessQueryFields() != null && mainTable != null
 								&& queryResult.getViewLogModeTip() == 0) {
 							sql2.append("select z.*"); //
-							if (query.getSqlPostSelect() != null && query.getSqlPostSelect().trim().length() > 2) {
-								if (query.getSqlPostSelect().contains("${")) {
-									Object[] oz = DBUtil.filterExt4SQL(query.getSqlPostSelect(), queryResult.getScd(),
-											queryResult.getRequestParams(), null);
-									sql2.append(", ").append(oz[0]);
-									if (oz[1] != null) {
-										queryResult.getSqlParams().addAll(0, (List) oz[1]);
-										paramIndex.getAndAdd(((List) oz[1]).size());
-									}
-								} else
-									sql2.append(", ").append(query.getSqlPostSelect());
-								if (queryResult.getQueryColMap() != null)
-									for (W5QueryField qf : queryResult.getQuery().get_queryFields())
-										if (qf.getPostProcessTip() == 99) {
-											queryResult.getQueryColMap().put(qf.getDsc(), qf);
-										}
-							}
 							addPostQueryFields(queryResult, sql2, paramIndex);
 
 							for (W5QueryField qf : queryResult.getQuery().get_queryFields())
-								if ((qf.getPostProcessTip() == 12 || qf.getPostProcessTip() == 13)
+								if ((qf.getPostProcessType() == 12 || qf.getPostProcessType() == 13)
 										&& qf.getLookupQueryId() != 0) { // queryField'da
-																			// postProcessTip=lookupTable
-																			// olanlar
+																			// postProcessType=lookupTable
+																			// 
 									// saptaniyor
 									prepareLookupTableQuery(queryResult, sql2, paramIndex);
 									break;
 								}
 
 							for (W5QueryField qf : queryResult.getQuery().get_queryFields())
-								if ((qf.getPostProcessTip() == 16 || qf.getPostProcessTip() == 17)
+								if ((qf.getPostProcessType() == 16 || qf.getPostProcessType() == 17)
 										&& qf.getLookupQueryId() != 0) { // queryField'da
-																			// postProcessTip=lookupQuery
-																			// olanlar
+																			// postProcessType=lookupQuery
+																			// 
 									// saptaniyor
-									W5QueryResult queryFieldLookupQueryResult = metaDataDao
+									W5QueryResult queryFieldLookupQueryResult = metadataLoader
 											.getQueryResult(queryResult.getScd(), qf.getLookupQueryId());
 									if (queryFieldLookupQueryResult != null
 											&& queryFieldLookupQueryResult.getQuery() != null) {
@@ -587,7 +555,7 @@ public class PostgreSQL extends BaseDAO {
 										if (queryResult.getPostProcessQueryFields() == null)
 											queryResult.setPostProcessQueryFields(new ArrayList());
 										queryResult.getPostProcessQueryFields().add(field);
-										if (qf.getPostProcessTip() == 16
+										if (qf.getPostProcessType() == 16
 												&& queryFieldLookupQueryResult.getQuery().get_queryFields().size() > 2)
 											for (int qi = 2; qi < queryFieldLookupQueryResult.getQuery()
 													.get_queryFields().size(); qi++) {
@@ -606,30 +574,20 @@ public class PostgreSQL extends BaseDAO {
 
 						} else {
 							sql2.append("select z.*");
-							if (query.getSqlPostSelect() != null && query.getSqlPostSelect().trim().length() > 2) {
-								if (query.getSqlPostSelect().contains("${")) {
-									Object[] oz = DBUtil.filterExt4SQL(query.getSqlPostSelect(), queryResult.getScd(),
-											queryResult.getRequestParams(), null);
-									sql2.append(", ").append(oz[0]);
-									if (oz[1] != null)
-										queryResult.getSqlParams().addAll(0, (List) oz[1]);
-								} else
-									sql2.append(", ").append(query.getSqlPostSelect());
-							}
 							for (W5QueryField qf : queryResult.getQuery().get_queryFields())
-								if (qf.getPostProcessTip() == 12 && qf.getLookupQueryId() != 0) { // queryField'da
-																									// postProcessTip=lookupTable
-																									// olanlar
+								if (qf.getPostProcessType() == 12 && qf.getLookupQueryId() != 0) { // queryField'da
+																									// postProcessType=lookupTable
+																									// 
 									// saptaniyor
 									prepareLookupTableQuery(queryResult, sql2, paramIndex);
 									break;
 								}
 							for (W5QueryField qf : queryResult.getQuery().get_queryFields())
-								if ((qf.getPostProcessTip() == 16) && qf.getLookupQueryId() != 0) { // queryField'da
-																									// postProcessTip=lookupQuery
-																									// olanlar
+								if ((qf.getPostProcessType() == 16) && qf.getLookupQueryId() != 0) { // queryField'da
+																									// postProcessType=lookupQuery
+																									// 
 									// saptaniyor
-									W5QueryResult queryFieldLookupQueryResult = metaDataDao
+									W5QueryResult queryFieldLookupQueryResult = metadataLoader
 											.getQueryResult(queryResult.getScd(), qf.getLookupQueryId());
 									if (queryFieldLookupQueryResult != null
 											&& queryFieldLookupQueryResult.getQuery() != null) {
@@ -640,7 +598,7 @@ public class PostgreSQL extends BaseDAO {
 										if (queryResult.getPostProcessQueryFields() == null)
 											queryResult.setPostProcessQueryFields(new ArrayList());
 										queryResult.getPostProcessQueryFields().add(field);
-										if (qf.getPostProcessTip() == 16
+										if (qf.getPostProcessType() == 16
 												&& queryFieldLookupQueryResult.getQuery().get_queryFields().size() > 2)
 											for (int qi = 2; qi < queryFieldLookupQueryResult.getQuery()
 													.get_queryFields().size(); qi++) {
@@ -726,14 +684,14 @@ public class PostgreSQL extends BaseDAO {
 											newQueryFields.add(qf);
 											if (maxTabOrder < qf.getTabOrder())
 												maxTabOrder = qf.getTabOrder();
-											if(tf!=null && qf.getPostProcessTip()==0) {
+											if(tf!=null && qf.getPostProcessType()==0) {
 												if(tf.getLkpEncryptionType()!=0) {
-													qf.setPostProcessTip((short)5);
+													qf.setPostProcessType((short)5);
 													qf.setLookupQueryId(tf.getLkpEncryptionType());
 													if(tf.getAccessMaskTip()>0)
-														qf.setPostProcessTip((short)14);
+														qf.setPostProcessType((short)14);
 												} else if(tf.getAccessMaskTip()>0) {
-													qf.setPostProcessTip((short)4);
+													qf.setPostProcessType((short)4);
 													qf.setLookupQueryId(tf.getAccessMaskTip());
 												}
 											}
@@ -767,16 +725,16 @@ public class PostgreSQL extends BaseDAO {
 									if (obj != null) {
 										if (obj instanceof java.sql.Timestamp) {
 											try {
-												obj = (queryResult.getQuery().getQueryTip() == 2
-														&& field.getFieldTip() == 2) ? (java.sql.Timestamp) obj
+												obj = (queryResult.getQuery().getQueryType() == 2
+														&& field.getFieldType() == 2) ? (java.sql.Timestamp) obj
 																: GenericUtil.uFormatDateTime((java.sql.Timestamp) obj, dateFormat);
 											} catch (Exception e) {
 												obj = "java.sql.Timestamp";
 											}
 										} else if (obj instanceof java.sql.Date) {
 											try {
-												obj = (queryResult.getQuery().getQueryTip() == 2
-														&& field.getFieldTip() == 2) ? rs.getTimestamp(field.getDsc())
+												obj = (queryResult.getQuery().getQueryType() == 2
+														&& field.getFieldType() == 2) ? rs.getTimestamp(field.getDsc())
 																: GenericUtil.uFormatDateTime(
 																		rs.getTimestamp(field.getDsc()), dateFormat);
 											} catch (Exception e) {
@@ -792,12 +750,12 @@ public class PostgreSQL extends BaseDAO {
 										throw ez;
 									errorFieldSet.add(field.getDsc());
 								}
-						if (query.getDataFillDirectionTip() != 0)
+						if (query.getDataFillDirectionType() != 0)
 							resultData.add(0, o);
 						else
 							resultData.add(o);
 						if (liveSyncKeys != null)
-							liveSyncKeys.add(GenericUtil.uInt(o[query.getQueryTip() == 3 ? 1 : 0]));
+							liveSyncKeys.add(GenericUtil.uInt(o[query.getQueryType() == 3 ? 1 : 0]));
 					}
 					if (queryResult.getFetchRowCount() == 0 && resultData != null) {
 						queryResult.setResultRowCount(resultData.size());
@@ -841,11 +799,11 @@ public class PostgreSQL extends BaseDAO {
 	}
 
 	public List runQuery2Map(Map<String, Object> scd, int queryId, Map<String, String> requestParams) {
-		W5QueryResult queryResult = metaDataDao.getQueryResult(scd, queryId);
+		W5QueryResult queryResult = metadataLoader.getQueryResult(scd, queryId);
 		queryResult.setErrorMap(new HashMap());
 		queryResult.setRequestParams(requestParams);
 
-		if (queryResult.getQuery().getQuerySourceTip() == 0) { // if JavaScript
+		if (queryResult.getQuery().getQuerySourceType() == 0) { // if JavaScript
 			scriptEngine.executeQueryAsScript(queryResult, null);
 			return queryResult.getData();
 		}
@@ -906,7 +864,7 @@ public class PostgreSQL extends BaseDAO {
 				queryResult.setOrderBy(queryResult.getQuery().getSqlOrderby());
 		} else
 			queryResult.setOrderBy(queryResult.getQuery().getSqlOrderby());
-		switch (queryResult.getQuery().getQueryTip()) {
+		switch (queryResult.getQuery().getQueryType()) {
 		case 9:
 		case 10:
 		case 12:
@@ -988,8 +946,8 @@ public class PostgreSQL extends BaseDAO {
 									} catch (Exception e) {
 									}
 								} else {
-									Object o = GenericUtil.getObjectByTip(obj.toString(), f.getFieldTip());
-									switch (f.getPostProcessTip()) {
+									Object o = GenericUtil.getObjectByTip(obj.toString(), f.getFieldType());
+									switch (f.getPostProcessType()) {
 									case 9: // _fieldName
 										result.put("_" + columnName, o);
 										break;
@@ -1035,7 +993,7 @@ public class PostgreSQL extends BaseDAO {
 		action.calcProcessTime();
 
 		queryResult.setProcessTime(action.getProcessTime());
-		if (queryResult.getQuery().getLogLevelTip() == 2 || (queryResult.getQuery().getLogLevelTip() == 1
+		if (queryResult.getQuery().getLogLevelType() == 2 || (queryResult.getQuery().getLogLevelType() == 1
 				&& FrameworkSetting.logQueryActionMinTime <= action.getProcessTime())) {
 			if (FrameworkSetting.log2tsdb) {
 				action.setDsc(GenericUtil.replaceSql(queryResult.getExecutedSql(), queryResult.getSqlParams()));
@@ -1048,10 +1006,10 @@ public class PostgreSQL extends BaseDAO {
 	}
 
 	public void logGlobalFuncAction(Log5GlobalFuncAction action, W5GlobalFuncResult fr, String error) {
-		if (!FrameworkSetting.log2tsdb && (fr.getGlobalFunc().getLogLevelTip() == 0 || FrameworkCache.getAppSettingIntValue(fr.getScd(), "log_db_func_action") == 0))
+		if (!FrameworkSetting.log2tsdb && (fr.getGlobalFunc().getLogLevelType() == 0 || FrameworkCache.getAppSettingIntValue(fr.getScd(), "log_db_func_action") == 0))
 			return;
 		action.calcProcessTime();
-		if (FrameworkSetting.log2tsdb  || (fr.getGlobalFunc().getLogLevelTip() == 1) || (fr.getGlobalFunc().getLogLevelTip() == 2
+		if (FrameworkSetting.log2tsdb  || (fr.getGlobalFunc().getLogLevelType() == 1) || (fr.getGlobalFunc().getLogLevelType() == 2
 				&& FrameworkCache.getAppSettingIntValue(fr.getScd(), "log_db_func_action") != 0 && FrameworkCache
 						.getAppSettingIntValue(fr.getScd(), "log_db_func_action_mintime") <= action.getProcessTime())) {
 			action.setDsc(GenericUtil.replaceSql(fr.getExecutedSql(), fr.getSqlParams()));
@@ -1074,9 +1032,9 @@ public class PostgreSQL extends BaseDAO {
 				includedValues = c.getLookupIncludedValues();
 				Map<String, String> paramMap = new HashMap<String, String>();
 				Set<Integer> keys = null;
-				switch (c.getControlTip()) {
+				switch (c.getControlType()) {
 				case 100: // button
-					if (c.getInitialSourceTip() == 4) { // sql ise
+					if (c.getInitialSourceType() == 4) { // sql ise
 						rc.setExtraValuesMap(runSQLQuery2Map(
 								GenericUtil.filterExt(c.getInitialValue(), scd, requestParams, null).toString(), null,
 								null));
@@ -1096,7 +1054,7 @@ public class PostgreSQL extends BaseDAO {
 				case 60: // remote superboxselect
 				case 16: // remote query
 				case 9: // remote query
-					rc.setLookupQueryResult(metaDataDao.getQueryResult(scd, c.getLookupQueryId()));
+					rc.setLookupQueryResult(metadataLoader.getQueryResult(scd, c.getLookupQueryId()));
 					// c.set_lookupListCount(c.getLookupQueryId()); // Fake:
 					// Normalde Query Id tutulur, ama
 					// su anda kac adet column tutuyor
@@ -1113,7 +1071,7 @@ public class PostgreSQL extends BaseDAO {
 					List<W5LookUpDetay> oldList = !FrameworkCache.hasQueuedReloadCache(projectId,
 							"13." + lookUp.getLookUpId())
 									? lookUp.get_detayList()
-									: metaDataDao.findLookUpDetay(c.getLookupQueryId(), projectId);
+									: metadataLoader.findLookUpDetay(c.getLookupQueryId(), projectId);
 
 					List<W5LookUpDetay> newList = null;
 					if (includedValues != null && includedValues.length() > 0) {
@@ -1181,26 +1139,19 @@ public class PostgreSQL extends BaseDAO {
 						}
 					}
 
-					W5QueryResult lookupQueryResult = metaDataDao.getQueryResult(scd, c.getLookupQueryId());
+					W5QueryResult lookupQueryResult = metadataLoader.getQueryResult(scd, c.getLookupQueryId());
 					lookupQueryResult.setErrorMap(new HashMap());
 					lookupQueryResult.setRequestParams(requestParams);
 					lookupQueryResult.setOrderBy(lookupQueryResult.getQuery().getSqlOrderby());
-					if (lookupQueryResult.getQuery().getQuerySourceTip() != 15)
-						switch (lookupQueryResult.getQuery().getQuerySourceTip()) {
+					if (lookupQueryResult.getQuery().getQuerySourceType() != 15)
+						switch (lookupQueryResult.getQuery().getQuerySourceType()) {
 						case 1376: // WS Method
 							W5WsMethod wsm = FrameworkCache.getWsMethod(projectId,
-									lookupQueryResult.getQuery().getMainTableId());
-
-							if (wsm.get_params() == null) {
-								wsm.set_params(metaDataDao.findWsMethodParams(wsm.getWsMethodId(), projectId));
-								wsm.set_paramMap(new HashMap());
-								for (W5WsMethodParam wsmp : wsm.get_params())
-									wsm.get_paramMap().put(wsmp.getWsMethodParamId(), wsmp);
-							}
+									lookupQueryResult.getQuery().getSourceObjectId());
 
 							W5WsMethodParam parentParam = null;
 							for (W5WsMethodParam px : wsm.get_params())
-								if (px.getOutFlag() != 0 && px.getParamTip() == 10) {
+								if (px.getOutFlag() != 0 && px.getParamType() == 10) {
 									parentParam = px;
 									break;
 								}
@@ -1228,9 +1179,9 @@ public class PostgreSQL extends BaseDAO {
 							continue; // burda sadece table icin olur
 						}
 					if (rc.getValue() != null && rc.getValue().length() > 0
-							&& GenericUtil.hasPartInside("7,10,61", Short.toString(c.getControlTip())))
+							&& GenericUtil.hasPartInside("7,10,61", Short.toString(c.getControlType())))
 						paramMap.put("pmust_load_id", rc.getValue());
-					switch (lookupQueryResult.getQuery().getQueryTip()) {
+					switch (lookupQueryResult.getQuery().getQueryType()) {
 					case 12:
 					case 13:
 						lookupQueryResult.prepareTreeQuery(paramMap);
@@ -1239,25 +1190,25 @@ public class PostgreSQL extends BaseDAO {
 						lookupQueryResult.prepareQuery(paramMap);
 					}
 					rc.setLookupQueryResult(lookupQueryResult);
-					if (c.getControlTip() == 10 || c.getControlTip() == 23 || c.getControlTip() == 7) {
+					if (c.getControlType() == 10 || c.getControlType() == 23 || c.getControlType() == 7) {
 						if (c.getDialogGridId() != 0) {
 							if (rc.getExtraValuesMap() == null)
 								rc.setExtraValuesMap(new HashMap());
 							rc.getExtraValuesMap().put("dialogGrid",
-									metaDataDao.getGridResult(scd, c.getDialogGridId(), requestParams, true));
+									metadataLoader.getGridResult(scd, c.getDialogGridId(), requestParams, true));
 						}
 
-						if (c.getControlTip() == 10 && GenericUtil.isEmpty(rc.getValue()))
+						if (c.getControlType() == 10 && GenericUtil.isEmpty(rc.getValue()))
 							break; // advanced select ise ve degeri yoksa
 									// hicbirsey koyma
 					}
 
 					if (lookupQueryResult.getErrorMap().isEmpty()) {
 						runQuery(lookupQueryResult);
-						if (tabId != null && lookupQueryResult.getQuery().getMainTableId() != 0
+						if (tabId != null && lookupQueryResult.getQuery().getSourceObjectId() != 0
 								&& requestParams.get(".w") != null) {
 							keys = UserUtil.getTableGridFormCellCachedKeys((String) scd.get("projectId"),
-									lookupQueryResult.getQuery().getMainTableId(), (Integer) scd.get("userId"),
+									lookupQueryResult.getQuery().getSourceObjectId(), (Integer) scd.get("userId"),
 									(String) scd.get("sessionId"), requestParams.get(".w"), tabId, -c.getFormCellId(),
 									requestParams, true);
 							if (keys != null)
@@ -1363,13 +1314,13 @@ public class PostgreSQL extends BaseDAO {
 				} else
 					b = true;
 				sql.append("t.").append(x.getExpressionDsc()).append(" = ? ");
-				Object psonuc = GenericUtil.prepareParam((W5Param) x, formResult.getScd(),
+				Object presult = GenericUtil.prepareParam((W5Param) x, formResult.getScd(),
 						formResult.getRequestParams(), (short) -1, null, (short) 1, null, null,
 						formResult.getErrorMap());
 				if (pkField == null)
-					pkField = psonuc;
-				realParams.add(psonuc);
-				formResult.getPkFields().put(x.getDsc(), psonuc);
+					pkField = presult;
+				realParams.add(presult);
+				formResult.getPkFields().put(x.getDsc(), presult);
 			}
 		}
 
@@ -1393,16 +1344,16 @@ public class PostgreSQL extends BaseDAO {
 							if (obj != null) {
 								if(tf.getLkpEncryptionType()!=0)obj = EncryptionUtil.decrypt(obj.toString(), tf.getLkpEncryptionType());
 
-								if (tf.getFieldTip() == 5 && obj instanceof Boolean) {
+								if (tf.getFieldType() == 5 && obj instanceof Boolean) {
 									obj = (Boolean) obj ? 1 : 0;
-								} else if (tf.getFieldTip() == 2 && obj instanceof java.sql.Timestamp) {
+								} else if (tf.getFieldType() == 2 && obj instanceof java.sql.Timestamp) {
 									try {
 										obj = GenericUtil.uFormatDateTime((java.sql.Timestamp) obj, dateFormat);
 									} catch (Exception e) {
 									}
-								} else if (tf.getFieldTip() == 2 && obj instanceof java.sql.Date) {
+								} else if (tf.getFieldType() == 2 && obj instanceof java.sql.Date) {
 									try {
-										if (cellResult.getFormCell().getControlTip() == 18) { // date
+										if (cellResult.getFormCell().getControlType() == 18) { // date
 																								// time
 											obj = rs.getTimestamp(
 													((W5TableField) cellResult.getFormCell().get_sourceObjectDetail())
@@ -1433,8 +1384,8 @@ public class PostgreSQL extends BaseDAO {
 									cellResult.setValue(sobj.charAt(0)+strMask.substring(2)+sobj.charAt(sobj.length()-1));break;
 								}
 							}
-						} else if (cellResult.getFormCell().getControlTip() == 101) {
-							switch (cellResult.getFormCell().getInitialSourceTip()) {
+						} else if (cellResult.getFormCell().getControlType() == 101) {
+							switch (cellResult.getFormCell().getInitialSourceType()) {
 							case 0: // yok-sabit
 								cellResult.setValue(cellResult.getFormCell().getInitialValue());
 								break;
@@ -1473,7 +1424,7 @@ public class PostgreSQL extends BaseDAO {
 
 //									if (res != null && res instanceof org.mozilla.javascript.Undefined)res = null;
 								if (res != null && ((W5Param) cellResult.getFormCell().get_sourceObjectDetail())
-										.getParamTip() == 4)
+										.getParamType() == 4)
 									res = "" + new BigDecimal(res.toString()).intValue();
 								cellResult.setValue(res == null ? null : res.toString());
 
@@ -1571,7 +1522,7 @@ public class PostgreSQL extends BaseDAO {
 
 	public String getInitialFormCellValue(Map<String, Object> scd, W5FormCell cell, Map<String, String> requestParams) {
 		String result = null;
-		switch (cell.getInitialSourceTip()) {
+		switch (cell.getInitialSourceType()) {
 		case 0: // yok-sabit
 			result = (cell.getInitialValue());
 			break;
@@ -1595,7 +1546,7 @@ public class PostgreSQL extends BaseDAO {
 			Object res = scriptEngine.executeScript(scd, requestParams, cell.getInitialValue(), null,
 					"41i" + cell.getFormCellId());
 
-			if (res != null && ((W5Param) cell.get_sourceObjectDetail()).getParamTip() == 4)
+			if (res != null && ((W5Param) cell.get_sourceObjectDetail()).getParamType() == 4)
 				res = "" + new BigDecimal(res.toString()).intValue();
 			result = (res == null ? null : res.toString());
 
@@ -1636,6 +1587,7 @@ public class PostgreSQL extends BaseDAO {
 			int fsmTableId, int fsmTablePk) {
 
 		W5Email email = new W5Email();
+		email.setMailSettingId(fsm.getMailSettingId());
 		String mailTo = fsm.getSmsMailTo();
 		if (mailTo != null && mailTo.contains("${")) {
 			StringBuilder tmp1 = new StringBuilder(mailTo);
@@ -1678,18 +1630,18 @@ public class PostgreSQL extends BaseDAO {
 		W5Form form = formResult.getForm();
 		String projectId = FrameworkCache.getProjectId(formResult.getScd(), "40." + formResult.getFormId());
 		W5Table t = null;
-		switch (form.getObjectTip()) {
+		switch (form.getObjectType()) {
 		case 2:// table
 			t = FrameworkCache.getTable(projectId, form.getObjectId());
 			break; // table
 		case 1:// grid
-			W5Grid g = metaDataDao.getGridResult(formResult.getScd(), form.getObjectId(), new HashMap(), true)
+			W5Grid g = metadataLoader.getGridResult(formResult.getScd(), form.getObjectId(), new HashMap(), true)
 					.getGrid();
 
 			if (g != null) {
-				W5Query q = metaDataDao.getQueryResult(formResult.getScd(), g.getQueryId()).getQuery();
+				W5Query q = metadataLoader.getQueryResult(formResult.getScd(), g.getQueryId()).getQuery();
 				if (q != null)
-					t = FrameworkCache.getTable(projectId, q.getMainTableId()); // grid
+					t = FrameworkCache.getTable(projectId, q.getSourceObjectId()); // grid
 			}
 			break;
 		// case 3: t= PromisCache.getTable(formResult.getScd(),
@@ -1704,10 +1656,10 @@ public class PostgreSQL extends BaseDAO {
 				try {
 					if (t != null) {
 						W5TableField tf = null;
-						if (form.getObjectTip() == 2 && cell.get_sourceObjectDetail() != null
+						if (form.getObjectType() == 2 && cell.get_sourceObjectDetail() != null
 								&& cell.get_sourceObjectDetail() instanceof W5TableField) {
 							tf = (W5TableField) cell.get_sourceObjectDetail();
-						} else if (form.getObjectTip() == 1 && cell.get_sourceObjectDetail() != null) {
+						} else if (form.getObjectType() == 1 && cell.get_sourceObjectDetail() != null) {
 							if (cell.get_sourceObjectDetail() instanceof W5QueryParam) {
 								W5QueryParam qp = (W5QueryParam) cell.get_sourceObjectDetail();
 								if (qp.getRelatedTableFieldId() != 0 && t != null) {
@@ -1726,7 +1678,7 @@ public class PostgreSQL extends BaseDAO {
 						}
 					}
 					W5FormCellHelper result = new W5FormCellHelper(cell);
-					switch (cell.getInitialSourceTip()) {
+					switch (cell.getInitialSourceType()) {
 					case 0: // yok-sabit
 						result.setValue(cell.getInitialValue());
 						break;
@@ -1758,7 +1710,7 @@ public class PostgreSQL extends BaseDAO {
 						Object res = scriptEngine.executeScript(formResult.getScd(), formResult.getRequestParams(),
 								cell.getInitialValue(), null, "41i" + cell.getFormCellId());
 
-						if (res != null && ((W5Param) cell.get_sourceObjectDetail()).getParamTip() == 4)
+						if (res != null && ((W5Param) cell.get_sourceObjectDetail()).getParamType() == 4)
 							res = "" + new BigDecimal(res.toString()).intValue();
 						result.setValue(res == null ? null : res.toString());
 
@@ -1797,7 +1749,7 @@ public class PostgreSQL extends BaseDAO {
 		Set<String> usedFields = new HashSet<String>();
 
 		Map<Integer, W5FormModule> moduleMap = null;
-		if (formResult.getForm().getRenderTip() != 0) {
+		if (formResult.getForm().getRenderType() != 0) {
 			moduleMap = new HashMap<Integer, W5FormModule>();
 			if (formResult.getForm().get_moduleList() != null)
 				for (W5FormModule m : formResult.getForm().get_moduleList())
@@ -1814,8 +1766,8 @@ public class PostgreSQL extends BaseDAO {
 		boolean b = false;
 		boolean extendedFlag = false;
 		for (W5FormCell x : f.get_formCells())
-			if (x.getNrdTip() != 1 && x.getObjectDetailId() != 0 && x.get_sourceObjectDetail() != null
-					&& x.getControlTip() < 100) { // normal ve readonly ise
+			if (x.getNrdType() != 1 && x.getObjectDetailId() != 0 && x.get_sourceObjectDetail() != null
+					&& x.getControlType() < 100) { // normal ve readonly ise
 				W5TableField tf = (W5TableField) x.get_sourceObjectDetail();
 				if (tf.getCanUpdateFlag() == 0 || tf.getTabOrder() < 1)
 					continue; // x.getCanUpdate()!=0
@@ -1847,39 +1799,41 @@ public class PostgreSQL extends BaseDAO {
 				if (!GenericUtil.accessControl4SessionField(formResult.getScd(), tf.getRelatedSessionField()))
 					continue;
 
-				if (paramSuffix.length() > 0 && formResult.getRequestParams().get(x.getDsc() + paramSuffix) == null)
+				if (paramSuffix.length() > 0 && !formResult.getRequestParams().containsKey(x.getDsc() + paramSuffix))
 					continue;
-				if (x.getControlTip() == 31 && GenericUtil.uInt(x.getLookupIncludedValues()) == 1
+				if (x.getControlType() == 31 && GenericUtil.uInt(x.getLookupIncludedValues()) == 1
 						&& !GenericUtil.hasPartInside(x.getLookupIncludedParams(), "" + scd.get("userId")))
+					continue;
+				if(x.getControlType()==42 && GenericUtil.safeEquals(FrameworkSetting.defaultPasswordMask, formResult.getRequestParams().get(x.getDsc())))
 					continue;
 
 				short notNullFlag = x.getNotNullFlag();
 				if(!GenericUtil.isEmpty(x.get_formCellPropertyList())) for(W5FormCellProperty fcp:x.get_formCellPropertyList()) {
-					if(fcp.getLkpPropertyTip()==0){//required
+					if(fcp.getLkpPropertyType()==0){//required
 						for(W5FormCell fc:f.get_formCells())if(fc.getFormCellId() == fcp.getRelatedFormCellId()) {
 							if(fc.getActiveFlag()!=0) {
 								notNullFlag = 0;
-								if(fc.getSourceTip()==1) {
+								if(fc.getSourceType()==1) {
 									String value = formResult.getRequestParams().get(fc.getDsc());
-									if(fc.getControlTip()==5) {
-										notNullFlag = (short)(fcp.getLkpOperatorTip() == GenericUtil.uCheckBox(value) ? 1:0);
+									if(fc.getControlType()==5) {
+										notNullFlag = (short)(fcp.getLkpOperatorType() == GenericUtil.uCheckBox(value) ? 1:0);
 									} else
-									notNullFlag = (short)(formElementProperty(fcp.getLkpOperatorTip(), value, fcp.getVal()) ? 1:0);
+									notNullFlag = (short)(formElementProperty(fcp.getLkpOperatorType(), value, fcp.getVal()) ? 1:0);
 								}
 							}
 							break;
 						}
 					}
-					if(notNullFlag==0 && fcp.getLkpPropertyTip()==1 && fcp.getOtherSetValueFlag()!=0){//visible
+					if(notNullFlag==0 && fcp.getLkpPropertyType()==1 && fcp.getOtherSetValueFlag()!=0){//visible
 						for(W5FormCell fc:f.get_formCells())if(fc.getFormCellId() == fcp.getRelatedFormCellId()) {
 							if(fc.getActiveFlag()!=0) {
 								short visibleFlag = 0;
-								if(fc.getSourceTip()==1) {
+								if(fc.getSourceType()==1) {
 									String value = formResult.getRequestParams().get(fc.getDsc());
-									if(fc.getControlTip()==5) {
-										visibleFlag = (short)(fcp.getLkpOperatorTip() == GenericUtil.uCheckBox(value) ? 1:0);
+									if(fc.getControlType()==5) {
+										visibleFlag = (short)(fcp.getLkpOperatorType() == GenericUtil.uCheckBox(value) ? 1:0);
 									} else
-										visibleFlag = (short)(formElementProperty(fcp.getLkpOperatorTip(), value, fcp.getVal()) ? 1:0);
+										visibleFlag = (short)(formElementProperty(fcp.getLkpOperatorType(), value, fcp.getVal()) ? 1:0);
 								}
 								
 								if(visibleFlag==0) { //not visible
@@ -1892,7 +1846,7 @@ public class PostgreSQL extends BaseDAO {
 
 				}
 				
-				Object presult = GenericUtil.prepareParam(tf, scd, formResult.getRequestParams(), x.getSourceTip(), null,
+				Object presult = GenericUtil.prepareParam(tf, scd, formResult.getRequestParams(), x.getSourceType(), null,
 						notNullFlag, x.getDsc() + paramSuffix, x.getDefaultValue(), formResult.getErrorMap());
 
 				if (formResult.getErrorMap().isEmpty()) {
@@ -1928,7 +1882,7 @@ public class PostgreSQL extends BaseDAO {
 
 		for (W5TableField p1 : t.get_tableFieldList())
 			if (p1.getCanUpdateFlag() != 0 && !usedFields.contains(p1.getDsc()))
-				switch (p1.getSourceTip()) { // geri kalan fieldlar icin
+				switch (p1.getSourceType()) { // geri kalan fieldlar icin
 				case 4: // calculated Fieldlar icin
 					if (b) {
 						sql.append(" , ");
@@ -1944,22 +1898,22 @@ public class PostgreSQL extends BaseDAO {
 					updateParams.add(GenericUtil.isEmpty(res) ? null : res.get(0));
 					break;
 				case 2: // session
-					Object psonuc = GenericUtil.prepareParam(p1, scd, formResult.getRequestParams(), (short) -1, null,
+					Object presult = GenericUtil.prepareParam(p1, scd, formResult.getRequestParams(), (short) -1, null,
 							(short) 0, null, null, formResult.getErrorMap());
-					if (psonuc != null) {
+					if (presult != null) {
 						if (b) {
 							sql.append(" , ");
 						} else
 							b = true;
 						usedFields.add(p1.getDsc());
 						sql.append(p1.getDsc()).append(" = ? ");
-						updateParams.add(psonuc);
+						updateParams.add(presult);
 						usedFields.add(p1.getDsc());
 					}
 
 					break;
 				}
-		if (usedFields.isEmpty()) { // sorun var
+		if (usedFields.isEmpty()) { // problems exists
 			throw new IWBException("validation", "Form Update", formResult.getFormId(), null, "No Used Fields", null);
 		}
 		if (f.get_versioningFlag()) { // eger versionin varsa, version'lari
@@ -1979,10 +1933,10 @@ public class PostgreSQL extends BaseDAO {
 				else
 					b = true;
 				sql.append(x.getExpressionDsc()).append(" = ? ");
-				Object psonuc = GenericUtil.prepareParam(x, scd, formResult.getRequestParams(), (short) -1, null,
+				Object presult = GenericUtil.prepareParam(x, scd, formResult.getRequestParams(), (short) -1, null,
 						(short) 0, x.getDsc() + paramSuffix, null, formResult.getErrorMap());
-				whereParams.add(psonuc);
-				formResult.getPkFields().put(x.getDsc(), psonuc);
+				whereParams.add(presult);
+				formResult.getPkFields().put(x.getDsc(), presult);
 			}
 
 		updateParams.addAll(whereParams);
@@ -2035,7 +1989,7 @@ public class PostgreSQL extends BaseDAO {
 		Set<String> usedFields = new HashSet<String>();
 
 		Map<Integer, W5FormModule> moduleMap = null;
-		if (formResult.getForm().getRenderTip() != 0) {
+		if (formResult.getForm().getRenderType() != 0) {
 			moduleMap = new HashMap<Integer, W5FormModule>();
 			if (formResult.getForm().get_moduleList() != null)
 				for (W5FormModule m : formResult.getForm().get_moduleList())
@@ -2043,7 +1997,7 @@ public class PostgreSQL extends BaseDAO {
 		}
 
 		for (W5FormCell x : f.get_formCells())
-			if (x.getNrdTip() != 1 && x.getObjectDetailId() != 0 && x.getControlTip() < 100) { // disabled(1)
+			if (x.getNrdType() != 1 && x.getObjectDetailId() != 0 && x.getControlType() < 100) { // disabled(1)
 																								// degil
 																								// VE
 																								// freeField(getObjectDetailId()!=0)
@@ -2063,7 +2017,7 @@ public class PostgreSQL extends BaseDAO {
 					continue; // access control
 
 
-				Object psonuc = null;
+				Object presult = null;
 				switch (p1.getCopySourceTip()) {
 				case 7: // object_source (readonly)
 				case 6: // object_source
@@ -2079,8 +2033,8 @@ public class PostgreSQL extends BaseDAO {
 						continue;
 					}
 				case 1: // request
-					psonuc = GenericUtil.prepareParam(p1, formResult.getScd(), formResult.getRequestParams(),
-							x.getSourceTip(), null, x.getNotNullFlag(), x.getDsc() + paramSuffix, x.getDefaultValue(),
+					presult = GenericUtil.prepareParam(p1, formResult.getScd(), formResult.getRequestParams(),
+							x.getSourceType(), null, x.getNotNullFlag(), x.getDsc() + paramSuffix, x.getDefaultValue(),
 							formResult.getErrorMap());
 					break;
 				default:
@@ -2097,25 +2051,25 @@ public class PostgreSQL extends BaseDAO {
 					sql.append(p1.getDsc());
 					if (x.getOutFlag() != 0) { // bu field outputParam'a
 												// yazilacak
-						if (x.getSourceTip() == 4) { // calculated, sql
+						if (x.getSourceType() == 4) { // calculated, sql
 														// calisacak sonra deger
 														// verilecek
-							calculatedParams.put(paramCount, (String) psonuc);
+							calculatedParams.put(paramCount, (String) presult);
 							calculatedParamNames.put(paramCount, x.getDsc());
 						} else {
-							formResult.getOutputFields().put(x.getDsc(), psonuc);
+							formResult.getOutputFields().put(x.getDsc(), presult);
 						}
 						postSql.append(" ? ");
 						copyParams.add(null);
 						paramCount++;
 					} else { // calculated, outputa yazilmadan direk
-						if (x.getSourceTip() == 4) { // calculated, sql
+						if (x.getSourceType() == 4) { // calculated, sql
 														// calisacak sonra deger
 														// verilecek
-							postSql.append(" ( ").append(psonuc).append(" ) ");
+							postSql.append(" ( ").append(presult).append(" ) ");
 						} else {
 							postSql.append(" ? ");
-							copyParams.add(psonuc);
+							copyParams.add(presult);
 							paramCount++;
 						}
 					}
@@ -2126,7 +2080,7 @@ public class PostgreSQL extends BaseDAO {
 			if (p1.getCanInsertFlag() != 0 && !usedFields.contains(p1.getDsc()))
 				switch (p1.getCopySourceTip()) {
 				case 7: //
-					if (p1.getSourceTip() != 4)
+					if (p1.getSourceType() != 4)
 						break;
 				case 4: // calculated Fieldlar icin
 					if (b) {
@@ -2145,9 +2099,9 @@ public class PostgreSQL extends BaseDAO {
 					paramCount++;
 					break;
 				case 2: // session
-					Object psonuc = GenericUtil.prepareParam(p1, formResult.getScd(), formResult.getRequestParams(),
+					Object presult = GenericUtil.prepareParam(p1, formResult.getScd(), formResult.getRequestParams(),
 							(short) -1, null, (short) 0, null, null, formResult.getErrorMap());
-					if (psonuc != null) {
+					if (presult != null) {
 						if (b) {
 							sql.append(" , ");
 							postSql.append(" , ");
@@ -2156,15 +2110,15 @@ public class PostgreSQL extends BaseDAO {
 						usedFields.add(p1.getDsc());
 						sql.append(p1.getDsc());
 						postSql.append(" ? ");
-						copyParams.add(psonuc);
+						copyParams.add(presult);
 						paramCount++;
 					}
 
 					break;
 				case 9: // UUID
-					Object psonuc2 = GenericUtil.prepareParam(p1, formResult.getScd(), formResult.getRequestParams(),
+					Object presult2 = GenericUtil.prepareParam(p1, formResult.getScd(), formResult.getRequestParams(),
 							(short) -1, null, (short) 0, null, null, formResult.getErrorMap());
-					if (psonuc2 != null) {
+					if (presult2 != null) {
 						if (b) {
 							sql.append(" , ");
 							postSql.append(" , ");
@@ -2173,17 +2127,17 @@ public class PostgreSQL extends BaseDAO {
 						usedFields.add(p1.getDsc());
 						sql.append(p1.getDsc());
 						postSql.append(" ? ");
-						copyParams.add(psonuc2);
+						copyParams.add(presult2);
 						paramCount++;
 
-						formResult.getOutputFields().put(p1.getDsc(), psonuc2);
+						formResult.getOutputFields().put(p1.getDsc(), presult2);
 					}
 
 					break;
 				case 8: // Global Nextval
-					Object psonuc3 = GenericUtil.prepareParam(p1, formResult.getScd(), formResult.getRequestParams(),
+					Object presult3 = GenericUtil.prepareParam(p1, formResult.getScd(), formResult.getRequestParams(),
 							(short) -1, null, (short) 0, null, null, formResult.getErrorMap());
-					if (psonuc3 != null) {
+					if (presult3 != null) {
 						if (b) {
 							sql.append(" , ");
 							postSql.append(" , ");
@@ -2192,10 +2146,10 @@ public class PostgreSQL extends BaseDAO {
 						usedFields.add(p1.getDsc());
 						sql.append(p1.getDsc());
 						postSql.append(" ? ");
-						copyParams.add(psonuc3);
+						copyParams.add(presult3);
 						paramCount++;
 
-						formResult.getOutputFields().put(p1.getDsc(), psonuc3);
+						formResult.getOutputFields().put(p1.getDsc(), presult3);
 					}
 
 					break;
@@ -2204,7 +2158,7 @@ public class PostgreSQL extends BaseDAO {
 		if (!formResult.getErrorMap().isEmpty())
 			return 0;
 
-		if (usedFields.isEmpty()) { // sorun var
+		if (usedFields.isEmpty()) { // problems exists
 			throw new IWBException("validation", "Form Copy", formResult.getFormId(), null, "No Used Fields", null);
 		}
 
@@ -2233,10 +2187,10 @@ public class PostgreSQL extends BaseDAO {
 				else
 					b = true;
 				sql.append(x.getExpressionDsc()).append(" = ? ");
-				Object psonuc = GenericUtil.prepareParam(x, formResult.getScd(), formResult.getRequestParams(),
+				Object presult = GenericUtil.prepareParam(x, formResult.getScd(), formResult.getRequestParams(),
 						(short) -1, null, (short) 0, x.getDsc() + paramSuffix, null, formResult.getErrorMap());
-				copyParams.add(psonuc);
-				formResult.getPkFields().put(x.getDsc(), psonuc);
+				copyParams.add(presult);
+				formResult.getPkFields().put(x.getDsc(), presult);
 			}
 
 		b = false;
@@ -2425,7 +2379,7 @@ public class PostgreSQL extends BaseDAO {
 		Set<String> usedFields = new HashSet<String>();
 
 		Map<Integer, W5FormModule> moduleMap = null;
-		if (formResult.getForm().getRenderTip() != 0) {
+		if (formResult.getForm().getRenderType() != 0) {
 			moduleMap = new HashMap<Integer, W5FormModule>();
 			if (formResult.getForm().get_moduleList() != null)
 				for (W5FormModule m : formResult.getForm().get_moduleList())
@@ -2433,14 +2387,14 @@ public class PostgreSQL extends BaseDAO {
 		}
 
 		for (W5FormCell x : f.get_formCells())
-			if (x.getNrdTip() != 1 && x.getObjectDetailId() != 0 && x.getControlTip() < 100) { // disabled(1)
+			if (x.getNrdType() != 1 && x.getObjectDetailId() != 0 && x.getControlType() < 100) { // disabled(1)
 																								// degil
 																								// VE
 																								// freeField(getObjectDetailId()!=0)
 																								// degilse
 				W5TableField tf = (W5TableField) x.get_sourceObjectDetail();
 				if (tf == null)
-					continue; // error. aslinda olmamasi lazim
+					continue; // error. actually olmamasi lazim
 				if (tf.getCanInsertFlag() == 0)
 					continue; // x.getCanInsert()!=0
 
@@ -2461,29 +2415,29 @@ public class PostgreSQL extends BaseDAO {
 
 				short notNullFlag = x.getNotNullFlag();
 				if(!GenericUtil.isEmpty(x.get_formCellPropertyList())) for(W5FormCellProperty fcp:x.get_formCellPropertyList()) {
-					if(fcp.getLkpPropertyTip()==0){//required
+					if(fcp.getLkpPropertyType()==0){//required
 						notNullFlag = 0;
 						for(W5FormCell fc:f.get_formCells())if(fc.getFormCellId() == fcp.getRelatedFormCellId()) {
-							if(fc.getSourceTip()==1) {
+							if(fc.getSourceType()==1) {
 								String value = formResult.getRequestParams().get(fc.getDsc());
-								if(fc.getControlTip()==5) {
-									notNullFlag = (short)(fcp.getLkpOperatorTip() == GenericUtil.uCheckBox(value) ? 1:0);
+								if(fc.getControlType()==5) {
+									notNullFlag = (short)(fcp.getLkpOperatorType() == GenericUtil.uCheckBox(value) ? 1:0);
 								} else
-									notNullFlag = (short)(formElementProperty(fcp.getLkpOperatorTip(), value, fcp.getVal()) ? 1:0);
+									notNullFlag = (short)(formElementProperty(fcp.getLkpOperatorType(), value, fcp.getVal()) ? 1:0);
 							}
 							break;
 						}
 					}
-					if(notNullFlag==0 && fcp.getLkpPropertyTip()==1 && fcp.getOtherSetValueFlag()!=0){//visible
+					if(notNullFlag==0 && fcp.getLkpPropertyType()==1 && fcp.getOtherSetValueFlag()!=0){//visible
 						for(W5FormCell fc:f.get_formCells())if(fc.getFormCellId() == fcp.getRelatedFormCellId()) {
 							if(fc.getActiveFlag()!=0) {
 								short visibleFlag = 0;
-								if(fc.getSourceTip()==1) {
+								if(fc.getSourceType()==1) {
 									String value = formResult.getRequestParams().get(fc.getDsc());
-									if(fc.getControlTip()==5) {
-										visibleFlag = (short)(fcp.getLkpOperatorTip() == GenericUtil.uCheckBox(value) ? 1:0);
+									if(fc.getControlType()==5) {
+										visibleFlag = (short)(fcp.getLkpOperatorType() == GenericUtil.uCheckBox(value) ? 1:0);
 									} else
-										visibleFlag = (short)(formElementProperty(fcp.getLkpOperatorTip(), value, fcp.getVal()) ? 1:0);
+										visibleFlag = (short)(formElementProperty(fcp.getLkpOperatorType(), value, fcp.getVal()) ? 1:0);
 								}
 								
 								if(visibleFlag==0) { //not visible
@@ -2494,13 +2448,13 @@ public class PostgreSQL extends BaseDAO {
 						}
 					}
 				}
-				Object psonuc = GenericUtil.prepareParam(tf, formResult.getScd(), formResult.getRequestParams(),
-						x.getSourceTip(), null, notNullFlag, x.getDsc() + paramSuffix, x.getDefaultValue(),
+				Object presult = GenericUtil.prepareParam(tf, formResult.getScd(), formResult.getRequestParams(),
+						x.getSourceType(), null, notNullFlag, x.getDsc() + paramSuffix, x.getDefaultValue(),
 						formResult.getErrorMap());
 
 				if (formResult.getErrorMap().isEmpty()) {
-					if(psonuc!=null && x.getVtype()!=null) {
-						if(!GenericUtil.validateVtype(psonuc.toString(), x.getVtype())) {
+					if(presult!=null && x.getVtype()!=null) {
+						if(!GenericUtil.validateVtype(presult.toString(), x.getVtype())) {
 							formResult.getErrorMap().put(x.getDsc(), LocaleMsgCache.get2(formResult.getScd(), "invalid_"+x.getVtype()));
 							continue;
 						}
@@ -2514,27 +2468,27 @@ public class PostgreSQL extends BaseDAO {
 					sql.append(tf.getDsc());
 					if (x.getOutFlag() != 0) { // bu field outputParam'a
 												// yazilacak
-						if (x.getSourceTip() == 4) { // calculated, sql
+						if (x.getSourceType() == 4) { // calculated, sql
 														// calisacak sonra deger
 														// verilecek
-							calculatedParams.put(paramCount, (String) psonuc);
+							calculatedParams.put(paramCount, (String) presult);
 							calculatedParamNames.put(paramCount, x.getDsc());
 						} else {
-							formResult.getOutputFields().put(x.getDsc(), psonuc);
+							formResult.getOutputFields().put(x.getDsc(), presult);
 						}
 						postSql.append(" ? ");
 						insertParams.add(null);
 						paramCount++;
 					} else { // calculated, outputa yazilmadan direk
-						if (x.getSourceTip() == 4) { // calculated, sql
+						if (x.getSourceType() == 4) { // calculated, sql
 														// calisacak sonra deger
 														// verilecek
-							postSql.append(" ( ").append(psonuc).append(" ) ");
+							postSql.append(" ( ").append(presult).append(" ) ");
 						} else {
 							postSql.append(" ? ");
-							//insertParams.add(psonuc);
-							if(psonuc==null || tf.getLkpEncryptionType()==0)insertParams.add(psonuc);
-							else insertParams.add(EncryptionUtil.encrypt(psonuc.toString(), tf.getLkpEncryptionType()));
+							//insertParams.add(presult);
+							if(presult==null || tf.getLkpEncryptionType()==0)insertParams.add(presult);
+							else insertParams.add(EncryptionUtil.encrypt(presult.toString(), tf.getLkpEncryptionType()));
 							paramCount++;
 						}
 					}
@@ -2543,7 +2497,7 @@ public class PostgreSQL extends BaseDAO {
 
 		for (W5TableField p1 : t.get_tableFieldList())
 			if (p1.getCanInsertFlag() != 0 && !usedFields.contains(p1.getDsc()))
-				switch (p1.getSourceTip()) {
+				switch (p1.getSourceType()) {
 
 				case 4: // SQL calculated Fieldlar icin
 					if (b) {
@@ -2563,9 +2517,9 @@ public class PostgreSQL extends BaseDAO {
 					break;
 				case 5:// javascript
 				case 2: // session
-					Object psonuc = GenericUtil.prepareParam(p1, formResult.getScd(), formResult.getRequestParams(),
+					Object presult = GenericUtil.prepareParam(p1, formResult.getScd(), formResult.getRequestParams(),
 							(short) -1, null, (short) 0, null, null, formResult.getErrorMap());
-					if (psonuc != null) {
+					if (presult != null) {
 						if (b) {
 							sql.append(" , ");
 							postSql.append(" , ");
@@ -2574,15 +2528,15 @@ public class PostgreSQL extends BaseDAO {
 						usedFields.add(p1.getDsc());
 						sql.append(p1.getDsc());
 						postSql.append(" ? ");
-						insertParams.add(psonuc);
+						insertParams.add(presult);
 						paramCount++;
 					}
 
 					break;
 				case 9: // UUID
-					Object psonuc2 = GenericUtil.prepareParam(p1, formResult.getScd(), formResult.getRequestParams(),
+					Object presult2 = GenericUtil.prepareParam(p1, formResult.getScd(), formResult.getRequestParams(),
 							(short) -1, null, (short) 0, null, null, formResult.getErrorMap());
-					if (psonuc2 != null) {
+					if (presult2 != null) {
 						if (b) {
 							sql.append(" , ");
 							postSql.append(" , ");
@@ -2591,17 +2545,17 @@ public class PostgreSQL extends BaseDAO {
 						usedFields.add(p1.getDsc());
 						sql.append(p1.getDsc());
 						postSql.append(" ? ");
-						insertParams.add(psonuc2);
+						insertParams.add(presult2);
 						paramCount++;
 
-						formResult.getOutputFields().put(p1.getDsc(), psonuc2);
+						formResult.getOutputFields().put(p1.getDsc(), presult2);
 					}
 
 					break;
 				case 8: // Global Nextval
-					Object psonuc3 = GenericUtil.prepareParam(p1, formResult.getScd(), formResult.getRequestParams(),
+					Object presult3 = GenericUtil.prepareParam(p1, formResult.getScd(), formResult.getRequestParams(),
 							(short) -1, null, (short) 0, null, null, formResult.getErrorMap());
-					if (psonuc3 != null) {
+					if (presult3 != null) {
 						if (b) {
 							sql.append(" , ");
 							postSql.append(" , ");
@@ -2610,10 +2564,10 @@ public class PostgreSQL extends BaseDAO {
 						usedFields.add(p1.getDsc());
 						sql.append(p1.getDsc());
 						postSql.append(" ? ");
-						insertParams.add(psonuc3);
+						insertParams.add(presult3);
 						paramCount++;
 
-						formResult.getOutputFields().put(p1.getDsc(), psonuc3);
+						formResult.getOutputFields().put(p1.getDsc(), presult3);
 					}
 
 					break;
@@ -2622,7 +2576,7 @@ public class PostgreSQL extends BaseDAO {
 		if (!formResult.getErrorMap().isEmpty())
 			return 0;
 
-		if (usedFields.isEmpty()) { // sorun var
+		if (usedFields.isEmpty()) { // problems exists
 			throw new IWBException("validation", "Form Insert", formResult.getFormId(), null, "No Used Fields", null);
 		}
 
@@ -2746,11 +2700,11 @@ public class PostgreSQL extends BaseDAO {
 		 * if(formResult.getForm().get_sourceTable() != null &&
 		 * formResult.getForm().get_sourceTable().getDoInsertLogFlag()!=0){ Bunun
 		 * yapılabilmesi için önce logTableRecord'un değişmesi lazım. for(W5TableParam
-		 * x: t.get_tableParamList()){ if(x.getNotNullFlag()!=0){ Object psonuc =
+		 * x: t.get_tableParamList()){ if(x.getNotNullFlag()!=0){ Object presult =
 		 * PromisUtil.prepareParam(x, formResult.getScd(),
 		 * formResult.getRequestParams(), (short)-1, null, (short)0, x.getDsc() +
 		 * paramSuffix, null, formResult.getErrorMap());
-		 * formResult.getPkFields().put(x.getDsc(), psonuc); } }
+		 * formResult.getPkFields().put(x.getDsc(), presult); } }
 		 * logTableRecord(formResult); }
 		 */
 	}
@@ -2772,10 +2726,10 @@ public class PostgreSQL extends BaseDAO {
 				else
 					b = true;
 				sql.append(x.getExpressionDsc()).append(" = ? ");
-				Object psonuc = GenericUtil.prepareParam(x, formResult.getScd(), formResult.getRequestParams(),
+				Object presult = GenericUtil.prepareParam(x, formResult.getScd(), formResult.getRequestParams(),
 						(short) -1, null, (short) 0, x.getDsc() + paramSuffix, null, formResult.getErrorMap());
-				realParams.add(psonuc);
-				formResult.getPkFields().put(x.getDsc(), psonuc);
+				realParams.add(presult);
+				formResult.getPkFields().put(x.getDsc(), presult);
 			}
 
 		if (t.getDoDeleteLogFlag() != 0)
@@ -2821,10 +2775,10 @@ public class PostgreSQL extends BaseDAO {
 					sqlParams.add(null);
 					hasOutParam = true;
 				} else {
-					Object psonuc = GenericUtil.prepareParam(p1, r.getScd(), r.getRequestParams(), (short) -1, null,
-							(short) 0, p1.getSourceTip() == 1 ? p1.getDsc() + paramSuffix : null, null,
+					Object presult = GenericUtil.prepareParam(p1, r.getScd(), r.getRequestParams(), (short) -1, null,
+							(short) 0, p1.getSourceType() == 1 ? p1.getDsc() + paramSuffix : null, null,
 							r.getErrorMap());
-					sqlParams.add(psonuc);
+					sqlParams.add(presult);
 					sqlNames.add(null);
 				}
 			}
@@ -2851,7 +2805,7 @@ public class PostgreSQL extends BaseDAO {
 						Object o = sqlParams.get(ix);
 						if (sqlNames.get(ix) != null) {
 							W5GlobalFuncParam p1 = r.getGlobalFunc().get_dbFuncParamList().get(i - 1);
-							short t = p1.getParamTip();
+							short t = p1.getParamType();
 							int t1 = java.sql.Types.VARCHAR;
 							if (t == 1)
 								t1 = java.sql.Types.VARCHAR;
@@ -2923,7 +2877,7 @@ public class PostgreSQL extends BaseDAO {
 		saveObject(formValue);
 
 		for (W5FormCell c : formResult.getForm().get_formCells())
-			if (c.getSourceTip() == 1) {
+			if (c.getSourceType() == 1) {
 				String val = formResult.getRequestParams().get(c.getDsc());
 				if (val != null && val.length() > 0 && (formId > 0 || val.length() <= 2048)) {
 					W5FormValueCell fvc = new W5FormValueCell();
@@ -2953,7 +2907,7 @@ public class PostgreSQL extends BaseDAO {
 		Map<String, String> requestParams = new HashMap();
 		requestParams.putAll(masterFormResult.getRequestParams());
 		W5Table mt = FrameworkCache.getTable(scd, masterFormResult.getForm().getObjectId()); // .get_sourceTable();
-		W5FormResult formResult = metaDataDao.getFormResult(scd, t.getDefaultUpdateFormId(), 2, requestParams);
+		W5FormResult formResult = metadataLoader.getFormResult(scd, t.getDefaultUpdateFormId(), 2, requestParams);
 		if (t.getAccessViewTip() == 0 && !FrameworkCache.roleAccessControl(scd, 0)) {
 			// throw new PromisException("security","Module", 0, null, "Modul
 			// Kontrol: Erişim kontrolünüz
@@ -3124,7 +3078,6 @@ public class PostgreSQL extends BaseDAO {
 			} else if (!GenericUtil.isEmpty(t.get_tableParamList())) {
 				requestParams.put(t.get_tableParamList().get(0).getDsc(), "" + tablePk);
 				StringBuilder sql = new StringBuilder(512);
-				boolean accessControlFlag = false;
 				sql.append("select ");
 				if (t.getSummaryRecordSql() == null) // bir tane degeriini
 														// koyacagiz
@@ -3155,16 +3108,9 @@ public class PostgreSQL extends BaseDAO {
 					sql.append(", (select count(1) from iwb.w5_comment cx where cx.table_id=").append(t.getTableId())
 							.append(" AND cx.project_uuid='${scd.projectId}' AND cx.table_pk=x.")
 							.append(t.get_tableParamList().get(0).getExpressionDsc()).append(") pcomment_count ");
-				if (t.getAccessTips() != null && GenericUtil.hasPartInside2(t.getAccessTips(), "0"))
-					accessControlFlag = true;
-				if (accessControlFlag)
-					sql.append(", ac.access_roles, ac.access_users");
+
 				sql.append(" from ").append(t.getDsc()).append(" x");
-				if (accessControlFlag)
-					sql.append(" left outer join iwb.w5_access_control ac on ac.ACCESS_TIP=0 AND ac.table_id=")
-							.append(t.getTableId())
-							.append(" AND ac.customization_id=${scd.customizationId} AND cast(ac.table_pk as int8)=x.")
-							.append(t.get_tableParamList().get(0).getExpressionDsc());
+
 				sql.append(" where x.").append(t.get_tableParamList().get(0).getExpressionDsc()).append("=${req.")
 						.append(t.get_tableParamList().get(0).getDsc()).append("}");
 				sql.append(DBUtil.includeTenantProjectPostSQL(scd, t));
@@ -3176,9 +3122,6 @@ public class PostgreSQL extends BaseDAO {
 				l.add(trh);
 
 				if (m != null) {
-					if (accessControlFlag)
-						trh.setViewAccessControl(new W5AccessControlHelper((String) m.get("access_roles"),
-								(String) m.get("access_users")));
 					if (m.size() == 1) {
 						Object o = m.values().iterator().next();
 						if (o != null)
@@ -3210,7 +3153,7 @@ public class PostgreSQL extends BaseDAO {
 								t = FrameworkCache.getTable(scd, tableId);
 								break;
 							}
-						if (tableId == -1) { // sorun, parent bulamamis
+						if (tableId == -1) { // problems, parent bulamamis
 							W5TableRecordHelper trhError = new W5TableRecordHelper();
 							trhError.setRecordDsc("ERROR: parent not found");
 							l.add(trhError);
@@ -3237,7 +3180,7 @@ public class PostgreSQL extends BaseDAO {
 		StringBuilder sql = new StringBuilder();
 		List<Object> params = new ArrayList();
 		sql.append("select ");
-		List<W5TableFieldCalculated> ltfc = metaDataDao.findTableCalcFields((String)scd.get("projectId"), tableId);
+		List<W5TableFieldCalculated> ltfc = metadataLoader.findTableCalcFields((String)scd.get("projectId"), tableId);
 		W5Table t = FrameworkCache.getTable(scd, tableId);
 		for (int bas = tmp1.indexOf("${"); bas >= 0; bas = tmp1.indexOf("${", bas + 2)) {
 			int bit = tmp1.indexOf("}", bas + 2);
@@ -3277,7 +3220,7 @@ public class PostgreSQL extends BaseDAO {
 					if (tfc.getDsc().equals(newSubStr)) {
 						String sqlCode = tfc.getSqlCode();
 						W5TableField ntf = new W5TableField(tfc.getTableFieldCalculatedId());
-						ntf.setDefaultControlTip((short) -1);
+						ntf.setDefaultControlType((short) -1);
 						if (sqlCode.contains("${")) {
 							Object[] oz = DBUtil.filterExt4SQL(sqlCode, scd, requestParams, null);
 							sqlCode = (String) oz[0];
@@ -3318,8 +3261,8 @@ public class PostgreSQL extends BaseDAO {
 						for (W5TableField tf : newT.get_tableFieldList())
 							if (tf.getDsc().equals(sss[isss])) {
 								foundSt = false;
-								if (tf.getDefaultControlTip() == 7 || tf.getDefaultControlTip() == 9
-										|| tf.getDefaultControlTip() == 10 /*
+								if (tf.getDefaultControlType() == 7 || tf.getDefaultControlType() == 9
+										|| tf.getDefaultControlType() == 10 /*
 																			 * || tf. getDefaultControlTip ()== 15
 																			 */) { // sub
 																					// table
@@ -3420,7 +3363,7 @@ public class PostgreSQL extends BaseDAO {
 		List<Object> params = new ArrayList();
 		sql.append("select ");
 		int field_cnt = 1;
-		List<W5TableFieldCalculated> ltfc = metaDataDao.findTableCalcFields(
+		List<W5TableFieldCalculated> ltfc = metadataLoader.findTableCalcFields(
 				FrameworkCache.getProjectId(scd.get("projectId"), "15." + tableId), tableId);
 		W5Table t = FrameworkCache.getTable(scd, tableId);
 		for (int bas = tmp.indexOf("${"); bas >= 0; bas = tmp.indexOf("${", bas + 2)) {
@@ -3453,7 +3396,7 @@ public class PostgreSQL extends BaseDAO {
 				String newSubStr = subStr.substring(4);
 				for (W5TableField tf : t.get_tableFieldList())
 					if (tf.getDsc().equals(newSubStr)) {
-						if (tf.getDefaultControlTip() == 15) {
+						if (tf.getDefaultControlType() == 15) {
 							W5Table st = FrameworkCache.getTable(scd, tf.getDefaultLookupTableId());
 							if (st != null && smsMailReplaceTip != 0 && smsMailTableIds.contains(st.getTableId())) { // eger
 																														// sms/mail
@@ -3475,7 +3418,7 @@ public class PostgreSQL extends BaseDAO {
 						} else {
 							res.put(subStr, fieldPrefix + field_cnt);
 							resField.put(subStr, tf);
-							if (tf.getFieldTip() == 2)
+							if (tf.getFieldType() == 2)
 								sql.append("to_char(x.").append(newSubStr).append(",'dd/mm/yyyy')");
 							else
 								sql.append("x.").append(newSubStr);
@@ -3496,7 +3439,7 @@ public class PostgreSQL extends BaseDAO {
 						String sqlCode = tfc.getSqlCode();
 						res.put(subStr, fieldPrefix + field_cnt);
 						W5TableField ntf = new W5TableField(tfc.getTableFieldCalculatedId());
-						ntf.setDefaultControlTip((short) -1);
+						ntf.setDefaultControlType((short) -1);
 						resField.put(subStr, ntf);
 						if (sqlCode.contains("${")) {
 							Object[] oz = DBUtil.filterExt4SQL(sqlCode, scd, requestParams, null);
@@ -3504,7 +3447,7 @@ public class PostgreSQL extends BaseDAO {
 							if (oz.length > 1)
 								params.addAll((List) oz[1]);
 						}
-						if (tfc.getFieldTip() == 2)
+						if (tfc.getFieldType() == 2)
 							sql.append("to_char((").append(sqlCode).append("),'dd/mm/yyyy')");
 						else
 							sql.append("(").append(sqlCode).append(")");
@@ -3531,8 +3474,8 @@ public class PostgreSQL extends BaseDAO {
 						}
 						for (W5TableField tf : newT.get_tableFieldList())
 							if (tf.getDsc().equals(sss[isss])) {
-								if (tf.getDefaultControlTip() == 7 || tf.getDefaultControlTip() == 9
-										|| tf.getDefaultControlTip() == 10 /*
+								if (tf.getDefaultControlType() == 7 || tf.getDefaultControlType() == 9
+										|| tf.getDefaultControlType() == 10 /*
 																			 * || tf. getDefaultControlTip ()== 15
 																			 */) { // sub
 																					// table
@@ -3546,9 +3489,9 @@ public class PostgreSQL extends BaseDAO {
 									for (W5TableField stf : st.get_tableFieldList())
 										if (stf.getDsc().equals(sss[isss + 1])) {
 											summaryMust = (conversionTip == 0)
-													&& (stf.getDefaultControlTip() == 7
-															|| stf.getDefaultControlTip() == 9
-															|| stf.getDefaultControlTip() == 10)
+													&& (stf.getDefaultControlType() == 7
+															|| stf.getDefaultControlType() == 9
+															|| stf.getDefaultControlType() == 10)
 													&& stf.getDefaultLookupTableId() != 0;
 											dltId = stf.getDefaultLookupTableId();
 											foundSt = true;
@@ -3617,11 +3560,11 @@ public class PostgreSQL extends BaseDAO {
 								resField.put(subStr, tf);
 					}
 				} else if (sss.length == 1) { // direk lnk.field_name seklinde
-												// olanlar icin
+												//  icin
 					for (W5TableField tf : t.get_tableFieldList())
 						if (tf.getDsc().equals(sss[0])) {
-							if ((conversionTip == 0) && (tf.getDefaultControlTip() == 7
-									|| tf.getDefaultControlTip() == 9 || tf.getDefaultControlTip() == 10)
+							if ((conversionTip == 0) && (tf.getDefaultControlType() == 7
+									|| tf.getDefaultControlType() == 9 || tf.getDefaultControlType() == 10)
 									&& tf.getDefaultLookupTableId() != 0) { // sub
 																			// table
 								W5Table st = FrameworkCache.getTable(scd, tf.getDefaultLookupTableId());
@@ -3630,14 +3573,7 @@ public class PostgreSQL extends BaseDAO {
 											// tabloya ulasilamadi
 
 								if (smsMailReplaceTip != 0) {
-									if (smsMailTableIds.contains(tf.getDefaultLookupTableId())) // eger
-																								// sms/mail
-																								// isi
-																								// ve
-																								// bu
-																								// bir
-																								// link
-																								// ise
+									if (smsMailTableIds.contains(tf.getDefaultLookupTableId())) // it is mail and link
 										sql.append("iwb.fnc_sms_mail_adress(?,").append(tf.getDefaultLookupTableId())
 												.append(",").append("x.").append(sss[0]).append(",")
 												.append(smsMailReplaceTip).append(")");
@@ -3708,10 +3644,10 @@ public class PostgreSQL extends BaseDAO {
 					} else
 						resStr = "";
 				} else if (conversionTip == 0) { // eger sadece serbest donusum
-													// var ise
+													// exists ise
 					W5TableField tf = resField.get(subStr);
 					if (tf != null)
-						switch (tf.getDefaultControlTip()) {
+						switch (tf.getDefaultControlType()) {
 						case 6: // combo static
 							if (tf.getDefaultLookupTableId() != 0) {
 								W5LookUp lu = FrameworkCache.getLookUp(scd, tf.getDefaultLookupTableId());
@@ -3751,7 +3687,7 @@ public class PostgreSQL extends BaseDAO {
 														// gerek
 				W5TableField tf = resField.get(subStr);
 				if (tf != null)
-					switch (tf.getDefaultControlTip()) {
+					switch (tf.getDefaultControlType()) {
 					case 6: // combo static
 						if (tf.getDefaultLookupTableId() != 0) {
 							W5LookUp lu = FrameworkCache.getLookUp(scd, tf.getDefaultLookupTableId());
@@ -3835,9 +3771,9 @@ public class PostgreSQL extends BaseDAO {
 		Map errorMap = new HashMap();
 		for (W5TableParam x : t.get_tableParamList()) {
 			sql.append("AND t.").append(x.getExpressionDsc()).append(" = ? ");
-			Object psonuc = GenericUtil.prepareParam((W5Param) x, scd, requestParams, (short) -1, null, (short) 1,
+			Object presult = GenericUtil.prepareParam((W5Param) x, scd, requestParams, (short) -1, null, (short) 1,
 					x.getDsc() + paramSuffix, null, errorMap);
-			params.add(psonuc);
+			params.add(presult);
 		}
 		if (!errorMap.isEmpty())
 			return true; // baska yerde yapsin error
@@ -3869,7 +3805,7 @@ public class PostgreSQL extends BaseDAO {
 		W5Table mainTable = queryResult.getMainTable();
 		int customizationId = (Integer) queryResult.getScd().get("customizationId");
 		String projectId =(String) queryResult.getScd().get("projectId");
-		String pkFieldName = query.getQueryTip() == 9 || query.getQueryTip() == 21 || query.getQueryTip() == 22 ? query.get_queryFields().get(0).getDsc() : "pkpkpk_id";
+		String pkFieldName = query.getQueryType() == 9 || query.getQueryType() == 21 || query.getQueryType() == 22 ? query.get_queryFields().get(0).getDsc() : "pkpkpk_id";
 		if (FrameworkSetting.vcs && mainTable.getVcsFlag() != 0 /*
 																 * && query.getSqlSelect().startsWith("x.*")
 																 */) { // VCS
@@ -3883,25 +3819,14 @@ public class PostgreSQL extends BaseDAO {
 			// sql2.append(",fnc_vcs_status(").append(customizationId).append(",'").append(queryResult.getScd().get("projectId")).append("',").append(query.getMainTableId()).append(",z.pkpkpk_id,").append(FrameworkUtil.getTableFields4VCS(mainTable,"z")).append(")
 			// ").append(FieldDefinitions.queryFieldName_Vcs).append(" ");
 			sql2.append(",iwb.fnc_vcs_status2(").append(customizationId).append(",'")
-					.append(projectId).append("',").append(query.getMainTableId())
+					.append(projectId).append("',").append(query.getSourceObjectId())
 					.append(",z.").append(pkFieldName).append(") ").append(FieldDefinitions.queryFieldName_Vcs)
 					.append(" ");
 			W5QueryField field = new W5QueryField();
 			field.setDsc(FieldDefinitions.queryFieldName_Vcs);
 			queryResult.getPostProcessQueryFields().add(field);
 		}
-		if (FrameworkCache.getAppSettingIntValue(queryResult.getScd(), "row_based_security_flag") != 0
-				&& mainTable.getAccessTips() != null && mainTable.getAccessTips().indexOf("0") > -1
-				&& (queryResult.getQueryColMap() == null || queryResult.getQueryColMap()
-						.containsKey(FieldDefinitions.queryFieldName_RowBasedSecurity))) {
-			sql2.append(",(select 1 from iwb.w5_access_control cx where cx.table_id=").append(query.getMainTableId())
-					.append(" AND cx.customization_id=").append(customizationId).append(" AND cx.table_pk=z.")
-					.append(pkFieldName).append(" limit 1) ").append(FieldDefinitions.queryFieldName_RowBasedSecurity)
-					.append(" ");
-			W5QueryField field = new W5QueryField();
-			field.setDsc(FieldDefinitions.queryFieldName_RowBasedSecurity);
-			queryResult.getPostProcessQueryFields().add(field);
-		}
+		
 		if (FrameworkCache.getAppSettingIntValue(queryResult.getScd(), "file_attachment_flag") != 0
 				&& mainTable.getFileAttachmentFlag() != 0 && FrameworkCache.roleAccessControl(queryResult.getScd(), 101)
 				&& (queryResult.getQueryColMap() == null
@@ -3912,7 +3837,7 @@ public class PostgreSQL extends BaseDAO {
 			// cx.customization_id=").append(customizationId).append(" AND
 			// cx.table_pk=to_char(z.pkpkpk_id)) pkpkpk_faf ");
 			sql2.append(",(select count(1) from iwb.w5_file_attachment cx where cx.table_id=")
-					.append(query.getMainTableId()).append(" AND cx.customization_id=").append(customizationId)
+					.append(query.getSourceObjectId()).append(" AND cx.customization_id=").append(customizationId)
 					.append(" AND cx.table_pk=(z.").append(pkFieldName).append(")::text limit 10) ")
 					.append(FieldDefinitions.queryFieldName_FileAttachment).append(" ");
 			W5QueryField field = new W5QueryField();
@@ -3931,15 +3856,15 @@ public class PostgreSQL extends BaseDAO {
 			if (false && FrameworkCache.getAppSettingIntValue(queryResult.getScd(), "make_comment_summary_flag") != 0) {
 				sql2.append(
 						",(select cx.comment_count||';'||cxx.comment_user_id||';'||to_char(cxx.comment_dttm,'dd/mm/yyyy hh24:mi:ss')||';'||cx.view_user_ids||'-'||cxx.dsc from iwb.w5_comment_summary cx, iwb.w5_comment cxx where cx.table_id=")
-						.append(query.getMainTableId()).append(" AND cx.project_uuid='")
+						.append(query.getSourceObjectId()).append(" AND cx.project_uuid='")
 						.append(projectId).append("'  AND cx.table_pk::int=z.")
 						.append(pkFieldName)
 						.append(" AND cxx.customization_id=cx.customization_id AND cxx.comment_id=cx.last_comment_id) pkpkpk_cf ");
-				field.setPostProcessTip((short) 48); // extra code :
+				field.setPostProcessType((short) 48); // extra code :
 														// commentCount-commentUserId-lastCommentDttm-viewUserIds-msg
 			} else {
 				sql2.append(",(select count(1) from iwb.w5_comment cx where cx.table_id=")
-						.append(query.getMainTableId()).append(" AND cx.project_uuid='")
+						.append(query.getSourceObjectId()).append(" AND cx.project_uuid='")
 						.append(projectId).append("'  AND cx.table_pk::int=z.")
 						.append(pkFieldName).append(" limit 10) ").append(FieldDefinitions.queryFieldName_Comment)
 						.append(" ");
@@ -3949,20 +3874,20 @@ public class PostgreSQL extends BaseDAO {
 		if (FrameworkSetting.workflow
 				&& mainTable.get_approvalMap() != null && !mainTable.get_approvalMap().isEmpty()
 				&& (queryResult.getQueryColMap() == null
-						|| queryResult.getQueryColMap().containsKey(FieldDefinitions.queryFieldName_Approval))) { // approval
+						|| queryResult.getQueryColMap().containsKey(FieldDefinitions.queryFieldName_Workflow))) { // approval
 																													// Record
 			sql2.append(
 					",(select cx.approval_record_id||';'||cx.approval_id||';'||cx.approval_step_id||';'||coalesce(cx.approval_roles,'')||';'||coalesce(cx.approval_users,'') from iwb.w5_approval_record cx where cx.table_id=")
-					.append(query.getMainTableId()).append(" AND cx.project_uuid='").append(projectId)
+					.append(query.getSourceObjectId()).append(" AND cx.project_uuid='").append(projectId)
 					.append("' AND cx.table_pk=z.").append(pkFieldName).append(" limit 1) ")
-					.append(FieldDefinitions.queryFieldName_Approval).append(" ");
+					.append(FieldDefinitions.queryFieldName_Workflow).append(" ");
 			W5QueryField field = new W5QueryField();
-			field.setDsc(FieldDefinitions.queryFieldName_Approval);
-			field.setPostProcessTip((short) 49); // approvalPostProcessTip2
+			field.setDsc(FieldDefinitions.queryFieldName_Workflow);
+			field.setPostProcessType((short) 49); // approvalPostProcessTip2
 			queryResult.getPostProcessQueryFields().add(field);
 			if (FrameworkCache.getAppSettingIntValue(queryResult.getScd(), "toplu_onay") != 0) {
 				sql2.append(",(select cx.version_no from iwb.w5_approval_record cx where cx.table_id=")
-						.append(query.getMainTableId()).append(" AND cx.project_uuid='").append(projectId)
+						.append(query.getSourceObjectId()).append(" AND cx.project_uuid='").append(projectId)
 						.append("' AND cx.table_pk=z.").append(pkFieldName).append(" limit 1) ")
 						.append(FieldDefinitions.queryFieldName_ArVersionNo).append(" ");
 				field = new W5QueryField();
@@ -4082,8 +4007,7 @@ public class PostgreSQL extends BaseDAO {
 		if (!GenericUtil.accessControlTable(scd, t))
 			return false;
 		if (tablePk != null && (!GenericUtil.isEmpty(t.get_approvalMap()) || (t.getAccessViewTip() != 0
-				&& ((t.getAccessTips() != null && GenericUtil.hasPartInside2(t.getAccessTips(), "0")
-						|| !GenericUtil.isEmpty(t.getAccessViewUserFields())))))) { // TODO
+				))) { // TODO
 																					// :
 																					// ekstra
 																					// record
@@ -4230,9 +4154,9 @@ public class PostgreSQL extends BaseDAO {
 			} else
 				b = true;
 			sql.append("t.").append(x.getExpressionDsc()).append(" = ? ");
-			Object psonuc = GenericUtil.prepareParam((W5Param) x, scd, requestParams, (short) -1, null, (short) 1, null,
+			Object presult = GenericUtil.prepareParam((W5Param) x, scd, requestParams, (short) -1, null, (short) 1, null,
 					null, m);
-			params.add(psonuc);
+			params.add(presult);
 		}
 
 		return runSQLQuery2Map(sql.toString(), params, null) != null;
@@ -4295,7 +4219,7 @@ public class PostgreSQL extends BaseDAO {
 					s.append(f.getDsc()).append("=?,");
 					try {
 						if (o.has(f.getDsc())) {
-							p.add(GenericUtil.getObjectByControl((String) o.get(f.getDsc()), f.getParamTip()));
+							p.add(GenericUtil.getObjectByControl((String) o.get(f.getDsc()), f.getParamType()));
 						} else
 							p.add(null);
 					} catch (JSONException e) {
@@ -4443,7 +4367,7 @@ public class PostgreSQL extends BaseDAO {
 								for (W5TableField f : t.get_tableFieldList())
 									if (f.getDsc().equals(columnName)) {
 										if (f.getDefaultLookupTableId() != 0)
-											switch (f.getDefaultControlTip()) {
+											switch (f.getDefaultControlType()) {
 											case 6:
 											case 8:
 												W5LookUp lu = FrameworkCache.getLookUp(scd,
@@ -4453,7 +4377,7 @@ public class PostgreSQL extends BaseDAO {
 													for (W5LookUpDetay d : lu.get_detayList()) {
 														m3.put(d.getVal(), LocaleMsgCache.get2(scd, d.getDsc()));
 													}
-													m2.put(f.getDefaultControlTip() == 6 ? "map" : "map2", m3);
+													m2.put(f.getDefaultControlType() == 6 ? "map" : "map2", m3);
 												}
 												break;
 											case 7:
@@ -4557,12 +4481,12 @@ public class PostgreSQL extends BaseDAO {
 	public Map executeQuery4Stat(Map<String, Object> scd, int gridId, Map<String, String> requestParams) {
 
 		int customizationId = (Integer) scd.get("customizationId");
-		int queryId = gridId > 0 ? metaDataDao.getGridResult(scd, gridId, requestParams, false).getGrid().getQueryId()
+		int queryId = gridId > 0 ? metadataLoader.getGridResult(scd, gridId, requestParams, false).getGrid().getQueryId()
 				: -gridId;
-		W5QueryResult queryResult = metaDataDao.getQueryResult(scd, queryId);
+		W5QueryResult queryResult = metadataLoader.getQueryResult(scd, queryId);
 		queryResult.setErrorMap(new HashMap());
 		queryResult.setRequestParams(requestParams);
-		if (queryResult.getQuery().getQuerySourceTip() == 1376)
+		if (queryResult.getQuery().getQuerySourceType() == 1376)
 			return scriptEngine.executeQuery4StatWS(queryResult);
 
 		if (queryId != 1 && queryId != 824 && queryResult.getMainTable() != null && (!FrameworkSetting.debug
@@ -4633,17 +4557,17 @@ public class PostgreSQL extends BaseDAO {
 		// queryResult.getQuery().getSqlOrderby()));
 		// queryResult.setOrderBy(queryResult.getQuery().getSqlOrderby());
 		String queryFieldSQL = qf.getDsc();
-		if (qf.getFieldTip() == 2) { // date ise
+		if (qf.getFieldType() == 2) { // date ise
 			queryFieldSQL = "to_char(" + queryFieldSQL + ", '"
 					+ (new String[] { "yyyy", "yyyy/Q", "yyyy/mm", "yyyy/WW", "yyyy/mm/dd" }[GenericUtil
 							.uInt(requestParams, "_dtt")])
 					+ "')";
 		}
 
-		switch (queryResult.getQuery().getQueryTip()) {
+		switch (queryResult.getQuery().getQueryType()) {
 		case 9:
 		case 10:
-		case 15: // TODO: aslinda hata. olmamasi lazim
+		case 15: // TODO: actually hata. olmamasi lazim
 			throw new IWBException("framework", "Query", queryId, null,
 					LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_grid_stat_query_error"), null);
 		default:
@@ -4716,7 +4640,7 @@ public class PostgreSQL extends BaseDAO {
 				}
 				l = nl;
 				Map lm = new HashMap();
-				switch (sf.getPostProcessTip()) {
+				switch (sf.getPostProcessType()) {
 				case 10: // static;
 					W5LookUp ld3 = FrameworkCache.getLookUp(customizationId, sf.getLookupQueryId());
 					if (ld3 != null)
@@ -4763,7 +4687,7 @@ public class PostgreSQL extends BaseDAO {
 			}
 			for (W5QueryField o : queryResult.getQuery().get_queryFields())
 				if (o.getQueryFieldId() == queryFieldId) {
-					switch (o.getPostProcessTip()) {
+					switch (o.getPostProcessType()) {
 					case 10: // lookup static
 						W5LookUp ld2 = FrameworkCache.getLookUp(customizationId, o.getLookupQueryId());
 						if (ld2 != null)
@@ -4815,8 +4739,8 @@ public class PostgreSQL extends BaseDAO {
 	public Map executeQuery4StatTree(Map<String, Object> scd, int gridId, Map<String, String> requestParams) {
 
 		String projectId = (String) scd.get("projectId");
-		int queryId = metaDataDao.getGridResult(scd, gridId, requestParams, false).getGrid().getQueryId();
-		W5QueryResult queryResult = metaDataDao.getQueryResult(scd, queryId);
+		int queryId = metadataLoader.getGridResult(scd, gridId, requestParams, false).getGrid().getQueryId();
+		W5QueryResult queryResult = metadataLoader.getQueryResult(scd, queryId);
 		W5Table t = queryResult.getMainTable();
 		if (queryId != 1 && queryId != 824 && queryResult.getMainTable() != null && (!FrameworkSetting.debug
 				|| (scd.get("roleId") != null && GenericUtil.uInt(scd.get("roleId")) != 0))) {
@@ -4875,7 +4799,7 @@ public class PostgreSQL extends BaseDAO {
 		} else if (tableFieldChain.startsWith("clc.")) { // calculated field
 			String newSubStr = tableFieldChain.substring(4);
 			boolean fieldFound = false;
-			List<W5TableFieldCalculated> ltcf = metaDataDao.findTableCalcFieldByName(projectId,
+			List<W5TableFieldCalculated> ltcf = metadataLoader.findTableCalcFieldByName(projectId,
 					t.getTableId(), newSubStr);
 			if (ltcf.isEmpty())
 				throw new IWBException("framework", "Query", queryId, null,
@@ -4907,8 +4831,8 @@ public class PostgreSQL extends BaseDAO {
 					for (W5TableField tf : newT.get_tableFieldList())
 						if (tf.getDsc().equals(sss[isss])) {
 							foundSt = false;
-							if (tf.getDefaultControlTip() == 7 || tf.getDefaultControlTip() == 9
-									|| tf.getDefaultControlTip() == 10 /*
+							if (tf.getDefaultControlType() == 7 || tf.getDefaultControlType() == 9
+									|| tf.getDefaultControlType() == 10 /*
 																		 * || tf. getDefaultControlTip ()==15
 																		 */) { // sub
 																				// table
@@ -4975,8 +4899,8 @@ public class PostgreSQL extends BaseDAO {
 		// queryResult.getQuery().getSqlOrderby()));
 		// queryResult.setOrderBy(queryResult.getQuery().getSqlOrderby());
 
-		if (tableField.getParamTip() == 2 || tableField.getDefaultControlTip() == 2
-				|| tableField.getDefaultControlTip() == 18) {
+		if (tableField.getParamType() == 2 || tableField.getDefaultControlType() == 2
+				|| tableField.getDefaultControlType() == 18) {
 			tableFieldSQL = "to_char(" + tableFieldSQL + ", '"
 					+ (new String[] { "yyyy", "yyyy/Q", "yyyy/mm", "yyyy/WW", "yyyy/mm/dd" }[GenericUtil
 							.uInt(requestParams, "_dtt")])
@@ -4984,10 +4908,10 @@ public class PostgreSQL extends BaseDAO {
 		}
 		Map result = new HashMap();
 		result.put("success", true);
-		switch (queryResult.getQuery().getQueryTip()) {
+		switch (queryResult.getQuery().getQueryType()) {
 		case 9:
 		case 10:
-		case 15: // TODO: aslinda hata. olmamasi lazim
+		case 15: // TODO: actually hata. olmamasi lazim
 			throw new IWBException("framework", "Query", queryId, null,
 					LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_grid_stat_query_error"), null);
 		default:
@@ -5007,7 +4931,7 @@ public class PostgreSQL extends BaseDAO {
 				for (String s : fq) {
 					int isx = GenericUtil.uInt(s);
 					if (isx < 0) {
-						W5TableFieldCalculated tcf = (W5TableFieldCalculated)metaDataDao.getMetadataObject("W5TableFieldCalculated", "tableFieldCalculatedId", -isx, projectId, "TableFieldCalculated");
+						W5TableFieldCalculated tcf = (W5TableFieldCalculated)metadataLoader.getMetadataObject("W5TableFieldCalculated", "tableFieldCalculatedId", -isx, projectId, "TableFieldCalculated");
 						lookUps.put(count+"", LocaleMsgCache.get2(scd, tcf.getDsc()));
 						count++;
 						Object[] oo = DBUtil.filterExt4SQL(tcf.getSqlCode(), scd, requestParams, null);
@@ -5075,7 +4999,7 @@ public class PostgreSQL extends BaseDAO {
 					}
 					l = nl;
 					Map lm = new HashMap();
-					switch (stackedQueryField.getPostProcessTip()) {
+					switch (stackedQueryField.getPostProcessType()) {
 					case 10: // static;
 						W5LookUp ld3 = FrameworkCache.getLookUp(projectId, stackedQueryField.getLookupQueryId());
 						if (ld3 != null)
@@ -5103,8 +5027,8 @@ public class PostgreSQL extends BaseDAO {
 					}
 					result.put("lookUp", lm);
 				} else {
-					int maxLegend = (tableField.getParamTip() == 2 || tableField.getDefaultControlTip() == 2
-							|| tableField.getDefaultControlTip() == 18) ? 360 : 10;
+					int maxLegend = (tableField.getParamType() == 2 || tableField.getDefaultControlType() == 2
+							|| tableField.getDefaultControlType() == 18) ? 360 : 10;
 					if (l.size() > maxLegend) { // TODO: temizlik
 						BigDecimal total = new BigDecimal(0);
 						String ids = "";
@@ -5123,7 +5047,7 @@ public class PostgreSQL extends BaseDAO {
 						l.add(nm);
 					}
 				}
-				switch (tableField.getDefaultControlTip()) {
+				switch (tableField.getDefaultControlType()) {
 				case 6: // lookup static
 					W5LookUp ld2 = FrameworkCache.getLookUp(projectId, tableField.getDefaultLookupTableId());
 					if (ld2 != null)
@@ -5177,7 +5101,7 @@ public class PostgreSQL extends BaseDAO {
 
 			if (c.startsWith("clc.")) {
 				String c2 = c.substring(4);
-				List<W5TableFieldCalculated> l = metaDataDao.findTableCalcFieldByName(
+				List<W5TableFieldCalculated> l = metadataLoader.findTableCalcFieldByName(
 						t.getProjectUuid(), t.getTableId(), c2);
 				if (!l.isEmpty()) {
 					sql.append("(").append(l.get(0).getSqlCode()).append(")");
@@ -5242,7 +5166,7 @@ public class PostgreSQL extends BaseDAO {
 							errorMap.put(c, "Calculated Field wrong definition");
 							continue;
 						}
-						List<W5TableFieldCalculated> l = metaDataDao.findTableCalcFieldByName(
+						List<W5TableFieldCalculated> l = metadataLoader.findTableCalcFieldByName(
 								t.getProjectUuid(), detT.getTableId(), sss[isss]);
 						if (!l.isEmpty()) {
 							newSub.append("SELECT ").append("sum" /* valMap.get(c) */).append("((")
@@ -5338,8 +5262,8 @@ public class PostgreSQL extends BaseDAO {
 							foundSt = false;
 							if (mtableField == null)
 								mtableField = tf;
-							if (tf.getDefaultControlTip() == 7 || tf.getDefaultControlTip() == 9
-									|| tf.getDefaultControlTip() == 10 /*
+							if (tf.getDefaultControlType() == 7 || tf.getDefaultControlType() == 9
+									|| tf.getDefaultControlType() == 10 /*
 																		 * || tf. getDefaultControlTip ()==15
 																		 */) { // sub
 																				// table
@@ -5357,7 +5281,7 @@ public class PostgreSQL extends BaseDAO {
 									break; // HATA: bir sonraki field bulunamadi
 								newSub.append("(select ");
 								if (isss == sss.length - 2)
-									switch (tableField.getDefaultControlTip()) {
+									switch (tableField.getDefaultControlType()) {
 									case 2: // date
 										newSub.append("to_char(y.").append(isss).append(".").append(sss[isss + 1])
 												.append(",'").append(dateFormat).append("')");
@@ -5420,7 +5344,7 @@ public class PostgreSQL extends BaseDAO {
 				iwfField++;
 				fieldName = clcFieldPrefix + iwfField;
 				iwbFieldMap.put(c, fieldName);
-				if (tableField != null && tableField.getDefaultControlTip() == 6) {
+				if (tableField != null && tableField.getDefaultControlType() == 6) {
 					W5LookUp lu = FrameworkCache.getLookUp(scd, tableField.getDefaultLookupTableId());
 					if (lu != null)
 						staticLookups.put(fieldName, lu);
@@ -5433,12 +5357,12 @@ public class PostgreSQL extends BaseDAO {
 				}
 				for (W5TableField f : t.get_tableFieldList())
 					if (f.getDsc().equals(c)) {
-						if (f.getDefaultControlTip() == 6 && f.getDefaultLookupTableId() > 0) {
+						if (f.getDefaultControlType() == 6 && f.getDefaultLookupTableId() > 0) {
 							W5LookUp lu = FrameworkCache.getLookUp(scd, f.getDefaultLookupTableId());
 							if (lu != null)
 								staticLookups.put(f.getDsc(), lu);
 						}
-						if ((f.getDefaultControlTip() == 7 || f.getDefaultControlTip() == 10)
+						if ((f.getDefaultControlType() == 7 || f.getDefaultControlType() == 10)
 								&& f.getDefaultLookupTableId() > 0) {
 							W5Table dt = FrameworkCache.getTable(scd, f.getDefaultLookupTableId());
 							if (dt != null && !GenericUtil.isEmpty(dt.getSummaryRecordSql())) {
@@ -5455,7 +5379,7 @@ public class PostgreSQL extends BaseDAO {
 								sql.append("x.").append(f.getDsc());
 							}
 						} else {
-							if (f.getFieldTip() == 2) { // date ise
+							if (f.getFieldType() == 2) { // date ise
 								sql.append("to_char(x.").append(f.getDsc()).append(",'").append(dateFormat)
 										.append("')");
 							} else
@@ -5539,7 +5463,7 @@ public class PostgreSQL extends BaseDAO {
 
 			if (c.startsWith("clc.")) {
 				String c2 = c.substring(4);
-				List<W5TableFieldCalculated> l = metaDataDao.findTableCalcFieldByName(t.getProjectUuid(), t.getTableId(), c2);
+				List<W5TableFieldCalculated> l = metadataLoader.findTableCalcFieldByName(t.getProjectUuid(), t.getTableId(), c2);
 				if (!l.isEmpty()) {
 					sql.append("(").append(l.get(0).getSqlCode()).append(")");
 					iwfField++;
@@ -5606,7 +5530,7 @@ public class PostgreSQL extends BaseDAO {
 							errorMap.put(c, "Calculated Field wrong definition");
 							continue;
 						}
-						List<W5TableFieldCalculated> l = metaDataDao.findTableCalcFieldByName(detT.getProjectUuid(), detT.getTableId(), sss[isss]);
+						List<W5TableFieldCalculated> l = metadataLoader.findTableCalcFieldByName(detT.getProjectUuid(), detT.getTableId(), sss[isss]);
 						if (!l.isEmpty()) {
 							newSub.append("SELECT ").append(valMap.get(c)).append("((")
 									.append(l.get(0).getSqlCode().replaceAll("x.", "z" + isss + ".")).append(")) from ")
@@ -5683,8 +5607,8 @@ public class PostgreSQL extends BaseDAO {
 							foundSt = false;
 							if (mtableField == null)
 								mtableField = tf;
-							if (tf.getDefaultControlTip() == 7 || tf.getDefaultControlTip() == 9
-									|| tf.getDefaultControlTip() == 10 /*
+							if (tf.getDefaultControlType() == 7 || tf.getDefaultControlType() == 9
+									|| tf.getDefaultControlType() == 10 /*
 																		 * || tf. getDefaultControlTip ()==15
 																		 */) { // sub
 																				// table
@@ -5702,7 +5626,7 @@ public class PostgreSQL extends BaseDAO {
 									break; // HATA: bir sonraki field bulunamadi
 								newSub.append("(select ");
 								if (isss == sss.length - 2)
-									switch (tableField.getDefaultControlTip()) {
+									switch (tableField.getDefaultControlType()) {
 									case 2: // date
 										newSub.append("to_char(y.").append(isss).append(".").append(sss[isss + 1])
 												.append(",'").append(dateFormat).append("')");
@@ -5765,7 +5689,7 @@ public class PostgreSQL extends BaseDAO {
 				iwfField++;
 				fieldName = clcFieldPrefix + iwfField;
 				iwbFieldMap.put(c, fieldName);
-				if (tableField != null && tableField.getDefaultControlTip() == 6) {
+				if (tableField != null && tableField.getDefaultControlType() == 6) {
 					W5LookUp lu = FrameworkCache.getLookUp(scd, tableField.getDefaultLookupTableId());
 					if (lu != null)
 						staticLookups.put(fieldName, lu);
@@ -5778,12 +5702,12 @@ public class PostgreSQL extends BaseDAO {
 				}
 				for (W5TableField f : t.get_tableFieldList())
 					if (f.getDsc().equals(c)) {
-						if (f.getDefaultControlTip() == 6 && f.getDefaultLookupTableId() > 0) {
+						if (f.getDefaultControlType() == 6 && f.getDefaultLookupTableId() > 0) {
 							W5LookUp lu = FrameworkCache.getLookUp(scd, f.getDefaultLookupTableId());
 							if (lu != null)
 								staticLookups.put(f.getDsc(), lu);
 						}
-						if ((f.getDefaultControlTip() == 7 || f.getDefaultControlTip() == 10)
+						if ((f.getDefaultControlType() == 7 || f.getDefaultControlType() == 10)
 								&& f.getDefaultLookupTableId() > 0) {
 							W5Table dt = FrameworkCache.getTable(scd, f.getDefaultLookupTableId());
 							if (dt != null && !GenericUtil.isEmpty(dt.getSummaryRecordSql())) {
@@ -5801,7 +5725,7 @@ public class PostgreSQL extends BaseDAO {
 								sql.append("x.").append(f.getDsc());
 							}
 						} else {
-							if (f.getFieldTip() == 2) { // date ise
+							if (f.getFieldType() == 2) { // date ise
 								sql.append("to_char(x.").append(f.getDsc()).append(",'").append(dateFormat)
 										.append("')");
 							} else
@@ -5948,14 +5872,23 @@ public class PostgreSQL extends BaseDAO {
 	}
 
 	public void reloadUsersCache(int customizationId) { // customizationID ??
-		List<Object[]> l = (List<Object[]>) executeSQLQuery(
-				"select x.customization_id, x.user_id, x.user_name, x.dsc, 1 allow_multi_login_flag, x.profile_picture_id from iwb.w5_user x "
-						+ (customizationId >= 0 ? (" where x.customization_id=" + customizationId + "") : ""));
-		if (l != null)
-			for (Object[] m : l) {
-				UserUtil.addUserWithProfilePicutre(GenericUtil.uInt(m[1]), (String) m[2], (String) m[3],
-						GenericUtil.uInt(m[4]) != 0, GenericUtil.uInt(m[5]));
-			}
+		List<Object[]> l = null;
+		if(FrameworkSetting.projectId==null || FrameworkSetting.projectId.equals(FrameworkSetting.devUuid)) {
+			l = (List<Object[]>) executeSQLQuery(
+					"select x.customization_id, x.user_id, x.user_name, x.dsc, 1 allow_multi_login_flag, x.profile_picture_id from iwb.w5_user x "
+							+ (customizationId >= 0 ? (" where x.customization_id=" + customizationId + "") : ""));
+		} else {
+			W5Project po = FrameworkCache.getProject(FrameworkSetting.projectId);
+			if(FrameworkCache.getTable(FrameworkSetting.projectId, 3107)!=null)l = (List<Object[]>) executeSQLQuery(
+					"select 0 customization_id, x.user_id, x.user_name, x.full_name dsc, 1 allow_multi_login_flag, 1 profile_picture_id from "
+					+ po.getRdbmsSchema() + ".x_user x");
+			
+		}
+		UserUtil.addUserWithProfilePicutre(0, "code2", "code2", true, 1);
+		if (l != null)for (Object[] m : l) {
+			UserUtil.addUserWithProfilePicutre(GenericUtil.uInt(m[1]), (String) m[2], (String) m[3],
+					GenericUtil.uInt(m[4]) != 0, GenericUtil.uInt(m[5]));
+		}		
 	}
 
   public void copyTableRecord4VCS(Map<String, Object> scd, Map dstScd, int tableId, int tablePk) {
@@ -6041,9 +5974,9 @@ public class PostgreSQL extends BaseDAO {
 
 	
 		for (W5TableField p1 : t.get_tableFieldList()) {
-			if(!requestParams.containsKey(p1.getDsc()) && p1.getSourceTip()==1)continue;
+			if(!requestParams.containsKey(p1.getDsc()) && p1.getSourceType()==1)continue;
 			if(requestParams.containsKey(p1.getDsc())) {
-				Object psonuc = requestParams.get(p1.getDsc());
+				Object presult = requestParams.get(p1.getDsc());
 				if (b) {
 					sql.append(" , ");
 					postSql.append(" , ");
@@ -6053,22 +5986,22 @@ public class PostgreSQL extends BaseDAO {
 				sql.append(p1.getDsc());
 				
 				postSql.append(" ? ");
-				//insertParams.add(psonuc);
-				if(psonuc==null || p1.getLkpEncryptionType()==0) {
-					if(psonuc!=null)switch(p1.getFieldTip()) {
-					case 2: if(scd!=null && psonuc!=null) {
-						psonuc = GenericUtil.uDate(psonuc.toString(), GenericUtil.uInt(scd.get("date_format")));
+				//insertParams.add(presult);
+				if(presult==null || p1.getLkpEncryptionType()==0) {
+					if(presult!=null)switch(p1.getFieldType()) {
+					case 2: if(scd!=null && presult!=null) {
+						presult = GenericUtil.uDate(presult.toString(), GenericUtil.uInt(scd.get("date_format")));
 						break;
 					}
 					default:
-						psonuc = GenericUtil.getObjectByTip(psonuc.toString(), p1.getFieldTip());
+						presult = GenericUtil.getObjectByTip(presult.toString(), p1.getFieldType());
 					}
-					insertParams.add(psonuc);
+					insertParams.add(presult);
 				} else 
-					insertParams.add(EncryptionUtil.encrypt(psonuc.toString(), p1.getLkpEncryptionType()));
+					insertParams.add(EncryptionUtil.encrypt(presult.toString(), p1.getLkpEncryptionType()));
 				paramCount++;
 				
-			} else switch (p1.getSourceTip()) {
+			} else switch (p1.getSourceType()) {
 			case 4: // SQL calculated Fieldlar icin
 				if (b) {
 					sql.append(" , ");
@@ -6087,9 +6020,9 @@ public class PostgreSQL extends BaseDAO {
 				break;
 			case 5:// javascript
 			case 2: // session
-				Object psonuc = GenericUtil.prepareParam(p1, scd, requestParams,
+				Object presult = GenericUtil.prepareParam(p1, scd, requestParams,
 						(short) -1, null, (short) 0, null, null, errorMap);
-				if (psonuc != null) {
+				if (presult != null) {
 					if (b) {
 						sql.append(" , ");
 						postSql.append(" , ");
@@ -6098,15 +6031,15 @@ public class PostgreSQL extends BaseDAO {
 					usedFields.add(p1.getDsc());
 					sql.append(p1.getDsc());
 					postSql.append(" ? ");
-					insertParams.add(psonuc);
+					insertParams.add(presult);
 					paramCount++;
 				}
 
 				break;
 			case 9: // UUID
-				Object psonuc2 = GenericUtil.prepareParam(p1, scd, requestParams,
+				Object presult2 = GenericUtil.prepareParam(p1, scd, requestParams,
 						(short) -1, null, (short) 0, null, null, errorMap);
-				if (psonuc2 != null) {
+				if (presult2 != null) {
 					if (b) {
 						sql.append(" , ");
 						postSql.append(" , ");
@@ -6115,17 +6048,17 @@ public class PostgreSQL extends BaseDAO {
 					usedFields.add(p1.getDsc());
 					sql.append(p1.getDsc());
 					postSql.append(" ? ");
-					insertParams.add(psonuc2);
+					insertParams.add(presult2);
 					paramCount++;
 
-					outMap.put(p1.getDsc(), psonuc2);
+					outMap.put(p1.getDsc(), presult2);
 				}
 
 				break;
 			case 8: // Global Nextval
-				Object psonuc3 = GenericUtil.prepareParam(p1, scd, requestParams,
+				Object presult3 = GenericUtil.prepareParam(p1, scd, requestParams,
 						(short) -1, null, (short) 0, null, null, errorMap);
-				if (psonuc3 != null) {
+				if (presult3 != null) {
 					if (b) {
 						sql.append(" , ");
 						postSql.append(" , ");
@@ -6134,10 +6067,10 @@ public class PostgreSQL extends BaseDAO {
 					usedFields.add(p1.getDsc());
 					sql.append(p1.getDsc());
 					postSql.append(" ? ");
-					insertParams.add(psonuc3);
+					insertParams.add(presult3);
 					paramCount++;
 
-					outMap.put(p1.getDsc(), psonuc3);
+					outMap.put(p1.getDsc(), presult3);
 				}
 
 				break;
@@ -6146,7 +6079,7 @@ public class PostgreSQL extends BaseDAO {
 
 
 
-		if (usedFields.isEmpty()) { // sorun var
+		if (usedFields.isEmpty()) { // problems exists
 			throw new IWBException("validation", "Table Insert", tableId, null, "No Used Fields", null);
 		}
 
@@ -6254,8 +6187,14 @@ public class PostgreSQL extends BaseDAO {
 		q.setSqlWhere(sqlWhere.toString());
 		Map<String, String> requestParams = new HashMap();
 		requestParams.put("id", "" + tablePk);
-
-		q.set_queryFields(find("from W5QueryField f where f.queryId=15 AND f.projectUuid='067e6162-3b6f-4ae2-a221-2470b63dff00' order by f.tabOrder")); // queryField'in
+		
+		List<W5QueryField> lf = new ArrayList();
+		W5QueryField f1 = new W5QueryField(); f1.setTabOrder((short)1);f1.setDsc("dsc");f1.setFieldType((short)1);
+		lf.add(f1);
+		W5QueryField f2 = new W5QueryField(); f2.setTabOrder((short)2);f2.setDsc("id");f2.setFieldType((short)4);
+		lf.add(f2);
+		
+		q.set_queryFields(lf); // queryField'in
 		// lookUp'i
 		q.set_queryParams(new ArrayList());
 

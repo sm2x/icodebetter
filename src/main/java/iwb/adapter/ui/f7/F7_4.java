@@ -126,17 +126,17 @@ public class F7_4 implements ViewMobileAdapter {
 							buf.append(",");
 						else
 							b = true;
-						if (f.getPostProcessTip() == 9)
+						if (f.getPostProcessType() == 9)
 							buf.append("\"_");
 						else
 							buf.append("\"");
-						buf.append(f.getPostProcessTip() == 6 ? f.getDsc()
+						buf.append(f.getPostProcessType() == 6 ? f.getDsc()
 								.substring(1) : f.getDsc());
-						if (f.getFieldTip() == 5) {// boolean
+						if (f.getFieldType() == 5) {// boolean
 							buf.append("\":").append(GenericUtil.uInt(obj) != 0);
 							continue;
 						}
-						if (f.getFieldTip() == 6) {// auto
+						if (f.getFieldType() == 6) {// auto
 							buf.append("\":");
 							if (obj == null || obj.toString().equals("0"))
 								buf.append("null");
@@ -145,7 +145,7 @@ public class F7_4 implements ViewMobileAdapter {
 							else
 								buf.append("\"").append(obj).append("\"");
 							continue;
-						} else if(f.getFieldTip() == 8) {
+						} else if(f.getFieldType() == 8) {
 							buf.append("\":");
 							if (obj == null)buf.append("null");
 							else if(obj instanceof Map)buf.append(GenericUtil.fromMapToJsonString2Recursive((Map)obj));
@@ -156,7 +156,7 @@ public class F7_4 implements ViewMobileAdapter {
 						
 						buf.append("\":\"");
 						if (obj != null)
-							switch (f.getPostProcessTip()) { // queryField PostProcessTip
+							switch (f.getPostProcessType()) { // queryField PostProcessTip
 							case	15://convert to []
 								buf.setLength(buf.length()-1);
 								buf.append("[").append(obj).append("]");
@@ -233,7 +233,7 @@ public class F7_4 implements ViewMobileAdapter {
 									break;
 								buf.append("\",\"").append(f.getDsc())
 										.append("_qw_\":\"");
-								String[] objs = f.getPostProcessTip() == 11 ? ((String) obj)
+								String[] objs = f.getPostProcessType() == 11 ? ((String) obj)
 										.split(",") : new String[] { obj
 										.toString() };
 								boolean bz = false;
@@ -397,24 +397,24 @@ public class F7_4 implements ViewMobileAdapter {
     	StringBuilder sb = new StringBuilder();
     	if(buf.indexOf("template:")==-1) {
     		StringBuilder code = new StringBuilder(), data = new StringBuilder();
-    		data.append("_tid:").append(p.getTemplateId());
+    		data.append("_tid:").append(p.getPageId());
     		code.append("on:{pageDestroy:function(){if(this.ptr)this.ptr.destroy('#idx-tpage-")
-    		.append(p.getTemplateId()).append("');},pageInit:function(){var self=this;setTimeout(function(){self.ptr=iwb.app.ptr.get('#idx-tpage-")
-    		.append(p.getTemplateId())
+    		.append(p.getPageId()).append("');},pageInit:function(){var self=this;setTimeout(function(){self.ptr=iwb.app.ptr.get('#idx-tpage-")
+    		.append(p.getPageId())
     		.append(".ptr-content');self.ptr.on('refresh',self.reload);self.reload();},100);}},methods:{clickMenu:function(){},clickLink:function(url){iwb.app.views.main.router.navigate(url);},reload:function(){var self=this;\n");
-    		sb.append(", template:`<div data-page=\"iwb-page-").append(p.getTemplateId()).append("\" class=\"page\">\n <div class=\"navbar\"><div class=\"navbar-inner\"><div class=\"left\"><a href=\"#\" class=\"link icon-only panel-open\" data-panel=\"left\"><i class=\"icon f7-icons if-not-md\">menu</i><i class=\"icon material-icons if-md\">menu</i></a></div><div class=\"title\">")
+    		sb.append(", template:`<div data-page=\"iwb-page-").append(p.getPageId()).append("\" class=\"page\">\n <div class=\"navbar\"><div class=\"navbar-inner\"><div class=\"left\"><a href=\"#\" class=\"link icon-only panel-open\" data-panel=\"left\"><i class=\"icon f7-icons if-not-md\">menu</i><i class=\"icon material-icons if-md\">menu</i></a></div><div class=\"title\">")
     			.append(LocaleMsgCache.get2(pageResult.getScd(),p.getDsc()))
-    			.append("</div><div class=\"right\"></div></div></div>\n <div id=\"idx-tpage-").append(p.getTemplateId()).append("\" class=\"page-content ptr-content\">\n");
+    			.append("</div><div class=\"right\"></div></div></div>\n <div id=\"idx-tpage-").append(p.getPageId()).append("\" class=\"page-content ptr-content\">\n");
     	    sb.append(
     	              "<div class=\"ptr-preloader\"><div class=\"preloader\"></div><div class=\"ptr-arrow\"></div></div>");
 
     		boolean lastBadge = false, lastGauge = false;
     		for(Object o:pageResult.getPageObjectList()) if(o!=null && !(o instanceof String)){	
-    			if(lastBadge && (!(o instanceof W5QueryResult) || ((W5QueryResult)o).getQuery().getQueryTip()!=21)) {
+    			if(lastBadge && (!(o instanceof W5QueryResult) || ((W5QueryResult)o).getQuery().getQueryType()!=21)) {
     				sb.append("</div></div>");
     				lastBadge = false;
     			}
-    			if(lastGauge && (!(o instanceof W5QueryResult) || ((W5QueryResult)o).getQuery().getQueryTip()!=22)) {
+    			if(lastGauge && (!(o instanceof W5QueryResult) || ((W5QueryResult)o).getQuery().getQueryType()!=22)) {
     				sb.append("</div></div>");
     				lastGauge = false;
     			}
@@ -441,8 +441,8 @@ public class F7_4 implements ViewMobileAdapter {
     					.append("', success:function(jj){self.$setState({data_").append(lr.getListId()).append(":jj.data||[]})}});");
 	    		} else if(o instanceof W5QueryResult) {
 	    			W5QueryResult qr = (W5QueryResult)o;
-        			String pk = "o"+qr.getQuery().getQueryTip()+"_" + qr.getQueryId();
-	    			switch(qr.getQuery().getQueryTip()) {
+        			String pk = "o"+qr.getQuery().getQueryType()+"_" + qr.getQueryId();
+	    			switch(qr.getQuery().getQueryType()) {
 	    			case	21://badge
 	    				if(!lastBadge) {
 	    					sb.append("\n  <div class=\"block\" style=\"padding-left: inherit; padding-right: inherit; margin-bottom: 0;\"><div class=\"row\">");
@@ -831,7 +831,7 @@ public class F7_4 implements ViewMobileAdapter {
 
     boolean masterDetail = false;
 
-    if (f.getObjectTip() == 2) {
+    if (f.getObjectType() == 2) {
       W5Table t = FrameworkCache.getTable(scd, f.getObjectId());
       pictureFlag = t.getFileAttachmentFlag() != 0;
       // insert AND continue control
@@ -856,16 +856,12 @@ public class F7_4 implements ViewMobileAdapter {
           && FrameworkCache.roleAccessControl(scd, 101))
         s.append(",\n fileAttachFlag:true, fileAttachCount:")
             .append(fr.getFileAttachmentCount());
-      if (FrameworkCache.getAppSettingIntValue(scd, "row_based_security_flag") != 0
-          && ((Integer) scd.get("userTip") != 3 && t.getAccessTips() != null))
-        s.append(",\n accessControlFlag:true, accessControlCount:")
-            .append(fr.getAccessControlCount());
       if (!GenericUtil.isEmpty(f.get_moduleList()) && fr.getModuleListMap() != null) {
         s.append(",\n subLists:[");
         boolean bq = false;
         for (W5FormModule fm : f.get_moduleList())
-          if (fm.getModuleTip() == 10
-              && (fm.getModuleViewTip() == 0 || fr.getAction() == fm.getModuleViewTip())) {
+          if (fm.getModuleType() == 10
+              && (fm.getModuleViewType() == 0 || fr.getAction() == fm.getModuleViewType())) {
             M5ListResult mlr = fr.getModuleListMap().get(fm.getObjectId());
             if (mlr == null) continue;
             if (bq) s.append("\n,");
@@ -898,7 +894,7 @@ public class F7_4 implements ViewMobileAdapter {
     //		buf.append(PromisUtil.filterExt(fc.getExtraDefinition(), fr.getScd(),
     // fr.getRequestParams(), o));
 
-    if (f.getObjectTip() == 2) {
+    if (f.getObjectType() == 2) {
       s.append("<div data-page=\"iwb-form-")
           .append(fr.getFormId())
           .append("\" class=\"page\"><div class=\"navbar\">")
@@ -1011,7 +1007,7 @@ public class F7_4 implements ViewMobileAdapter {
       if (GenericUtil.isEmpty(r)) continue;
       if (m.getFormModuleId() != 0) {
         W5FormCell fcx = new W5FormCell();
-        fcx.setControlTip((short) 102);
+        fcx.setControlType((short) 102);
         fcx.setLookupQueryId(10);
         fcx.setLocaleMsgKey(m.getLocaleMsgKey());
         s.append(
@@ -1022,7 +1018,7 @@ public class F7_4 implements ViewMobileAdapter {
       for (W5FormCellHelper fc : r) {
         s.append(
             GenericUtil.stringToJS(serializeFormCell(customizationId, xlocale, fc, fr)));
-        switch (fc.getFormCell().getControlTip()) {
+        switch (fc.getFormCell().getControlType()) {
           case 2: // date
             jsCode
                 .append("iwb.app.calendar.create({inputEl: '#idx-formcell-")
@@ -1037,7 +1033,7 @@ public class F7_4 implements ViewMobileAdapter {
 	          for (W5FormCellHelper cfc : fr.getFormCellResults()) {
 	            if (cfc.getFormCell().getParentFormCellId() == fc.getFormCell().getFormCellId()) {
 	              if (!GenericUtil.isEmpty(cfc.getFormCell().getLookupIncludedParams()))
-	                switch (cfc.getFormCell().getControlTip()) {
+	                switch (cfc.getFormCell().getControlType()) {
 	                  case 9:
 	                  case 16:
 	                  	multiRelatedComboMap.put(cfc.getFormCell().getFormCellId(), cfc.getFormCell().getLookupIncludedParams());
@@ -1084,9 +1080,9 @@ public class F7_4 implements ViewMobileAdapter {
               for (W5FormCellHelper rfc : fr.getFormCellResults()) {
                 if (rfc.getFormCell().getFormCellId() == fc.getFormCell().getParentFormCellId()) {
                   W5FormCell pfc = rfc.getFormCell();
-                  if (pfc.getControlTip() == 6
-                      || pfc.getControlTip() == 7
-                      || pfc.getControlTip() == 9)
+                  if (pfc.getControlType() == 6
+                      || pfc.getControlType() == 7
+                      || pfc.getControlType() == 9)
                     jsCode
                         .append("iwb.combo2combo('#idx-formcell-")
                         .append(pfc.getFormCellId())
@@ -1108,7 +1104,7 @@ public class F7_4 implements ViewMobileAdapter {
           case 59: // superbox lov-static, superbox lov-query combo
           case 51:
           case 52: // user defined combo, multi
-        	  if(f.getObjectTip() == 10) {
+        	  if(f.getObjectType() == 10) {
         		  jsCode
   	          	.append("iwb.app.smartSelect.create({routableModals: false, closeOnSelect:!0, el: '#idx-formcell-")
   	                .append(fc.getFormCell().getFormCellId())
@@ -1118,21 +1114,21 @@ public class F7_4 implements ViewMobileAdapter {
       }
     }
 
-    if (f.getObjectTip() == 2
+    if (f.getObjectType() == 2
         && f.get_formSmsMailList() != null
         && !f.get_formSmsMailList().isEmpty()) { // automatic sms isleri varsa
       StringBuilder s2 = new StringBuilder();
       int cnt = 0;
       for (W5FormSmsMail fsm : f.get_formSmsMailList())
-        if (((fsm.getSmsMailTip() == 0
+        if (((fsm.getSmsMailType() == 0
                     && FrameworkSetting.sms
                     && FrameworkCache.getAppSettingIntValue(customizationId, "sms_flag") != 0)
-                || (fsm.getSmsMailTip() != 0
+                || (fsm.getSmsMailType() != 0
                     && FrameworkSetting.mail
                     && FrameworkCache.getAppSettingIntValue(customizationId, "mail_flag") != 0))
             && fsm.getAlarmFlag() == 0
             && fsm.getPreviewFlag() == 0
-            && GenericUtil.hasPartInside2(fsm.getActionTips(), fr.getAction())
+            && GenericUtil.hasPartInside2(fsm.getActionTypes(), fr.getAction())
             && GenericUtil.hasPartInside2(fsm.getWebMobileTips(), "2")) {
           cnt++;
         }
@@ -1141,21 +1137,21 @@ public class F7_4 implements ViewMobileAdapter {
         //	s2.append(",\n\"smsMailTemplateCnt\":").append(cnt).append(",\n\"smsMailTemplates\":[");
         boolean b = false;
         for (W5FormSmsMail fsm : f.get_formSmsMailList())
-          if (((fsm.getSmsMailTip() == 0
+          if (((fsm.getSmsMailType() == 0
                       && FrameworkSetting.sms
                       && FrameworkCache.getAppSettingIntValue(customizationId, "sms_flag") != 0)
-                  || (fsm.getSmsMailTip() != 0
+                  || (fsm.getSmsMailType() != 0
                       && FrameworkSetting.mail
                       && FrameworkCache.getAppSettingIntValue(customizationId, "mail_flag") != 0))
               && fsm.getAlarmFlag() == 0
               && fsm.getPreviewFlag() == 0
-              && GenericUtil.hasPartInside2(fsm.getActionTips(), fr.getAction())
+              && GenericUtil.hasPartInside2(fsm.getActionTypes(), fr.getAction())
               && GenericUtil.hasPartInside2(fsm.getWebMobileTips(), "2")) {
             W5FormCell fcx = new W5FormCell();
-            fcx.setControlTip((short) 5);
+            fcx.setControlType((short) 5);
             fcx.setLookupQueryId(10);
             fcx.setLocaleMsgKey(
-                (fsm.getSmsMailTip() == 0
+                (fsm.getSmsMailType() == 0
                         ? "[SMS] "
                         : "["
                             + (LocaleMsgCache.get2(customizationId, xlocale, "email_upper"))
@@ -1169,7 +1165,7 @@ public class F7_4 implements ViewMobileAdapter {
             fcx.setLookupQueryId(fsm.getFormSmsMailId());
             fcx.setDsc("_smsStr");
             W5FormCellHelper fcr = new W5FormCellHelper(fcx);
-            if (fsm.getSmsMailSentTip() == 1 || fsm.getSmsMailSentTip() == 0) fcr.setValue("1");
+            if (fsm.getSmsMailSentType() == 1 || fsm.getSmsMailSentType() == 0) fcr.setValue("1");
             s2.append(
                 GenericUtil.stringToJS(
                     serializeFormCell(customizationId, xlocale, fcr, fr)));
@@ -1197,7 +1193,7 @@ public class F7_4 implements ViewMobileAdapter {
       }
       if (s2.length() > 0) {
         W5FormCell fcx = new W5FormCell();
-        fcx.setControlTip((short) 102);
+        fcx.setControlType((short) 102);
         fcx.setLookupQueryId(11);
         fcx.setLocaleMsgKey("SMS/E-Posta Dönüşümleri");
         s.append(
@@ -1208,7 +1204,7 @@ public class F7_4 implements ViewMobileAdapter {
       }
     }
 
-    if (f.getObjectTip() == 2) {
+    if (f.getObjectType() == 2) {
       s.append("</ul>");
       if (!fr.isViewMode()) { // kaydet butonu
         if (masterDetail) // master detail
@@ -1235,7 +1231,7 @@ public class F7_4 implements ViewMobileAdapter {
     }
 
     s.append("}");
-    if (f.getObjectTip() == 2) {
+    if (f.getObjectType() == 2) {
       s.append(",\n methods:{clickPhoto:function(){iwb.formPhotoMenu(this.$options.props);}");
       if (!fr.isViewMode()) { // kaydet butonu
         if (!masterDetail) // master detail
@@ -1305,7 +1301,7 @@ public class F7_4 implements ViewMobileAdapter {
               fc.getExtraDefinition(), fr.getScd(), fr.getRequestParams(), o));
       return buf;
     }
-    if ((fc.getControlTip() == 101
+    if ((fc.getControlType() == 101
         || cellResult.getHiddenValue()
             != null) /* && (fc.getControlTip()!=9 && fc.getControlTip()!=16) */) { // readonly
       buf.append("<li id=\"id-formcell-")
@@ -1324,7 +1320,7 @@ public class F7_4 implements ViewMobileAdapter {
       return buf;
     }
 
-    switch (fc.getControlTip()) {
+    switch (fc.getControlType()) {
       case 102: // label
         if (fc.getLookupQueryId() >= 10) {
           buf.append("<li class=\"iwb-form-tab iwb-type-")
@@ -1416,7 +1412,7 @@ public class F7_4 implements ViewMobileAdapter {
       case 51:
       case 52: // user defined combo, multi
         boolean multi =
-            fc.getControlTip() != 6 && fc.getControlTip() != 7 && fc.getControlTip() != 51;
+            fc.getControlType() != 6 && fc.getControlType() != 7 && fc.getControlType() != 51;
         StringBuilder resultText = new StringBuilder();
         buf.append("<li id=\"id-formcell-")
             .append(fc.getFormCellId())
@@ -1494,7 +1490,7 @@ public class F7_4 implements ViewMobileAdapter {
 
       case 9: // combo-remote
       case 16: // lovcombo-remote
-        multi = fc.getControlTip() == 16;
+        multi = fc.getControlType() == 16;
         buf.append("<li id=\"id-formcell-")
             .append(fc.getFormCellId())
             .append("\"><a href=#")
@@ -1603,7 +1599,7 @@ public class F7_4 implements ViewMobileAdapter {
               fc.getExtraDefinition(), fr.getScd(), fr.getRequestParams(), o));
       return buf;
     }
-    if ((fc.getControlTip() == 101
+    if ((fc.getControlType() == 101
         || cellResult.getHiddenValue()
             != null) /* && (fc.getControlTip()!=9 && fc.getControlTip()!=16) */) { // readonly
       buf.append("<li id=\"id-formcell-")
@@ -1622,7 +1618,7 @@ public class F7_4 implements ViewMobileAdapter {
       return buf;
     }
 
-    switch (fc.getControlTip()) {
+    switch (fc.getControlType()) {
       case 102: // label
         if (fc.getLookupQueryId() >= 10) {
           buf.append("<li class=\"iwb-form-tab iwb-type-")
@@ -1714,7 +1710,7 @@ public class F7_4 implements ViewMobileAdapter {
       case 51:
       case 52: // user defined combo, multi
         boolean multi =
-            fc.getControlTip() != 6 && fc.getControlTip() != 7 && fc.getControlTip() != 51;
+            fc.getControlType() != 6 && fc.getControlType() != 7 && fc.getControlType() != 51;
         StringBuilder resultText = new StringBuilder();
         buf.append("<li id=\"id-formcell-")
             .append(fc.getFormCellId())
@@ -1789,7 +1785,7 @@ public class F7_4 implements ViewMobileAdapter {
 
       case 9: // combo-remote
       case 16: // lovcombo-remote
-        multi = fc.getControlTip() == 16;
+        multi = fc.getControlType() == 16;
         buf.append("<li id=\"id-formcell-")
             .append(fc.getFormCellId())
             .append("\"><a href=#")
@@ -1884,7 +1880,7 @@ public class F7_4 implements ViewMobileAdapter {
     buf.append("\n htmlPage:'");
     W5FormCell c0 = new W5FormCell();
     c0.setLocaleMsgKey(formBuilder.getString("title"));
-    c0.setControlTip((short) 102);
+    c0.setControlType((short) 102);
     W5FormCellHelper cellResult0 = new W5FormCellHelper(c0);
     buf.append(serializeFormCell(0, "tr", cellResult0, r));
 
@@ -1908,11 +1904,11 @@ public class F7_4 implements ViewMobileAdapter {
             d.setDsc(i.getString(1));
             cellResult.getLookupListValues().add(d);
           }
-          c.setControlTip((short) 6);
+          c.setControlType((short) 6);
           ;
-        } else c.setControlTip(o.has("_controlTip") ? (short) o.getInt("_controlTip") : 1);
+        } else c.setControlType(o.has("_controlTip") ? (short) o.getInt("_controlTip") : 1);
         ;
-        if (c.getControlTip() == 2) {
+        if (c.getControlType() == 2) {
           int formCellId = (int) new Date().getTime();
           jsCode
               .append("iwb.app.calendar({input: '#idx-formcell-")

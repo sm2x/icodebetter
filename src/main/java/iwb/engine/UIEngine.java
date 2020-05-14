@@ -112,7 +112,7 @@ public class UIEngine {
 			tabOrder++;
 			formResult.getFormCellResults().add(result);
 		}
-		if (queryResult.getQuery().get_queryFields().get(7).getPostProcessTip() == 10) { // tipi
+		if (queryResult.getQuery().get_queryFields().get(7).getPostProcessType() == 10) { // tipi
 																							// lookup
 																							// ise
 																							// o
@@ -185,7 +185,7 @@ public class UIEngine {
 			// GenericUtil.uInt(requestParams,"_dev")!=0;
 			String projectId = FrameworkCache.getProjectId(scd, "40." + formId);
 			W5Table t = null;
-			switch (formResult.getForm().getObjectTip()) {
+			switch (formResult.getForm().getObjectType()) {
 			case 2: // table
 				t = FrameworkCache.getTable(projectId, formResult.getForm().getObjectId()); // formResult.getForm().get_sourceTable();
 				boolean accessControlSelfFlag = true; // kendisi VEYA
@@ -195,34 +195,34 @@ public class UIEngine {
 					if (t.getAccessViewUserFields() == null && !GenericUtil.accessControl(scd, t.getAccessViewTip(),
 							t.getAccessViewRoles(), t.getAccessViewUsers())) {
 						throw new IWBException("security", "Form", formId, null, LocaleMsgCache.get2(0,
-								(String) scd.get("locale"), "fw_guvenlik_tablo_kontrol_goruntuleme"), null);
+								(String) scd.get("locale"), "fw_security_table_control_view"), null);
 					}
 				}
 
 				if (accessControlSelfFlag)
 					acEngine.accessControl4FormTable(formResult, null);
 				if (formResult.getForm().get_moduleList() != null) {
-					for (W5FormModule m : formResult.getForm().get_moduleList()) if(m.getModuleViewTip() == 0 || m.getModuleViewTip() == action)
-						switch(m.getModuleTip()){
+					for (W5FormModule m : formResult.getForm().get_moduleList()) if(m.getModuleViewType() == 0 || m.getModuleViewType() == action)
+						switch(m.getModuleType()){
 						case	3://form
 						case	4://multi form
-							int newAction = m.getModuleTip() == 3 ? 2 : GenericUtil.uInt(requestParams.get("a" + m.getTabOrder()));
+							int newAction = m.getModuleType() == 3 ? 2 : GenericUtil.uInt(requestParams.get("a" + m.getTabOrder()));
 							if (newAction == 0)
 								newAction = action;
 							if (formResult.getModuleFormMap() == null)
 								formResult.setModuleFormMap(new HashMap());
 							W5FormResult dfr = getFormResult(scd, m.getObjectId(), newAction, requestParams);
 							formResult.getModuleFormMap().put(m.getObjectId(), dfr);
-							if(action==1 && m.getModuleTip() == 3 && !GenericUtil.isEmpty(t.get_tableChildList())) {//TODO: load detail records for form
+							if(action==1 && m.getModuleType() == 3 && !GenericUtil.isEmpty(t.get_tableChildList())) {//TODO: load detail records for form
 								for(W5TableChild tc:t.get_tableChildList()) if(tc.getRelatedTableId() == dfr.getForm().getObjectId()){
 									W5Table dt = FrameworkCache.getTable(scd, tc.getRelatedTableId());
 									StringBuilder sql = new StringBuilder();
 									String pkFieldName = dt.get_tableFieldList().get(0).getDsc();
 									sql.append("select x.").append(pkFieldName);
-									for(W5FormCell fc2:dfr.getForm().get_formCells()) if(fc2.getActiveFlag()!=0 && fc2.getControlTip()>0 && fc2.getControlTip()<90 && fc2.get_sourceObjectDetail()!=null){
+									for(W5FormCell fc2:dfr.getForm().get_formCells()) if(fc2.getActiveFlag()!=0 && fc2.getControlType()>0 && fc2.getControlType()<90 && fc2.get_sourceObjectDetail()!=null){
 										W5TableField tf2 = (W5TableField)fc2.get_sourceObjectDetail();
 										if(tf2.getTabOrder()!=1)sql.append(", x.").append(tf2.getDsc());
-										if(fc2.getControlTip()==71) {//file
+										if(fc2.getControlType()==71) {//file
 											sql.append(", (select a.original_file_name from iwb.w5_file_attachment a where a.project_uuid='").append(scd.get("projectId")).append("' AND a.file_attachment_id=x.").append(tf2.getDsc()).append(") ").append(tf2.getDsc()).append("_qw_");
 											
 										}
@@ -233,7 +233,7 @@ public class UIEngine {
 										sql.append(" AND ").append(dt.get_tableFieldMap().get(tc.getRelatedStaticTableFieldId()).getDsc()).append("=").append(tc.getRelatedStaticTableFieldVal());
 									List params = new ArrayList();
 									params.add(GenericUtil.uInt(requestParams.get(t.get_tableParamList().get(0).getDsc())));
-									if(dt.get_tableParamList().size()>0)for(W5TableParam tp2:dt.get_tableParamList())if(tp2.getSourceTip()==2) {
+									if(dt.get_tableParamList().size()>0)for(W5TableParam tp2:dt.get_tableParamList())if(tp2.getSourceType()==2) {
 										sql.append(" AND x.").append(tp2.getExpressionDsc()).append("=?");
 										params.add(scd.get(tp2.getDsc()));
 									}
@@ -271,30 +271,30 @@ public class UIEngine {
 			}
 
 			W5Form f = formResult.getForm();
-			if (f.getObjectTip() != 2 && (f.getObjectTip()!=11 || action == 0))
+			if (f.getObjectType() != 2 && (f.getObjectType()!=11 || action == 0))
 				action = 2; // eger table degilse sadece initializeForm olabilir
 
-			if (f.getObjectTip() != 5
+			if (f.getObjectType() != 5
 					&& action == 9 /* edit (if not insert) */) {
 				action = dao.checkIfRecordsExists(scd, requestParams, t) ? 1 : 2;
 			}
 
 			/* tableTrigger before Show start */
-			if (f.getObjectTip() == 2 && action != 3)
+			if (f.getObjectType() == 2 && action != 3)
 				crudEngine.extFormTableEvent(formResult, new String[] { "_", "su", "si", "_", "_", "si" }[action], scd,
 						requestParams, t, null, null);
 			/* end of tableTrigger */
 
-			if (f.getObjectTip() != 5)
+			if (f.getObjectType() != 5)
 				switch (action) {
 				case 5: // copy
 				case 1: // edit
-					if (f.getObjectTip() == 2) {
+					if (f.getObjectType() == 2) {
 						if (action == 1 && !GenericUtil.isEmpty(f.get_conversionList())) { // conversion form, then sync
 							// covnerted objects find
 							String inStr = "";
 							for (W5Conversion cnv : f.get_conversionList())
-								if (GenericUtil.hasPartInside2(cnv.getActionTips(), action)
+								if (GenericUtil.hasPartInside2(cnv.getActionTypes(), action)
 										|| cnv.getSynchOnUpdateFlag() != 0) { // synch
 																				// varsa
 									inStr += "," + cnv.getConversionId();
@@ -336,7 +336,7 @@ public class UIEngine {
 							}
 						}
 						dao.loadFormTable(formResult);
-					} else if(f.getObjectTip() == 11){ //ws method
+					} else if(f.getObjectType() == 11){ //ws method
 						if (f.getSourceWsMethodId() != 0) {
 							W5WsMethod wsm = FrameworkCache.getWsMethod(scd, f.getSourceWsMethodId());
 							if(wsm!=null){
@@ -349,7 +349,7 @@ public class UIEngine {
 										W5FormCellHelper result = new W5FormCellHelper(cell);
 										Object o = r.get(cell.getDsc());
 										if(o!=null) {
-											if(cell.getControlTip()==5) {
+											if(cell.getControlType()==5) {
 												if(o.toString()=="true" || o.toString()=="on" || o.toString()=="yes" || GenericUtil.uInt(o)!=0)
 													result.setValue("1");
 												else result.setValue("0");
@@ -387,7 +387,7 @@ public class UIEngine {
 							}
 							for (W5FormCellHelper fcx2 : formResult.getFormCellResults())
 								if (fcx2.getFormCell().getObjectDetailId() == 0)
-									switch (fcx2.getFormCell().getInitialSourceTip()) {
+									switch (fcx2.getFormCell().getInitialSourceType()) {
 									case 0: // yok-sabit
 										fcx2.setValue(fcx2.getFormCell().getInitialValue());
 										break;
@@ -534,9 +534,9 @@ public class UIEngine {
 									// conversion esnasinda, request'ten gelen
 									// degerleri simule ediyor, request'e
 									// manuel koyarak
-									if (convb && (fc.getFormCell().getControlTip() == 0
-											|| (fc.getFormCell().getNrdTip() == 2
-													&& fc.getFormCell().getInitialSourceTip() == 1
+									if (convb && (fc.getFormCell().getControlType() == 0
+											|| (fc.getFormCell().getNrdType() == 2
+													&& fc.getFormCell().getInitialSourceType() == 1
 													&& fc.getFormCell().getInitialValue() != null && fc.getFormCell()
 															.getInitialValue().equals(fc.getFormCell().getDsc()))))
 										formResult.getRequestParams().put(fc.getFormCell().getDsc(), s.toString());
@@ -544,7 +544,7 @@ public class UIEngine {
 							}
 						}
 					} else { // copy
-						if (f.getObjectTip() == 2)
+						if (f.getObjectType() == 2)
 							for (W5FormCellHelper fcr : formResult.getFormCellResults())
 								if (fcr.getFormCell().get_sourceObjectDetail() != null)
 									switch (((W5TableField) fcr.getFormCell().get_sourceObjectDetail())
@@ -586,11 +586,11 @@ public class UIEngine {
 
 			// form cell lookup load
 			dao.loadFormCellLookups(formResult.getScd(), formResult.getFormCellResults(), formResult.getRequestParams(),
-					FrameworkSetting.liveSyncRecord && f.getObjectTip() == 2
+					FrameworkSetting.liveSyncRecord && f.getObjectType() == 2
 							? formResult.getUniqueId() : null);
 
 			for (W5FormCellHelper cr : formResult.getFormCellResults())
-				if (cr.getFormCell().getControlTip() == 99) { // grid ise bunun
+				if (cr.getFormCell().getControlType() == 99) { // grid ise bunun
 																// icinde var mi
 																// editableFormCell
 					W5Grid g = (W5Grid) cr.getFormCell().get_sourceObjectDetail();
@@ -641,22 +641,22 @@ public class UIEngine {
 			// normal/readonly/disabled show control/ozel kodlama
 			int updatableFieldsCount = 0;
 			for (W5FormCellHelper cr : formResult.getFormCellResults())
-				if (cr.getFormCell().getControlTip() != 0 && cr.getFormCell().getControlTip() != 13
-						&& cr.getFormCell().getControlTip() != 100) { // yok ve
+				if (cr.getFormCell().getControlType() != 0 && cr.getFormCell().getControlType() != 13
+						&& cr.getFormCell().getControlType() != 100) { // yok ve
 																		// hidden
 																		// ve
 																		// buttondan
 																		// baska
-					W5TableField tf = f.getObjectTip() == 2
+					W5TableField tf = f.getObjectType() == 2
 							&& cr.getFormCell().get_sourceObjectDetail() instanceof W5TableField
 									? (W5TableField) cr.getFormCell().get_sourceObjectDetail() : null;
 					if (formResult.isViewMode() || cr.getHiddenValue() != null
 							|| (action == 1 && cr.getFormCell()
-									.getControlTip() == 31 /* ozel kodlama */
+									.getControlType() == 31 /* ozel kodlama */
 							&& GenericUtil.uInt(cr.getFormCell().getLookupIncludedValues()) == 1
 							&& !GenericUtil.hasPartInside(cr.getFormCell().getLookupIncludedParams(),
 									"" + formResult.getScd().get("userId")))
-							|| cr.getFormCell().getNrdTip() != 0 // readonly/disabled
+							|| cr.getFormCell().getNrdType() != 0 // readonly/disabled
 							|| (workflowStep != null
 									&& cr.getFormCell()
 											.get_sourceObjectDetail() != null
@@ -665,7 +665,7 @@ public class UIEngine {
 													.getTableFieldId())) // approvalStepUpdatable
 																			// Table
 																			// Fields
-							|| (f.getObjectTip() == 2 && action == 1 && tf != null
+							|| (f.getObjectType() == 2 && action == 1 && tf != null
 									&& (tf.getCanUpdateFlag() == 0 || (tf.getAccessUpdateTip() != 0
 											&& !GenericUtil.accessControl(scd, tf.getAccessUpdateTip(),
 													tf.getAccessUpdateRoles(), tf.getAccessUpdateUsers())
@@ -678,7 +678,7 @@ public class UIEngine {
 
 						String value = cr.getValue();
 						cr.setHiddenValue(value == null || value.length() == 0 ? "_" : GenericUtil.stringToJS(value));
-						switch (cr.getFormCell().getControlTip()) {
+						switch (cr.getFormCell().getControlType()) {
 						case 5: // checkbox
 							break;
 						case 9:
@@ -734,7 +734,7 @@ public class UIEngine {
 								for (Object[] d : (List<Object[]>) cr.getLookupQueryResult().getData()) {
 									if (vals.contains(d[1].toString())) {
 										xval += cr.getLookupQueryResult().getQuery().get_queryFields().get(0)
-												.getPostProcessTip() == 2
+												.getPostProcessType() == 2
 														? LocaleMsgCache.get2((Integer) scd.get("customizationId"),
 																(String) scd.get("locale"), d[0].toString()) + ", "
 														: d[0].toString() + ", ";
@@ -762,7 +762,7 @@ public class UIEngine {
 
 					} else
 						updatableFieldsCount++;
-				} else if (cr.getFormCell().getControlTip() == 100) { // Buton
+				} else if (cr.getFormCell().getControlType() == 100) { // Buton
 																		// ise
 																		// butonun
 																		// extra
@@ -776,7 +776,7 @@ public class UIEngine {
 				} else
 					cr.setHiddenValue(null);
 
-			if (f.getObjectTip() == 2) { // table ise
+			if (f.getObjectType() == 2) { // table ise
 				if (updatableFieldsCount == 0)
 					formResult.setViewMode(true);
 				if (action == 1) { // eidt mode'da ise
@@ -821,25 +821,6 @@ public class UIEngine {
 			templateObjectListExt.addAll(pr.getPage().get_pageObjectList());
 
 			requestParams.put("_dont_throw", "1");
-			if (pageId == 238) { // Record based privilge 
-				int objectId = GenericUtil.uInt(requestParams.get("_gid1"));
-				if (objectId == 477) {
-					W5Table t = FrameworkCache.getTable(scd, GenericUtil.uInt(requestParams.get("crud_table_id")));
-					if (t.getAccessPermissionUserFields() != null)
-						requestParams.put(t.get_tableParamList().get(0).getDsc(), requestParams.get("_table_pk"));
-					// Kontrol atanmışsa ve kullanıcının yetkisi yoksa
-					if (t.getAccessPermissionTip() == 1
-							&& !GenericUtil.accessControl(scd, t.getAccessPermissionTip(), t.getAccessPermissionRoles(),
-									t.getAccessPermissionUsers())
-							&& (t.getAccessPermissionUserFields() == null || dao.accessUserFieldControl(t,
-									t.getAccessPermissionUserFields(), scd, requestParams, null))) {
-						throw new IWBException("security", "Table",
-								GenericUtil.uInt(requestParams.get("crud_table_id")), null,
-								LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_guvenlik_yetkilendirme_yetkisi"),
-								null);
-					}
-				}
-			}
 
 			for (int i = 1; requestParams.containsKey("_gid" + i) || requestParams.containsKey("_fid" + i)
 					|| requestParams.containsKey("_dvid" + i) || requestParams.containsKey("_lvid" + i)
@@ -851,45 +832,44 @@ public class UIEngine {
 																												// seyler
 																												// soylenebilir
 				int objectId = GenericUtil.uInt(requestParams.get("_gid" + i)); // grid
-				short objectTip = -1;
+				short objectType = -1;
 				if (objectId == 0) {
 					objectId = GenericUtil.uInt(requestParams.get("_fid" + i)); // form
-					objectTip = -3;
+					objectType = -3;
 				}
 				if (objectId == 0) {
-					objectId = GenericUtil.uInt(requestParams.get("_dvid" + i)); // data
-																					// view
-					objectTip = -2;
+					objectId = GenericUtil.uInt(requestParams.get("_dvid" + i)); // card
+					objectType = -2;
 				}
 				if (objectId == 0) {
 					objectId = GenericUtil.uInt(requestParams.get("_lvid" + i)); // list view
-					objectTip = -7;
+					objectType = -7;
 				}
 				if (objectId == 0) {
 					objectId = GenericUtil.uInt(requestParams.get("_qid" + i)); // query Result
-					objectTip = -4;
+					objectType = -4;
 				}
 				if (objectId == 0) {
 					objectId = GenericUtil.uInt(requestParams.get("_mlid" + i)); // mobile list view
-					objectTip = -11;
+					objectType = -11;
 				}
 				if (objectId == 0) {
 					objectId = GenericUtil.uInt(requestParams.get("_gdid" + i)); // graph dashboard
-					objectTip = -9;
+					objectType = -9;
 				}
 				if (objectId == 0) {
 					objectId = GenericUtil.uInt(requestParams.get("_ggid" + i)); // gauge view
-					objectTip = -22;
+					objectType = -22;
 				}
 				W5PageObject o = new W5PageObject();
-				o.setObjectTip(objectTip);
+				o.setObjectType(objectType);
 				o.setObjectId(objectId);
 				templateObjectListExt.add(o);
 			}
 			
-			if(pr.getPage().getTemplateTip()==0 && scd!=null && GenericUtil.uInt(scd.get("dashboardPageId"))!=0) {//html
+			if(pr.getPage().getPageType()==0 && scd!=null && GenericUtil.uInt(scd.get("dashboardPageId"))!=0) {//html
 				W5PageObject o = new W5PageObject();
-				o.setObjectTip((short)-31);
+				o.setObjectType((short)-31);
 				o.setObjectId(GenericUtil.uInt(scd.get("dashboardPageId")));
 				templateObjectListExt.add(o);
 			}
@@ -901,25 +881,24 @@ public class UIEngine {
 								o.getAccessViewUsers());
 				Object obz = null;
 				W5Table mainTable = null;
-				switch (Math.abs(o.getObjectTip())) {
+				switch (Math.abs(o.getObjectType())) {
 				case 1: // grid
 					W5GridResult gridResult = metadataLoader.getGridResult(scd, o.getObjectId(), requestParams,
 							pageId == 298 /* || objectCount!=0 */);
 					if (pageId == 298) { // log template
 						gridResult.setViewLogMode(true);
 					}
-					if (o.getObjectTip() < 0) {
+					if (o.getObjectType() < 0) {
 						if (GenericUtil.uInt(requestParams, "_gid" + gridResult.getGridId() + "_a") != 0)
 							gridResult.setAction(
 									GenericUtil.uInt(requestParams, "_gid" + gridResult.getGridId() + "_a"));
 						gridResult.setGridId(-gridResult.getGridId());
 					}
 					mainTable = gridResult.getGrid() != null && gridResult.getGrid().get_query() != null
-							? FrameworkCache.getTable(scd, gridResult.getGrid().get_query().getMainTableId())
+							? FrameworkCache.getTable(scd, gridResult.getGrid().get_query().getSourceObjectId())
 							: null;
 					if (!debugAndDeveloper && mainTable != null
-							&& (((mainTable.getAccessTips() == null || mainTable.getAccessTips().indexOf("0") == -1)
-									&& mainTable.getAccessViewUserFields() == null
+							&& ((mainTable.getAccessViewUserFields() == null
 									&& !GenericUtil.accessControl(scd, mainTable.getAccessViewTip(),
 											mainTable.getAccessViewRoles(), mainTable.getAccessViewUsers()))))
 						obz = gridResult.getGrid().getDsc();
@@ -935,21 +914,20 @@ public class UIEngine {
 						Map m = gridResult.getExtraOutMap();
 						gridResult.setTplObj(o);
 						gridResult.setExtraOutMap(m);
-						m.put("tplId", o.getTemplateId());
-						m.put("tplObjId", o.getTemplateObjectId());
+						m.put("tplId", o.getPageId());
+						m.put("tplObjId", o.getPageObjectId());
 					}
 					break;
 				case 2: // card view
 					W5CardResult cardResult = metadataLoader.getCardResult(scd, o.getObjectId(), requestParams,
 							objectCount != 0);
-					if (o.getObjectTip() < 0)
-						cardResult.setDataViewId(-cardResult.getDataViewId());
+					if (o.getObjectType() < 0)
+						cardResult.setCardId(-cardResult.getCardId());
 					mainTable = cardResult.getCard() != null && cardResult.getCard().get_query() != null
-							? FrameworkCache.getTable(scd, cardResult.getCard().get_query().getMainTableId())
+							? FrameworkCache.getTable(scd, cardResult.getCard().get_query().getSourceObjectId())
 							: null;
 					if (!debugAndDeveloper && mainTable != null
-							&& (((mainTable.getAccessTips() == null || mainTable.getAccessTips().indexOf("0") == -1)
-									&& mainTable.getAccessViewUserFields() == null
+							&& ((mainTable.getAccessViewUserFields() == null
 									&& !GenericUtil.accessControl(scd, mainTable.getAccessViewTip(),
 											mainTable.getAccessViewRoles(), mainTable.getAccessViewUsers()))))
 						obz = cardResult.getCard().getDsc();
@@ -960,23 +938,22 @@ public class UIEngine {
 						Map m = new HashMap();
 						cardResult.setTplObj(o);
 						cardResult.setExtraOutMap(m);
-						m.put("tplId", o.getTemplateId());
-						m.put("tplObjId", o.getTemplateObjectId());
+						m.put("tplId", o.getPageId());
+						m.put("tplObjId", o.getPageObjectId());
 					}
 					break;
 				case 7: // list view
 					W5ListViewResult listViewResult = metadataLoader.getListViewResult(scd, o.getObjectId(), requestParams,
 							objectCount != 0);
-					if (o.getObjectTip() < 0)
+					if (o.getObjectType() < 0)
 						listViewResult.setListId(-listViewResult.getListId());
 					mainTable = listViewResult.getListView() != null
 							&& listViewResult.getListView().get_query() != null
 									? FrameworkCache.getTable(scd,
-											listViewResult.getListView().get_query().getMainTableId())
+											listViewResult.getListView().get_query().getSourceObjectId())
 									: null;
 					if (!debugAndDeveloper && mainTable != null
-							&& (((mainTable.getAccessTips() == null || mainTable.getAccessTips().indexOf("0") == -1)
-									&& mainTable.getAccessViewUserFields() == null
+							&& (( mainTable.getAccessViewUserFields() == null
 									&& !GenericUtil.accessControl(scd, mainTable.getAccessViewTip(),
 											mainTable.getAccessViewRoles(), mainTable.getAccessViewUsers()))))
 						obz = listViewResult.getListView().getDsc();
@@ -988,9 +965,9 @@ public class UIEngine {
 					W5FormResult formResult = getFormResult(scd, o.getObjectId(),
 							requestParams.get("a") != null ? GenericUtil.uInt(requestParams, "a") : 2,
 							requestParams);
-					if (o.getObjectTip() < 0)
+					if (o.getObjectType() < 0)
 						formResult.setFormId(-formResult.getFormId());
-					formResult.setObjectTip(o.getObjectTip()); // render
+					formResult.setObjectType(o.getObjectType()); // render
 																// icin
 																// gerekecek
 					/*
@@ -1004,18 +981,22 @@ public class UIEngine {
 					obz = accessControl ? formResult : formResult.getForm().getDsc();
 					break;
 				case 4: // query
-				case	10:					
-					Map paramMap = new HashMap();
-					paramMap.putAll(requestParams);
-					if (!GenericUtil.isEmpty(o.getPostJsCode())) {
-						String[] ar1 = o.getPostJsCode().split("&");
-						for (int it4 = 0; it4 < ar1.length; it4++) {
-							String[] ar2 = ar1[it4].split("=");
-							if (ar2.length == 2 && ar2[0] != null && ar2[1] != null)
-								paramMap.put(ar2[0], ar2[1]);
+				case	10:
+					if(FrameworkSetting.metadata && pr.getPage().getPageType()==0 && o.getObjectId()==2822) { //prepare menu from cache
+						obz = FrameworkCache.getQueryResult4Menu(scd);
+					} else {
+						Map paramMap = new HashMap();
+						paramMap.putAll(requestParams);
+						if (!GenericUtil.isEmpty(o.getPostJsCode())) {
+							String[] ar1 = o.getPostJsCode().split("&");
+							for (int it4 = 0; it4 < ar1.length; it4++) {
+								String[] ar2 = ar1[it4].split("=");
+								if (ar2.length == 2 && ar2[0] != null && ar2[1] != null)
+									paramMap.put(ar2[0], ar2[1]);
+							}
 						}
+						obz = queryEngine.executeQuery(scd, o.getObjectId(), paramMap);
 					}
-					obz = queryEngine.executeQuery(scd, o.getObjectId(), paramMap);
 					break;
 				case 8:// component
 					obz = FrameworkCache.getComponent(scd, o.getObjectId());//metaDataDao.loadComponent(scd, o.getObjectId(), new HashMap());
@@ -1046,13 +1027,7 @@ public class UIEngine {
 					}
 					break;
 				}
-				if (pr.getPage().getTemplateTip() <= 2 && objectCount == 0) { // daha
-																				// ilk
-																				// objede
-																				// sorun
-																				// varsa
-																				// exception
-																				// ver
+				if (pr.getPage().getPageType() <= 2 && objectCount == 0) { // throw exception for the first object
 					if (obz instanceof String)
 						throw new IWBException("security", "Module", o.getObjectId(), null,
 								"Role Access Control(Page Object)", null);
@@ -1088,7 +1063,7 @@ public class UIEngine {
 		W5FormCellHelper rc = new W5FormCellHelper(c);
 		String includedValues = c.getLookupIncludedValues();
 		Map<String, String> requestParams = null;
-		switch (c.getControlTip()) {
+		switch (c.getControlType()) {
 		case 58: // superboxselect
 		case 8: // lovcombo static
 		case 6: // eger static combobox ise listeyi load et
@@ -1164,9 +1139,9 @@ public class UIEngine {
 			lookupQueryResult.setRequestParams(requestParams);
 			lookupQueryResult.setOrderBy(lookupQueryResult.getQuery().getSqlOrderby());
 			if (rc.getValue() != null && rc.getValue().length() > 0
-					&& GenericUtil.hasPartInside("7,10,61", Short.toString(c.getControlTip())))
+					&& GenericUtil.hasPartInside("7,10,61", Short.toString(c.getControlType())))
 				paramMap.put("pmust_load_id", rc.getValue());
-			switch (lookupQueryResult.getQuery().getQueryTip()) {
+			switch (lookupQueryResult.getQuery().getQueryType()) {
 			case 12:
 				lookupQueryResult.prepareTreeQuery(paramMap);
 				break; // lookup tree query
@@ -1177,9 +1152,9 @@ public class UIEngine {
 
 			if (lookupQueryResult.getErrorMap().isEmpty()) {
 				dao.runQuery(lookupQueryResult);
-				if (tabId != null && lookupQueryResult.getQuery().getMainTableId() != 0) {
+				if (tabId != null && lookupQueryResult.getQuery().getSourceObjectId() != 0) {
 					Set<Integer> keys = UserUtil.getTableGridFormCellCachedKeys((String) scd.get("projectId"),
-							lookupQueryResult.getQuery().getMainTableId(), userId, (String) scd.get("sessionId"),
+							lookupQueryResult.getQuery().getSourceObjectId(), userId, (String) scd.get("sessionId"),
 							requestParams.get(".w"), tabId, -c.getFormCellId(), requestParams, true);
 					for (Object[] o : lookupQueryResult.getData())
 						keys.add(GenericUtil.uInt(o[1]));

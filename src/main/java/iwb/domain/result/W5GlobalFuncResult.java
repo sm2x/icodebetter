@@ -11,7 +11,7 @@ import iwb.domain.helper.W5ReportCellHelper;
 
 public class W5GlobalFuncResult implements W5MetaResult{
 	
-	private	int	dbFuncId;
+	private	int	globalFuncId;
 	private W5GlobalFunc globalFunc;
 	
 	private String executedSql;
@@ -27,14 +27,14 @@ public class W5GlobalFuncResult implements W5MetaResult{
 	
 	
 
-	public W5GlobalFuncResult(int dbFuncId) {
-		this.dbFuncId = dbFuncId;
+	public W5GlobalFuncResult(int globalFuncId) {
+		this.globalFuncId = globalFuncId;
 	}
 	public int getGlobalFuncId() {
-		return dbFuncId;
+		return globalFuncId;
 	}
-	public void setGlobalFuncId(int dbFuncId) {
-		this.dbFuncId = dbFuncId;
+	public void setGlobalFuncId(int globalFuncId) {
+		this.globalFuncId = globalFuncId;
 	}
 	public W5GlobalFunc getGlobalFunc() {
 		return globalFunc;

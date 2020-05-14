@@ -158,7 +158,7 @@ public class DBUtil {
 
 			if (s.length() > 0)
 				s.append(" || '-iwb-' || ");
-			switch (f.getParamTip()) {
+			switch (f.getParamType()) {
 			case 1:
 				s.append("coalesce(").append(prefix).append(".").append(f.getDsc()).append(",'')");
 				break;

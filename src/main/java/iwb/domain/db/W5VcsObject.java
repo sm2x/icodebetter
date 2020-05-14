@@ -28,7 +28,7 @@ public class W5VcsObject  implements java.io.Serializable {
 	private String projectUuid;
 	private int vcsCommitId;
 	private String vcsCommitRecordHash;
-	private short vcsObjectStatusTip;
+	private short vcsObjectStatusType;
 	private short versionNo;
 	private int insertUserId;
 	private int versionUserId;
@@ -43,7 +43,7 @@ public class W5VcsObject  implements java.io.Serializable {
 	public W5VcsObject(Map<String, Object> scd, int tableId2, int tablePk2) {
 		this.tableId = tableId2;
 		this.tablePk = tablePk2;
-		this.vcsObjectStatusTip = (short)2; //insert
+		this.vcsObjectStatusType = (short)2; //insert
 		this.vcsCommitRecordHash = "!123456789012345678901234567890!";
 		this.vcsCommitId = 1;
 		this.versionNo = (short)1;
@@ -113,11 +113,11 @@ public class W5VcsObject  implements java.io.Serializable {
 	}
 	
 	@Column(name="vcs_object_status_tip")
-	public short getVcsObjectStatusTip() {
-		return vcsObjectStatusTip;
+	public short getVcsObjectStatusType() {
+		return vcsObjectStatusType;
 	}
-	public void setVcsObjectStatusTip(short vcsObjectStatusTip) {
-		this.vcsObjectStatusTip = vcsObjectStatusTip;
+	public void setVcsObjectStatusType(short vcsObjectStatusType) {
+		this.vcsObjectStatusType = vcsObjectStatusType;
 	}
 	@Column(name="version_no")
 	public short getVersionNo() {
@@ -160,7 +160,7 @@ public class W5VcsObject  implements java.io.Serializable {
 		n.setTablePk(tablePk);
 		n.setVcsCommitId(vcsCommitId);
 		n.setVcsCommitRecordHash(vcsCommitRecordHash);
-		n.setVcsObjectStatusTip(vcsObjectStatusTip);
+		n.setVcsObjectStatusType(vcsObjectStatusType);
 		n.setVersionUserId(versionUserId);
 		n.setVersionDttm(versionDttm);
 		return n;

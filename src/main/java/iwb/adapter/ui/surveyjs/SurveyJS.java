@@ -25,14 +25,14 @@ public class SurveyJS {
 	private static StringBuilder serializeFormCellProperty4SurveyJs(W5FormCellHelper cellResult, W5FormResult formResult) {
 		StringBuilder buf = new StringBuilder();
 		if(!GenericUtil.isEmpty(cellResult.getFormCell().get_formCellPropertyList())) for(W5FormCellProperty fcp:cellResult.getFormCell().get_formCellPropertyList()){
-			if(fcp.getLkpPropertyTip()==3) {
+			if(fcp.getLkpPropertyType()==3) {
 				buf.append(",description:'").append(GenericUtil.stringToJS(fcp.getVal())).append("'");				
 			} else  for(W5FormCellHelper fcr:formResult.getFormCellResults())if(fcr.getFormCell().getFormCellId()==fcp.getRelatedFormCellId()) {
-				if(fcr.getFormCell().getActiveFlag()!=0 && fcp.getLkpPropertyTip()!=3) {
-					buf.append(",").append(new String[] {"requiredIf:\"{","visibleIf:\"{","enableIf:\"{"}[fcp.getLkpPropertyTip()]);
+				if(fcr.getFormCell().getActiveFlag()!=0 && fcp.getLkpPropertyType()!=3) {
+					buf.append(",").append(new String[] {"requiredIf:\"{","visibleIf:\"{","enableIf:\"{"}[fcp.getLkpPropertyType()]);
 						buf.append(fcr.getFormCell().getDsc());
 						buf.append("} ");
-						switch(fcp.getLkpOperatorTip()) {
+						switch(fcp.getLkpOperatorType()) {
 						case -1:
 							buf.append(" empty ");
 							break;
@@ -40,22 +40,22 @@ public class SurveyJS {
 							buf.append(" notempty ");
 							break;
 						case 3:case 4:case 5:case 6://> < >= <=
-							buf.append(FrameworkSetting.operatorMap[fcp.getLkpOperatorTip()]).append(" ").append(fcp.getVal());							
+							buf.append(FrameworkSetting.operatorMap[fcp.getLkpOperatorType()]).append(" ").append(fcp.getVal());							
 							break;
 						case 0: case 1: //equals, not equals
-							if(fcr.getFormCell().getControlTip()==5) {
-								if(fcp.getLkpOperatorTip()==1)buf.append("=true");
+							if(fcr.getFormCell().getControlType()==5) {
+								if(fcp.getLkpOperatorType()==1)buf.append("=true");
 								else buf.append("=false");							
 							} else 
-								buf.append(FrameworkSetting.operatorMap[fcp.getLkpOperatorTip()]).append(" ").append(fcp.getVal());
+								buf.append(FrameworkSetting.operatorMap[fcp.getLkpOperatorType()]).append(" ").append(fcp.getVal());
 							break;
 						case 8: case 9://contains , not contains
-							if(fcr.getFormCell().getControlTip()==8 || fcr.getFormCell().getControlTip()==15) {//multi
-								if(fcp.getLkpOperatorTip()==9)buf.append("not ");
+							if(fcr.getFormCell().getControlType()==8 || fcr.getFormCell().getControlType()==15) {//multi
+								if(fcp.getLkpOperatorType()==9)buf.append("not ");
 								buf.append(" contains '").append(fcp.getVal().split(",")[0]).append("'");
 							
 							} else {
-								if(fcp.getLkpOperatorTip()==9)buf.append("!");
+								if(fcp.getLkpOperatorType()==9)buf.append("!");
 								buf.append("='").append(fcp.getVal().split(",")[0]).append("'");
 							}
 //							buf.append(FrameworkSetting.operatorMap[fcp.getLkpOperatorTip()]).append(" ").append(fcp.getVal());
@@ -121,11 +121,11 @@ public class SurveyJS {
 		buf.append("\nvar __action__=").append(formResult.getAction())
 			.append(", surveyData={\n");
 		boolean b = false;
-		for (W5FormCellHelper fc : formResult.getFormCellResults())if (fc.getFormCell().getActiveFlag() != 0 && fc.getFormCell().getControlTip()>0 && fc.getFormCell().getControlTip()<100) {
+		for (W5FormCellHelper fc : formResult.getFormCellResults())if (fc.getFormCell().getActiveFlag() != 0 && fc.getFormCell().getControlType()>0 && fc.getFormCell().getControlType()<100) {
 			if (b)buf.append("\n,"); else b = true;
 			buf.append(fc.getFormCell().getDsc()).append(":'");
 			String value = fc.getHiddenValue(); if(value == null) value =  fc.getValue();
-			if(!GenericUtil.isEmpty(value))switch(fc.getFormCell().getControlTip()){
+			if(!GenericUtil.isEmpty(value))switch(fc.getFormCell().getControlType()){
 			case 71://file attachment
 				buf.setLength(buf.length()-1);
 				String fileName = GenericUtil.stringToJS(fc.getExtraValuesMap().get("dsc").toString());
@@ -157,10 +157,10 @@ public class SurveyJS {
 			}
 			buf.append("'");
 		}
-		if(formResult.getAction()==1 && formResult.getForm().get_moduleList()!=null)for(W5FormModule m:formResult.getForm().get_moduleList())if(m.getModuleTip()==3) {
+		if(formResult.getAction()==1 && formResult.getForm().get_moduleList()!=null)for(W5FormModule m:formResult.getForm().get_moduleList())if(m.getModuleType()==3) {
 			W5FormResult dfr = formResult.getModuleFormMap().get(m.getObjectId());
 			List list = (List)dfr.getOutputFields().get("list"); 
-			if(list!=null) for(W5FormCellHelper fcr:dfr.getFormCellResults())if(fcr.getFormCell().getControlTip()==71){
+			if(list!=null) for(W5FormCellHelper fcr:dfr.getFormCellResults())if(fcr.getFormCell().getControlType()==71){
 				for(Map mm : (List<Map>)list) {
 					String fileName = (String)mm.get(fcr.getFormCell().getDsc()+"_qw_");
 					if(GenericUtil.isEmpty(fileName))fileName="noFound";
@@ -199,10 +199,10 @@ public class SurveyJS {
 		if (formResult.getForm().get_moduleList() != null)
 			for (W5FormModule m : formResult.getForm().get_moduleList())
 				if (m.getFormModuleId() != 0) {
-					if ((m.getModuleViewTip() == 0 || formResult.getAction() == m
-							.getModuleViewTip()) ) {
+					if ((m.getModuleViewType() == 0 || formResult.getAction() == m
+							.getModuleViewType()) ) {
 						W5FormResult dfr = null;
-						switch (m.getModuleTip()) {
+						switch (m.getModuleType()) {
 						case	0:
 							if(!GenericUtil.isEmpty(map.get(m.getFormModuleId()))) {					
 								buf.append(serializeFormModule4FormCells(formResult, map.get(m.getFormModuleId()), LocaleMsgCache.get2(scd, m.getLocaleMsgKey()))).append("\n,");
@@ -212,7 +212,7 @@ public class SurveyJS {
 							dfr = formResult.getModuleFormMap().get(m.getObjectId());
 							if(dfr!=null) {
 								buf.append(
-										dfr.getForm().getRenderTip()==2?//tabPanel means panel
+										dfr.getForm().getRenderType()==2?//tabPanel means panel
 										serializeFormModule4FormResultPanel(formResult, dfr):
 										serializeFormModule4FormResultList(formResult, dfr)).append("\n,");
 							}
@@ -279,7 +279,7 @@ public class SurveyJS {
 				break;
 			}
 		}
-		for(W5FormModule m:formResult.getForm().get_moduleList())if(m.getModuleTip()==3 && m.getObjectId()==df.getFormId()) {
+		for(W5FormModule m:formResult.getForm().get_moduleList())if(m.getModuleType()==3 && m.getObjectId()==df.getFormId()) {
 			buf.append(",minRowCount:").append(m.getMinRow());
 			if(formResult.getAction()==2)buf.append(",rowCount:").append(m.getMinRow()==0?1:m.getMinRow());
 			else {
@@ -313,7 +313,7 @@ public class SurveyJS {
 			}
 		}
 		if(!df.getLocaleMsgKey().equals("."))buf.append(", title:'").append(LocaleMsgCache.get2(scd, df.getLocaleMsgKey())).append("'");
-		for(W5FormModule m:formResult.getForm().get_moduleList())if(m.getModuleTip()==3 && m.getObjectId()==df.getFormId()) {
+		for(W5FormModule m:formResult.getForm().get_moduleList())if(m.getModuleType()==3 && m.getObjectId()==df.getFormId()) {
 			buf.append(",minPanelCount:").append(m.getMinRow());
 			if(formResult.getAction()==2)buf.append(",rowCount:").append(m.getMinRow()==0?1:m.getMinRow());
 			else {
@@ -347,19 +347,19 @@ public class SurveyJS {
 		StringBuilder buf = new StringBuilder();
 		W5FormCell fc = cellResult.getFormCell();
 		String value = cellResult.getValue(); // bu ilerde hashmap ten gelebilir
-		if (fc.getControlTip() == 0 || fc.getControlTip() == 100 || fc.getControlTip() == 102 || fc.getControlTip() == 101)return null;
+		if (fc.getControlType() == 0 || fc.getControlType() == 100 || fc.getControlType() == 102 || fc.getControlType() == 101)return null;
 		
 		buf.append("{name:'").append(fc.getDsc()).append("'");
 		if(!fc.getLocaleMsgKey().equals("."))buf.append(", title:'").append(LocaleMsgCache.get2(formResult.getScd(), fc.getLocaleMsgKey())).append("'");
 		else buf.append(", titleLocation:'hidden'");
 		if(fc.getNotNullFlag()!=0)buf.append(",isRequired:true");
-		if(fc.getNrdTip()!=0  || cellResult.getHiddenValue() != null)buf.append(",readOnly:!0");
+		if(fc.getNrdType()!=0  || cellResult.getHiddenValue() != null)buf.append(",readOnly:!0");
 		buf.append(serializeFormCellProperty4SurveyJs(cellResult, formResult));
 		
 		buf.append(",").append(!forMatrix ? "type":"cellType").append(":'");
 		
 		
-		switch(fc.getControlTip()){
+		switch(fc.getControlType()){
 			case	1:buf.append("text'");
 				if(GenericUtil.safeEquals(fc.getVtype(), "email"))buf.append(",inputType:'email',validators: [{type: 'email'}]");
 				else if(GenericUtil.safeEquals(fc.getVtype(), "url"))buf.append(",inputType:'url',validators: [{type: 'url'}]");
@@ -393,12 +393,12 @@ public class SurveyJS {
 			case	15://lovcombo query
 			case	59://superbox lovcombo query
 				buf.append("");
-				if(fc.getControlTip()<8)
+				if(fc.getControlType()<8)
 					buf.append(!forMatrix ? "radiogroup":"dropdown");//formResult!=null && fc.getParentFormCellId()==1?"radiogroup":"dropdown"
 				else
 					buf.append("checkbox");
 				buf.append("', choices:[");//static combo
-				if ((fc.getControlTip()==6 || fc.getControlTip()==8 ||fc.getControlTip()==58) && cellResult.getLookupListValues() != null) {
+				if ((fc.getControlType()==6 || fc.getControlType()==8 ||fc.getControlType()==58) && cellResult.getLookupListValues() != null) {
 					boolean b1=false;
 					
 					for (W5Detay p : (List<W5Detay>) cellResult
@@ -413,7 +413,7 @@ public class SurveyJS {
 										: p.getDsc()).append("'");
 						buf.append("}");
 					}
-				} else if ((fc.getControlTip()==7 || fc.getControlTip()==15 ||fc.getControlTip()==59)){
+				} else if ((fc.getControlType()==7 || fc.getControlType()==15 ||fc.getControlType()==59)){
 					if(cellResult.getLookupQueryResult()!=null && cellResult.getLookupQueryResult().getData() != null) {
 						boolean b1 = false;
 						for (Object[] p : cellResult.getLookupQueryResult().getData()) {
@@ -431,7 +431,7 @@ public class SurveyJS {
 									bb = true;
 								if (z == null)z = "";
 								buf.append(f.getDsc().equals("id")?"value":(f.getDsc().equals("dsc")?"text":f.getDsc())).append(":'")
-										.append(f.getPostProcessTip() == 2 ? LocaleMsgCache
+										.append(f.getPostProcessType() == 2 ? LocaleMsgCache
 												.get2(formResult.getScd(),
 														z.toString()) : GenericUtil
 												.stringToJS(z.toString()))

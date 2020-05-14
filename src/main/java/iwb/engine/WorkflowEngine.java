@@ -60,7 +60,7 @@ public class WorkflowEngine {
 		int userId = (Integer) scd.get("userId");
 		int versionNo = GenericUtil.uInt(parameterMap.get("_avno"));
 		W5WorkflowRecord ar = (W5WorkflowRecord) metadataLoader.getMetadataObject(
-				"W5WorkflowRecord t","approvalRecordId", approvalRecordId,
+				"W5WorkflowRecord","approvalRecordId", approvalRecordId,
 				scd.get("projectId"), "Workflow Record not Found");
 		String mesaj = "";
 		String xlocale = (String) scd.get("locale");
@@ -109,7 +109,7 @@ public class WorkflowEngine {
 			if (a.getAdvancedBeginSql() != null && a.getAdvancedBeginSql().length() > 10) { // calisacak
 				parameterMap.put("_tb_pk", "" + ar.getTablePk());
 				Object oz = scriptEngine.executeScript(scd, parameterMap, a.getAdvancedBeginSql(), null,
-						"wf_" + a.getApprovalId() + "_abs");
+						"wf_" + a.getWorkflowId() + "_abs");
 				if (oz != null) {
 					if (oz instanceof Boolean) {
 						if (!((Boolean) oz))
@@ -394,7 +394,7 @@ public class WorkflowEngine {
 								Map<String, Object> advancedStepSqlResult = null;
 
 								Object oz = scriptEngine.executeScript(scd, parameterMap, a.getAdvancedBeginSql(), null,
-										"wf_" + a.getApprovalId() + "_abs");
+										"wf_" + a.getWorkflowId() + "_abs");
 								if (oz != null) {
 									if (oz instanceof Boolean) {
 										if (!((Boolean) oz))
@@ -534,7 +534,7 @@ public class WorkflowEngine {
 						}
 						W5Email email = dao.interprateMailTemplate(fsm, scd, newParamMap, ar.getTableId(), ar.getTablePk());
 						if(email!=null) {
-							email.set_oms(notificationEngine.findObjectMailSetting(scd, email.getMailSettingId()));
+							email.set_oms(metadataLoader.findObjectMailSetting(scd, email.getMailSettingId()));
 							notificationEngine.sendMail(scd, email);
 						}
 					}
@@ -577,7 +577,7 @@ public class WorkflowEngine {
 			logRecord.setUserId(1);// system
 			logRecord.setApprovalRecordId(rec.getApprovalRecordId());
 			logRecord.setApprovalStepId(step.getApprovalStepId());
-			logRecord.setApprovalId(step.getApprovalId());
+			logRecord.setApprovalId(step.getWorkflowId());
 			logRecord.setDsc("escalation");
 			logRecord.setApprovalActionTip((short) 4);
 			dao.saveObject(logRecord);
@@ -590,8 +590,8 @@ public class WorkflowEngine {
 
 	public List<W5WorkflowRecord> listWorkflowEscalatedRecords(W5WorkflowStep step) {
 		return dao.find(
-				"from W5WorkflowRecord t where t.approvalId=?0 AND t.approvalStepId=?1 AND t.projectUuid=?2 AND t.validUntilDttm>current_timestamp",
-				step.getApprovalId(), step.getApprovalStepId(), step.getProjectUuid());
+				"from W5WorkflowRecord t where t.workflowId=?0 AND t.approvalStepId=?1 AND t.projectUuid=?2 AND t.validUntilDttm>current_timestamp",
+				step.getWorkflowId(), step.getApprovalStepId(), step.getProjectUuid());
 	}
 
 	public void updateWorkflowEscalatedRecord(W5WorkflowStep step, W5WorkflowRecord rec) {
@@ -604,11 +604,11 @@ public class WorkflowEngine {
 		int nextStepId = step.getOnTimeLimitExceedStepId();
 		
 		Object oz = scriptEngine.executeScript(scd, parameterMap, step.getOnEscalationCode(), null,
-				"wec_" + step.getApprovalId() + "_abs");
+				"wec_" + step.getWorkflowId() + "_abs");
 		if(oz!=null && oz instanceof Integer)
 			nextStepId = (Integer) oz;
 		
-		W5Workflow w = FrameworkCache.getWorkflow(step.getProjectUuid(), step.getApprovalId());
+		W5Workflow w = FrameworkCache.getWorkflow(step.getProjectUuid(), step.getWorkflowId());
 		W5WorkflowStep nextStep = w.get_approvalStepMap().get(nextStepId);
 		rec.setApprovalStepId(nextStep.getApprovalStepId());
 		rec.setApprovalUsers(nextStep.getApprovalUsers());
@@ -624,7 +624,7 @@ public class WorkflowEngine {
 		logRecord.setUserId(1);// system
 		logRecord.setApprovalRecordId(rec.getApprovalRecordId());
 		logRecord.setApprovalStepId(step.getApprovalStepId());
-		logRecord.setApprovalId(step.getApprovalId());
+		logRecord.setApprovalId(step.getWorkflowId());
 		logRecord.setDsc("escalation");
 		logRecord.setApprovalActionTip((short) 4);
 		dao.saveObject(logRecord);

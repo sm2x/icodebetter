@@ -15,7 +15,7 @@ import graphql.GraphQL;
 @Entity
 @Immutable
 @Table(name="w5_ws_server",schema="iwb")
-public class W5WsServer  implements java.io.Serializable {
+public class W5WsServer  implements java.io.Serializable, W5Base {
 
 	private static final long serialVersionUID = 134252091872912873L;
 	
@@ -146,4 +146,10 @@ public class W5WsServer  implements java.io.Serializable {
 		return projectUuid.hashCode() + 100*getWsServerId();
 	}
 	
+
+	@Transient
+	public boolean safeEquals(W5Base q) {
+
+			return false;
+	}
 }

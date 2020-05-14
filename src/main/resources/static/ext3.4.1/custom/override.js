@@ -30,74 +30,7 @@ try {
             handler: this.onCloseAll
           });
         }
-        if (
-          _scd.customizationId ==
-          0 /* && this.tabs.getActiveTab()._callCfg.request._tid*/
-        ) {
-          items.push("-");
-          items.push({
-            itemId: "showhelp",
-            text: getLocMsg("js_help_definition"),
-            scope: this,
-            handler: function(ax, bx, cx) {
-              var templateId = this.tabs.getActiveTab()._tid;
-              if (templateId)
-                promisRequest({
-                  url: "ajaxQueryData?_qid=1745",
-                  params: {
-                    xtable_id: 64,
-                    xtable_pk: templateId,
-                    xlocale: _scd.locale
-                  },
-                  successCallback: function(j) {
-                    var str =
-                      j.data && j.data.length
-                        ? "a=1&tdoc_id=" + j.data[0].doc_id
-                        : "a=2&table_id=64&table_pk=" + templateId;
-                    mainPanel.loadTab({
-                      attributes: {
-                        _title_: "Doc - ",
-                        modalWindow: true,
-                        href: "showForm?_fid=1721&" + str
-                      }
-                    });
-                  }
-                });
-              else alert("No Help for this Page");
-            }
-          });
-        }
-        if (this.tabs.getActiveTab()._myPage) {
-          items.push("-");
-          items.push({
-            itemId: "saveportletgrids",
-            text: getLocMsg("js_save_portlet_grids"),
-            scope: this,
-            cls: "save",
-            handler: function() {
-              var tmp_str = "";
-              var temp_items = this.tabs.getActiveTab().items;
-              for (var i = 0; i < temp_items.length; i++) {
-                tmp_str += "" + i;
-                for (var j = 0; j < temp_items.get(i).items.length; j++) {
-                  tmp_str += "," + temp_items.get(i).items.items[j].gridId;
-                }
-                tmp_str += ";";
-              }
-              promisRequest({
-                url:
-                  "ajaxPostForm?_fid=1565&a=1&portlet_grids_orders=" + tmp_str,
-                successCallback: function(j) {
-                  Ext.Msg.alert(
-                    getLocMsg("js_bilgi"),
-                    getLocMsg("js_islem_basariyla_tamamlandi")
-                  );
-                }
-              });
-            }
-          });
-        }
-
+        
         this.menu = new Ext.menu.Menu({
           items: items
         });
@@ -518,8 +451,7 @@ try {
 
 try {
   /*
- * Bu override form içinde tabpanel oluşturunca aktif olmayan tabitem
- * içindeki fieldların da aktif olmasını sağlar.
+ * form tabpanel render even not active
  */
 
   Ext.override(Ext.layout.CardLayout, {
@@ -979,107 +911,6 @@ try {
   console.log(eq);
 }
 
-try {
-  Ext.form.FormCellCodeDetail = Ext.extend(Ext.form.TwinTriggerField, {
-    initComponent: function() {
-      Ext.form.FormCellCodeDetail.superclass.initComponent.call(this);
-      this.on(
-        "specialkey",
-        function(f, e) {
-          if (e.getKey() == e.ENTER) {
-            this.onTrigger2Click();
-          }
-        },
-        this
-      );
-    },
-    updateEditState: function() {
-      if (this.rendered) {
-        if (this.readOnly) {
-          this.el.dom.readOnly = true;
-          this.el.addClass("x-trigger-noedit");
-          this.mun(this.el, "click", this.onTriggerClick, this);
-          this.trigger.setDisplayed(false); //Bu yanında trigger alanının çıkmasını sağlamak için.
-        } else {
-          if (!this.editable) {
-            this.el.dom.readOnly = true;
-            this.el.addClass("x-trigger-noedit");
-            this.mon(this.el, "click", this.onTriggerClick, this);
-          } else {
-            this.el.dom.readOnly = false;
-            this.el.removeClass("x-trigger-noedit");
-            this.mun(this.el, "click", this.onTriggerClick, this);
-          }
-          this.trigger.setDisplayed(!this.hideTrigger);
-        }
-        this.onResize(this.width || this.wrap.getWidth());
-      }
-    },
-    validationEvent: false,
-    validateOnBlur: false,
-    trigger2Class: "x-form-cog-trigger",
-    hideTrigger1: true,
-    width: 180,
-    setValueFromSystem: function(e) {
-      var parentForm = this.findParentByType("form", false);
-      if (!parentForm) {
-        Ext.Msg.alert(
-          getLocMsg("js_bilgi"),
-          "Muhtemelen Ayni SiraNo'ya sahip oldugu icin aclmiyor"
-        );
-      } else if (
-        (typeof e != "undefined" && e.ctrlKey) ||
-        !this.getValue() ||
-        parentForm.baseParams.a != 1
-      ) {
-        var xthis = this;
-        var params2 = parentForm.getForm().getValues(); //Ext.apply(parentForm.baseParams||{},parentForm.getForm().getValues());
-        var qq = {};
-        if (parentForm.baseParams) qq = parentForm.baseParams;
-        for (var ki in qq)
-          if (typeof params2[ki] == "undefined") params2[ki] = qq[ki];
-        promisRequest({
-          url: "ajaxFormCellCode?_formCellId=" + this.formCellId,
-          params: params2,
-          successCallback: function(json) {
-            if (json.msg)
-              Ext.infoMsg.msg(
-                json.info || "hata",
-                json.msg,
-                json.pauseTime || 3
-              );
-            else xthis.setValue(json.result);
-          }
-        });
-      }
-    },
-    onFocus: function(e) {
-      this.setValueFromSystem(e);
-    },
-    onTrigger2Click: function() {
-      var parentForm = this.findParentByType("form", false);
-      if (!parentForm) {
-        Ext.Msg.alert(
-          getLocMsg("js_bilgi"),
-          "Muhtemelen Ayni SiraNo'ya sahip oldugu icin aclmiyor"
-        );
-      } else
-        mainPanel.loadTab({
-          attributes: {
-            modalWindow: true,
-            title: getLocMsg("js_coding") + ": " + this.fieldLabel,
-            href:
-              "showFormByQuery?_fid=1011&_qid=1033&xform_cell_id=" +
-              this.formCellId,
-            _parentFormCell: this,
-            _parentForm: parentForm
-          }
-        });
-    }
-  });
-} catch (eq) {
-  console.log(eq);
-}
 
 try {
   Ext.ux.BubblePanel = Ext.extend(Ext.Panel, {
@@ -2006,3 +1837,197 @@ Ext.layout.ColumnLayout = Ext.extend(Ext.layout.ContainerLayout, {
 });
 
 Ext.Container.LAYOUTS['column'] = Ext.layout.ColumnLayout;
+/**
+ * Copyright(c) 2011
+ *
+ * Licensed under the terms of the Open Source LGPL 3.0
+ * http://www.gnu.org/licenses/lgpl.html
+ * @author Greivin Britton, brittongr@gmail.com
+ *     
+ * @changes
+ * No currency symbol by default    
+ * No decimalPrecision in config
+ * Supporting any character as thousand separator
+ * Improved getFormattedValue
+ * Removed unnecessary code to create format template, now using float.toFixed(this.decimalPrecission)    
+ */
+	
+Ext.ux.NumericField = function(config){
+	var defaultConfig = 
+    {
+		style: 'text-align:right;'
+    };
+    
+    Ext.ux.NumericField.superclass.constructor.call(this, Ext.apply(defaultConfig, config));
+
+    //Only if thousandSeparator doesn't exists is assigned when using decimalSeparator as the same as thousandSeparator
+	if(this.useThousandSeparator && this.decimalSeparator == ',' && Ext.isEmpty(config.thousandSeparator))
+		this.thousandSeparator = '.';
+	else
+		if(this.allowDecimals && this.thousandSeparator == '.' && Ext.isEmpty(config.decimalSeparator))
+			this.decimalSeparator = ',';
+		
+    this.onFocus = this.onFocus.createSequence(this.onFocus);
+};
+
+Ext.extend(Ext.ux.NumericField, Ext.form.NumberField, 
+{
+    currencySymbol: null,
+	useThousandSeparator: true,
+	thousandSeparator: ',',
+	alwaysDisplayDecimals: false,
+	setValue: function(v){
+	   Ext.ux.NumericField.superclass.setValue.call(this, v);
+       
+	   this.setRawValue(this.getFormattedValue(this.getValue()));
+    },
+	/**
+	 * No more using Ext.util.Format.number, Ext.util.Format.number in ExtJS versions
+	 * less thant 4.0 doesn't allow to use a different thousand separator than "," or "."
+	 * @param {Number} v
+	 */
+    getFormattedValue: function(v){
+       
+		if (Ext.isEmpty(v) || !this.hasFormat()) 
+            return v;
+	    else 
+        {
+			var neg = null;
+			
+			v = (neg = v < 0) ? v * -1 : v;	
+			v = this.allowDecimals && this.alwaysDisplayDecimals ? v.toFixed(this.decimalPrecision) : v;
+			
+			if(this.useThousandSeparator)
+			{
+				if(this.useThousandSeparator && Ext.isEmpty(this.thousandSeparator))
+					throw ('NumberFormatException: invalid thousandSeparator, property must has a valid character.');
+				
+				if(this.thousandSeparator == this.decimalSeparator)
+					throw ('NumberFormatException: invalid thousandSeparator, thousand separator must be different from decimalSeparator.');
+				
+				var v = String(v);
+		
+				var ps = v.split('.');
+                ps[1] = ps[1] ? ps[1] : null;
+                
+                var whole = ps[0];
+                
+                var r = /(\d+)(\d{3})/;
+
+				var ts = this.thousandSeparator;
+				
+                while (r.test(whole)) 
+                    whole = whole.replace(r, '$1' + ts + '$2');
+            
+			    v = whole + (ps[1] ? this.decimalSeparator + ps[1] : '');
+			}
+			
+			return String.format('{0}{1}{2}', (neg ? '-' : ''), (Ext.isEmpty(this.currencySymbol) ? '' : this.currencySymbol + ' '), v);
+        }
+    },
+    /**
+     * overrides parseValue to remove the format applied by this class
+     */
+    parseValue: function(v){
+		//Replace the currency symbol and thousand separator
+        return Ext.ux.NumericField.superclass.parseValue.call(this, this.removeFormat(v));
+    },
+    /**
+     * Remove only the format added by this class to let the superclass validate with it's rules.
+     * @param {Object} v
+     */
+    removeFormat: function(v){
+        if (Ext.isEmpty(v) || !this.hasFormat()) 
+            return v;
+        else 
+        {
+			v = v.replace(this.currencySymbol + ' ', '');
+			
+			v = this.useThousandSeparator ? v.replace(new RegExp('[' + this.thousandSeparator + ']', 'g'), '') : v;
+			//v = this.allowDecimals && this.decimalPrecision > 0 ? v.replace(this.decimalSeparator, '.') : v;
+			
+            return v;
+        }
+    },
+    /**
+     * Remove the format before validating the the value.
+     * @param {Number} v
+     */
+    getErrors: function(v){
+        return Ext.ux.NumericField.superclass.getErrors.call(this, this.removeFormat(v));
+    },
+	hasFormat: function()
+	{
+		return this.decimalSeparator != '.' || this.useThousandSeparator == true || !Ext.isEmpty(this.currencySymbol) || this.alwaysDisplayDecimals;	
+	},
+    /**
+     * Display the numeric value with the fixed decimal precision and without the format using the setRawValue, don't need to do a setValue because we don't want a double
+     * formatting and process of the value because beforeBlur perform a getRawValue and then a setValue.
+     */
+    onFocus: function(){
+		this.setRawValue(this.removeFormat(this.getRawValue()));
+    }
+});
+Ext.reg('numericfield', Ext.ux.NumericField);
+
+if(false)Ext.lib.Ajax.serializeForm = function(form) {
+	if(typeof form == 'string') {
+        form = (document.getElementById(form) || document.forms[form]);
+    }
+
+    var el, name, val, disabled, data = '', hasSubmit = false;
+    for (var i = 0; i < form.elements.length; i++) {
+        el = form.elements[i];
+        disabled = form.elements[i].disabled;
+        name = form.elements[i].name;
+        val = form.elements[i].value;
+
+        if (!disabled && name){
+        	
+            switch (el.type){
+                case 'select-one':
+                case 'select-multiple':
+                    for (var j = 0; j < el.options.length; j++) {
+                        if (el.options[j].selected) {
+                            if (Ext.isIE) {
+                                data += encodeURIComponent(name) + '=' + encodeURIComponent(el.options[j].attributes['value'].specified ? el.options[j].value : el.options[j].text) + '&';
+                            }
+                            else {
+                                data += encodeURIComponent(name) + '=' + encodeURIComponent(el.options[j].hasAttribute('value') ? el.options[j].value : el.options[j].text) + '&';
+                            }
+                        }
+                    }
+                    break;
+                case 'radio':
+                case 'checkbox':
+                    if (el.checked) {
+                        data += encodeURIComponent(name) + '=' + encodeURIComponent(val) + '&';
+                    }
+                    break;
+                case 'file':	
+                case undefined:	
+                case 'reset':
+                case 'button':
+                    break;
+                case 'submit':
+                    if(hasSubmit == false) {
+                        data += encodeURIComponent(name) + '=' + encodeURIComponent(val) + '&';
+                        hasSubmit = true;
+                    }
+                    break;
+                default:
+                	if(el.className.indexOf("x-form-num-field")>-1){
+                		var s=val;
+                		s=s.split('.').join('');
+                		s=s.split(',').join('.');
+                		data += encodeURIComponent(name) + '=' + encodeURIComponent(s) + '&';
+                	}else{
+                		data += encodeURIComponent(name) + '=' + encodeURIComponent(val) + '&';
+                	}
+                    break;
+            }
+        }
+    }
+    data = data.substr(0, data.length - 1);
+    return data;
+}

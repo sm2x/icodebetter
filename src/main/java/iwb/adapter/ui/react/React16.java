@@ -196,9 +196,9 @@ public class React16 implements ViewAdapter {
 				.append("';\n");
 
 			
-		if (GenericUtil.uInt(fr.getRequestParams().get("a")) != 5 && fr.getForm().getRenderTip() != 0) { // tabpanel ve icinde gridler varsa
+		if (GenericUtil.uInt(fr.getRequestParams().get("a")) != 5 && fr.getForm().getRenderType() != 0) { // tabpanel ve icinde gridler varsa
 			for (W5FormModule m : fr.getForm().get_moduleList()){
-					switch (m.getModuleTip()) {
+					switch (m.getModuleType()) {
 					case 4:// form
 						if (fr.getModuleFormMap() == null)
 							break;
@@ -213,9 +213,9 @@ public class React16 implements ViewAdapter {
 					case 5:// grid
 						if (fr.getModuleGridMap() == null)
 							return null;
-						if (m.getModuleViewTip() == 0
+						if (m.getModuleViewType() == 0
 								|| fr.getAction() == m
-										.getModuleViewTip()) {
+										.getModuleViewType()) {
 							W5GridResult gridResult = fr
 									.getModuleGridMap().get(m.getObjectId());
 							gridResult.setAction(fr.getAction());
@@ -255,7 +255,7 @@ public class React16 implements ViewAdapter {
 
 		W5Form f = fr.getForm();
 		
-		if(f.getRenderTip()==4) {//wizard and insert
+		if(f.getRenderType()==4) {//wizard and insert
 			return SurveyJS.serializeForm4SurveyJS(fr, 5)
 					.append("return _(CardBody,{},_('i',{style:{float:'right',fontSize: '1.5rem', color: '#999', marginTop: 11, cursor:'pointer'},onClick:()=>iwb.closeTab(), className:'icon-close'}), _(Survey.Survey,{model:survey}))");//react			
 		}
@@ -274,9 +274,9 @@ public class React16 implements ViewAdapter {
 	
 //		boolean liveSyncRecord = false;
 		// form(table) fields
-		if (f.getObjectTip() == 2
+		if (f.getObjectType() == 2
 				&& FrameworkCache.getTable(scd, f.getObjectId()) != null) {
-			s.append(",\n renderTip:").append(fr.getForm().getRenderTip());
+			s.append(",\n renderTip:").append(fr.getForm().getRenderType());
 			W5Table t = FrameworkCache.getTable(scd, f.getObjectId());
 			// insert AND continue control
 			s.append(", crudTableId:").append(f.getObjectId());
@@ -310,9 +310,6 @@ public class React16 implements ViewAdapter {
 			if (FrameworkCache.getAppSettingIntValue(scd, "file_attachment_flag") != 0 && t.getFileAttachmentFlag() != 0
 					&& FrameworkCache.roleAccessControl(scd, 101))
 				s.append(",\n fileAttachFlag:true, fileAttachCount:").append(fr.getFileAttachmentCount());
-			if (FrameworkCache.getAppSettingIntValue(scd, "row_based_security_flag") != 0
-					&& ((Integer) scd.get("userTip") != 3 && t.getAccessTips() != null))
-				s.append(",\n accessControlFlag:true, accessControlCount:").append(fr.getAccessControlCount());
 	
 			if (fr.isViewMode())s.append(",\n viewMode:true");
 	
@@ -320,11 +317,11 @@ public class React16 implements ViewAdapter {
 					&& !f.get_formSmsMailList().isEmpty()) { // automatic sms isleri varsa
 				int cnt = 0;
 				for (W5FormSmsMail fsm : f.get_formSmsMailList())
-					if (fsm.getSmsMailSentTip() != 3
-							&& ((fsm.getSmsMailTip() == 0 && FrameworkSetting.sms) || (fsm
-									.getSmsMailTip() != 0 && FrameworkSetting.mail))
+					if (fsm.getSmsMailSentType() != 3
+							&& ((fsm.getSmsMailType() == 0 && FrameworkSetting.sms) || (fsm
+									.getSmsMailType() != 0 && FrameworkSetting.mail))
 							&& fsm.getAlarmFlag() == 0
-							&& GenericUtil.hasPartInside2(fsm.getActionTips(),
+							&& GenericUtil.hasPartInside2(fsm.getActionTypes(),
 									fr.getAction())
 							&& GenericUtil.hasPartInside2(fsm.getWebMobileTips(), mobile ? "2" : "1")) {
 						cnt++;
@@ -333,14 +330,14 @@ public class React16 implements ViewAdapter {
 					s.append(",\n\"smsMailTemplateCnt\":").append(cnt++).append(",\n\"smsMailTemplates\":[");
 					boolean b = false;
 					for (W5FormSmsMail fsm : f.get_formSmsMailList())
-						if (fsm.getSmsMailSentTip() != 3
-								&& ((fsm.getSmsMailTip() == 0
+						if (fsm.getSmsMailSentType() != 3
+								&& ((fsm.getSmsMailType() == 0
 										&& FrameworkSetting.sms) || (fsm
-										.getSmsMailTip() != 0
+										.getSmsMailType() != 0
 										&& FrameworkSetting.mail))
 								&& fsm.getAlarmFlag() == 0
 								&& GenericUtil.hasPartInside2(
-										fsm.getActionTips(),
+										fsm.getActionTypes(),
 										fr.getAction())
 								&& GenericUtil
 										.hasPartInside2(fsm.getWebMobileTips(),
@@ -357,13 +354,13 @@ public class React16 implements ViewAdapter {
 											customizationId, xlocale,
 											fsm.getDsc()))
 									.append("\",\"checked\":")
-									.append(fsm.getSmsMailSentTip() == 1
-											|| fsm.getSmsMailSentTip() == 0)
+									.append(fsm.getSmsMailSentType() == 1
+											|| fsm.getSmsMailSentType() == 0)
 									.append(",\"smsMailTip\":")
-									.append(fsm.getSmsMailTip())
+									.append(fsm.getSmsMailType())
 									.append(",\"previewFlag\":")
 									.append(fsm.getPreviewFlag() != 0);
-							if (fsm.getSmsMailSentTip() == 0)
+							if (fsm.getSmsMailSentType() == 0)
 								s.append(",\"disabled\":true");
 							s.append("}");
 						}
@@ -373,14 +370,14 @@ public class React16 implements ViewAdapter {
 				if (FrameworkSetting.alarm) {
 					cnt = 0;
 					for (W5FormSmsMail fsm : f.get_formSmsMailList())
-						if (fsm.getSmsMailSentTip() != 3
-								&& ((fsm.getSmsMailTip() == 0
+						if (fsm.getSmsMailSentType() != 3
+								&& ((fsm.getSmsMailType() == 0
 										&& FrameworkSetting.sms) || (fsm
-										.getSmsMailTip() != 0
+										.getSmsMailType() != 0
 										&& FrameworkSetting.mail))
 								&& fsm.getAlarmFlag() != 0
 								&& GenericUtil.hasPartInside2(
-										fsm.getActionTips(),
+										fsm.getActionTypes(),
 										fr.getAction())
 								&& GenericUtil
 										.hasPartInside2(fsm.getWebMobileTips(),
@@ -398,14 +395,14 @@ public class React16 implements ViewAdapter {
 								.append(",\n\"alarmTemplates\":[");
 						boolean b = false;
 						for (W5FormSmsMail fsm : f.get_formSmsMailList())
-							if (fsm.getSmsMailSentTip() != 3
-									&& ((fsm.getSmsMailTip() == 0
+							if (fsm.getSmsMailSentType() != 3
+									&& ((fsm.getSmsMailType() == 0
 											&& FrameworkSetting.sms) || (fsm
-											.getSmsMailTip() != 0
+											.getSmsMailType() != 0
 											&& FrameworkSetting.mail))
 									&& fsm.getAlarmFlag() != 0
 									&& GenericUtil.hasPartInside2(
-											fsm.getActionTips(),
+											fsm.getActionTypes(),
 											fr.getAction())
 									&& GenericUtil.hasPartInside2(fsm.getWebMobileTips(), mobile ? "2"
 											: "1")) {
@@ -423,14 +420,14 @@ public class React16 implements ViewAdapter {
 												.getDsc()))
 										.append("\",\"checked\":")
 										.append(a != null
-												|| fsm.getSmsMailSentTip() == 1
-												|| fsm.getSmsMailSentTip() == 0)
+												|| fsm.getSmsMailSentType() == 1
+												|| fsm.getSmsMailSentType() == 0)
 										.append(",\"smsMailTip\":")
-										.append(fsm.getSmsMailTip());
+										.append(fsm.getSmsMailType());
 								s.append(",\"previewFlag\":").append(
 										fsm.getPreviewFlag() != 0);
 								if ((a != null && a.getStatus() != 1)
-										|| fsm.getSmsMailSentTip() == 0)
+										|| fsm.getSmsMailSentType() == 0)
 									s.append(",\"disabled\":true");
 								// s.append(",\"menu\":[");
 								// s.append("new Ext.ux.form.DateTime({\"width\":200");
@@ -466,8 +463,8 @@ public class React16 implements ViewAdapter {
 					&& !f.get_conversionList().isEmpty()) {
 				int cnt = 0;
 				for (W5Conversion fsm : f.get_conversionList())
-					if (fsm.getConversionTip() != 3
-							&& GenericUtil.hasPartInside2(fsm.getActionTips(),
+					if (fsm.getConversionType() != 3
+							&& GenericUtil.hasPartInside2(fsm.getActionTypes(),
 									fr.getAction())) { // bu action ile
 																// ilgili var mi
 																// kayit
@@ -481,9 +478,9 @@ public class React16 implements ViewAdapter {
 							.append(",\nconversionForms:[");
 					boolean b = false;
 					for (W5Conversion fsm : f.get_conversionList())
-						if ((fsm.getConversionTip() != 3/* invisible-checked */
+						if ((fsm.getConversionType() != 3/* invisible-checked */
 								&& GenericUtil.hasPartInside2(
-										fsm.getActionTips(),
+										fsm.getActionTypes(),
 										fr.getAction()) || (fr
 								.getMapConvertedObject() != null && fr
 								.getMapConvertedObject().containsKey(
@@ -514,9 +511,9 @@ public class React16 implements ViewAdapter {
 								boolean check = false;
 								List<W5ConvertedObject> convertedObjects = null;
 								if (isConvertedBefore
-										&& fsm.getConversionTip() != 3
+										&& fsm.getConversionType() != 3
 										&& GenericUtil.hasPartInside2(
-												fsm.getActionTips(),
+												fsm.getActionTypes(),
 												fr.getAction())) {
 									convertedObjects = fr
 											.getMapConvertedObject().get(
@@ -536,9 +533,9 @@ public class React16 implements ViewAdapter {
 													fsm.getDsc()))
 //											.append(formResult.getAction() == 2 ? (fsm.getPreviewFlag() != 0 ? " (<i>" + (LocaleMsgCache.get2( customizationId, xlocale, "with_preview")) + "</i>)" : "") : "")
 											.append("\",checked:")
-											.append(fsm.getConversionTip() == 1
-													|| fsm.getConversionTip() == 0);
-									if (fsm.getConversionTip() == 0)
+											.append(fsm.getConversionType() == 1
+													|| fsm.getConversionType() == 0);
+									if (fsm.getConversionType() == 0)
 										s.append(",disabled:true");
 									s.append(",previewFlag:").append(fsm.getPreviewFlag() != 0 );
 									s.append("}");
@@ -573,7 +570,7 @@ public class React16 implements ViewAdapter {
 	
 				cnt = 0;
 				for (W5Conversion fsm : f.get_conversionList())
-					if (GenericUtil.hasPartInside2(fsm.getActionTips(), 0)) { // manuel
+					if (GenericUtil.hasPartInside2(fsm.getActionTypes(), 0)) { // manuel
 																				// icin
 																				// var
 																				// mi
@@ -671,7 +668,7 @@ public class React16 implements ViewAdapter {
 		}
 	
 		
-		if ((fr.getForm().getObjectTip()!=2 || fr.getAction()==1) && f.get_toolbarItemList().size() > 0) { // extra buttonlari var mi yok
+		if ((fr.getForm().getObjectType()!=2 || fr.getAction()==1) && f.get_toolbarItemList().size() > 0) { // extra buttonlari var mi yok
 													// mu?
 			StringBuilder buttons = serializeToolbarItems(scd,
 					f.get_toolbarItemList(), (fr.getFormId() > 0 ? true
@@ -696,7 +693,7 @@ public class React16 implements ViewAdapter {
 									fr.getRequestParams(), null)
 							: fr.getForm().get_renderTemplate()
 									.getCode());
-		} else if(true || fr.getForm().getObjectTip()==2)
+		} else if(true || fr.getForm().getObjectType()==2)
 			s.append("\nreturn _(XTabForm, {body:bodyForm, cfg:cfgForm, parentCt:parentCt, callAttributes:callAttributes});");
 		
 
@@ -715,7 +712,7 @@ public class React16 implements ViewAdapter {
 				.append(formResult.getFormId()).append(", \"a\":")
 				.append(formResult.getAction());
 		W5Table t = null;
-		if (f.getObjectTip() == 2) {
+		if (f.getObjectType() == 2) {
 			t = FrameworkCache.getTable(formResult.getScd(), f.getObjectId());
 			if (FrameworkCache.getAppSettingIntValue(formResult.getScd(),
 					"file_attachment_flag") != 0
@@ -734,10 +731,10 @@ public class React16 implements ViewAdapter {
 															// varsa
 			int cnt = 0;
 			for (W5FormSmsMail fsm : f.get_formSmsMailList())
-				if (((fsm.getSmsMailTip() == 0 && FrameworkSetting.sms) || (fsm
-						.getSmsMailTip() != 0 && FrameworkSetting.mail))
+				if (((fsm.getSmsMailType() == 0 && FrameworkSetting.sms) || (fsm
+						.getSmsMailType() != 0 && FrameworkSetting.mail))
 						&& fsm.getAlarmFlag() == 0
-						&& GenericUtil.hasPartInside2(fsm.getActionTips(),
+						&& GenericUtil.hasPartInside2(fsm.getActionTypes(),
 								formResult.getAction())
 						&& GenericUtil.hasPartInside2(fsm.getWebMobileTips(),
 								mobile ? "2" : "1")) {
@@ -748,10 +745,10 @@ public class React16 implements ViewAdapter {
 						.append(",\n\"smsMailTemplates\":[");
 				boolean b = false;
 				for (W5FormSmsMail fsm : f.get_formSmsMailList())
-					if (((fsm.getSmsMailTip() == 0 && FrameworkSetting.sms) || (fsm
-							.getSmsMailTip() != 0 && FrameworkSetting.mail))
+					if (((fsm.getSmsMailType() == 0 && FrameworkSetting.sms) || (fsm
+							.getSmsMailType() != 0 && FrameworkSetting.mail))
 							&& fsm.getAlarmFlag() == 0
-							&& GenericUtil.hasPartInside2(fsm.getActionTips(),
+							&& GenericUtil.hasPartInside2(fsm.getActionTypes(),
 									formResult.getAction())
 							&& GenericUtil.hasPartInside2(
 									fsm.getWebMobileTips(), mobile ? "2" : "1")) {
@@ -770,13 +767,13 @@ public class React16 implements ViewAdapter {
 												customizationId, xlocale,
 												"with_preview")) + ")" : "")
 								.append("\",\"checked\":")
-								.append(fsm.getSmsMailSentTip() == 1
-										|| fsm.getSmsMailSentTip() == 0)
+								.append(fsm.getSmsMailSentType() == 1
+										|| fsm.getSmsMailSentType() == 0)
 								.append(",\"smsMailTip\":")
-								.append(fsm.getSmsMailTip())
+								.append(fsm.getSmsMailType())
 								.append(",\"previewFlag\":")
 								.append(fsm.getPreviewFlag() != 0);
-						if (fsm.getSmsMailSentTip() == 0)
+						if (fsm.getSmsMailSentType() == 0)
 							s.append(",\"disabled\":true");
 						s.append("}");
 					}
@@ -785,10 +782,10 @@ public class React16 implements ViewAdapter {
 
 			cnt = 0;
 			for (W5FormSmsMail fsm : f.get_formSmsMailList())
-				if (((fsm.getSmsMailTip() == 0 && FrameworkSetting.sms) || (fsm
-						.getSmsMailTip() != 0 && FrameworkSetting.mail))
+				if (((fsm.getSmsMailType() == 0 && FrameworkSetting.sms) || (fsm
+						.getSmsMailType() != 0 && FrameworkSetting.mail))
 						&& fsm.getAlarmFlag() != 0
-						&& GenericUtil.hasPartInside2(fsm.getActionTips(),
+						&& GenericUtil.hasPartInside2(fsm.getActionTypes(),
 								formResult.getAction())
 						&& GenericUtil.hasPartInside2(fsm.getWebMobileTips(),
 								mobile ? "2" : "1")) {
@@ -804,10 +801,10 @@ public class React16 implements ViewAdapter {
 						.append(",\n\"alarmTemplates\":[");
 				boolean b = false;
 				for (W5FormSmsMail fsm : f.get_formSmsMailList())
-					if (((fsm.getSmsMailTip() == 0 && FrameworkSetting.sms) || (fsm
-							.getSmsMailTip() != 0 && FrameworkSetting.mail))
+					if (((fsm.getSmsMailType() == 0 && FrameworkSetting.sms) || (fsm
+							.getSmsMailType() != 0 && FrameworkSetting.mail))
 							&& fsm.getAlarmFlag() != 0
-							&& GenericUtil.hasPartInside2(fsm.getActionTips(),
+							&& GenericUtil.hasPartInside2(fsm.getActionTypes(),
 									formResult.getAction())
 							&& GenericUtil.hasPartInside2(
 									fsm.getWebMobileTips(), mobile ? "2" : "1")) {
@@ -828,14 +825,14 @@ public class React16 implements ViewAdapter {
 												"with_preview")) + ")" : "")
 								.append("\",\"checked\":")
 								.append(a != null
-										|| fsm.getSmsMailSentTip() == 1
-										|| fsm.getSmsMailSentTip() == 0)
+										|| fsm.getSmsMailSentType() == 1
+										|| fsm.getSmsMailSentType() == 0)
 								.append(",\"smsMailTip\":")
-								.append(fsm.getSmsMailTip());
+								.append(fsm.getSmsMailType());
 						s.append(",\"previewFlag\":").append(
 								fsm.getPreviewFlag() != 0);
 						if ((a != null && a.getStatus() != 1)
-								|| fsm.getSmsMailSentTip() == 0)
+								|| fsm.getSmsMailSentType() == 0)
 							s.append(",\"disabled\":true");
 						// s.append(",\"menu\":[");
 						// s.append("new Ext.ux.form.DateTime({\"width\":200");
@@ -897,8 +894,8 @@ public class React16 implements ViewAdapter {
 		boolean b = false, bb;
 		for (W5FormCellHelper fc : formResult.getFormCellResults())
 			if (fc.getFormCell().getActiveFlag() != 0
-					&& fc.getFormCell().getControlTip() != 102) {
-				if (fc.getFormCell().getControlTip() != 102) {// label'dan
+					&& fc.getFormCell().getControlType() != 102) {
+				if (fc.getFormCell().getControlType() != 102) {// label'dan
 																// farkli ise.
 																// label direk
 																// render
@@ -925,7 +922,7 @@ public class React16 implements ViewAdapter {
 								"\"");
 					} else
 						s.append("\"");
-					switch (fc.getFormCell().getControlTip()) {
+					switch (fc.getFormCell().getControlType()) {
 					case 10:// advanced select
 						if (!GenericUtil.isEmpty(fc.getValue())
 								&& fc.getLookupQueryResult() != null
@@ -983,7 +980,7 @@ public class React16 implements ViewAdapter {
 									if (z == null)
 										z = "";
 									s.append("\"")
-											.append(qf.getPostProcessTip() == 2 ? LocaleMsgCache
+											.append(qf.getPostProcessType() == 2 ? LocaleMsgCache
 													.get2(customizationId,
 															xlocale,
 															z.toString())
@@ -1018,18 +1015,18 @@ public class React16 implements ViewAdapter {
 		// s.append("var ").append(formResult.getForm().getDsc()).append("=");
 		String[] postFormStr = new String[] { "", "search_form",
 				"ajaxPostForm",
-				f.getObjectTip() == 3 ? "rpt/" + f.getDsc() : "ajaxExecDbFunc",
-				"ajaxExecDbFunc",null,null,"search_form", "search_form", null,null,"ajaxCallWs?serviceName="+(f.getObjectTip() == 11 ? FrameworkCache.getServiceNameByMethodId(scd,  f.getObjectId()):"")+"&"};
-		s.append("{\nconstructor(props, context){\nsuper(props, context);\nprops.parentCt.form=this;this.url='").append(postFormStr[f.getObjectTip()])
+				f.getObjectType() == 3 ? "rpt/" + f.getDsc() : "ajaxExecDbFunc",
+				"ajaxExecDbFunc",null,null,"search_form", "search_form", null,null,"ajaxCallWs?serviceName="+(f.getObjectType() == 11 ? FrameworkCache.getServiceNameByMethodId(scd,  f.getObjectId()):"")+"&"};
+		s.append("{\nconstructor(props, context){\nsuper(props, context);\nprops.parentCt.form=this;this.url='").append(postFormStr[f.getObjectType()])
 			.append("';this.params=").append(GenericUtil.fromMapToJsonString(formResult.getRequestParams()))
 			.append(";\nif(props.setCmp)props.setCmp(this);this.egrids={};this.state=(!props.values && iwb.forms['").append(formResult.getUniqueId()).append("']) ||{errors:{},values:props.values||{");
 		
 		boolean b = false;
-		for (W5FormCellHelper fc : formResult.getFormCellResults())if (fc.getFormCell().getActiveFlag() != 0 && fc.getFormCell().getControlTip()>0 && fc.getFormCell().getControlTip()<100) {
+		for (W5FormCellHelper fc : formResult.getFormCellResults())if (fc.getFormCell().getActiveFlag() != 0 && fc.getFormCell().getControlType()>0 && fc.getFormCell().getControlType()<100) {
 			if (b)s.append(","); else b = true;
 			s.append(fc.getFormCell().getDsc()).append(":'");
 			String value = fc.getHiddenValue(); if(value == null) value =  fc.getValue();
-			if(!GenericUtil.isEmpty(value))switch(fc.getFormCell().getControlTip()){
+			if(!GenericUtil.isEmpty(value))switch(fc.getFormCell().getControlType()){
 			case	2://date && 
 				s.append(GenericUtil.uDateStr(value));
 				break;
@@ -1054,7 +1051,7 @@ public class React16 implements ViewAdapter {
 		
 		s.append("},\noptions:{");
 		b = false;
-		for (W5FormCellHelper fc : formResult.getFormCellResults())if (!GenericUtil.isEmpty(fc.getValue()) && fc.getFormCell().getActiveFlag() != 0 && fc.getFormCell().getControlTip()==10
+		for (W5FormCellHelper fc : formResult.getFormCellResults())if (!GenericUtil.isEmpty(fc.getValue()) && fc.getFormCell().getActiveFlag() != 0 && fc.getFormCell().getControlType()==10
 				&& fc.getLookupQueryResult() != null && !GenericUtil.isEmpty(fc.getLookupQueryResult().getData())) {
 			if (b)s.append(","); else b = true;
 			Object[] oo = fc.getLookupQueryResult().getData().get(0);
@@ -1064,11 +1061,11 @@ public class React16 implements ViewAdapter {
 		s.append("},activeTab:false}");
 		//\nif(this.componentWillPost)this.componentWillPost=this.componentWillPost.bind(this);
 		Map<String, List<W5FormCell>> pcr = new HashMap();
-		for (W5FormCellHelper fc : formResult.getFormCellResults())if (fc.getFormCell().getActiveFlag() != 0 && (fc.getFormCell().getControlTip()==9 ||fc.getFormCell().getControlTip()==16) && fc.getFormCell().getParentFormCellId()!=0 && !GenericUtil.isEmpty(fc.getFormCell().getLookupIncludedParams())) {//combo remote
+		for (W5FormCellHelper fc : formResult.getFormCellResults())if (fc.getFormCell().getActiveFlag() != 0 && (fc.getFormCell().getControlType()==9 ||fc.getFormCell().getControlType()==16) && fc.getFormCell().getParentFormCellId()!=0 && !GenericUtil.isEmpty(fc.getFormCell().getLookupIncludedParams())) {//combo remote
 			for (W5FormCellHelper rfc : formResult.getFormCellResults()) {
 				if (rfc.getFormCell().getFormCellId() == fc.getFormCell().getParentFormCellId()) {
 					W5FormCell pfc = rfc.getFormCell();
-					if (pfc.getControlTip() == 6 || pfc.getControlTip() == 7 || pfc.getControlTip() == 9 || pfc.getControlTip() == 10 || pfc.getControlTip() == 51) {
+					if (pfc.getControlType() == 6 || pfc.getControlType() == 7 || pfc.getControlType() == 9 || pfc.getControlType() == 10 || pfc.getControlType() == 51) {
 						List<W5FormCell> lfc = pcr.get(pfc.getDsc());
 						if(lfc==null){
 							lfc= new ArrayList();
@@ -1115,7 +1112,7 @@ public class React16 implements ViewAdapter {
 		
 		for (W5FormCellHelper fc : formResult.getFormCellResults())
 			if (fc.getFormCell().getActiveFlag() != 0) {
-				if (fc.getFormCell().getControlTip() != 102) {// label'dan farkli ise. label direk render edilirken koyuluyor
+				if (fc.getFormCell().getControlType() != 102) {// label'dan farkli ise. label direk render edilirken koyuluyor
 					s.append("var _").append(fc.getFormCell().getDsc()).append("=").append(serializeFormCell(customizationId, xlocale,fc, formResult)).append(";\n");
 				} else {
 					fc.setValue(LocaleMsgCache.get2(customizationId, xlocale,
@@ -1148,12 +1145,12 @@ public class React16 implements ViewAdapter {
 			s.append("}\n");
 		}
 
-		if(formResult.getForm().getObjectTip()==1 | formResult.getForm().getObjectTip() == 8 ){ //search ise
+		if(formResult.getForm().getObjectType()==1 | formResult.getForm().getObjectType() == 8 ){ //search ise
 			s.append(renderSearchFormModuleList(customizationId, xlocale,
 					formResult.getUniqueId(),
 					formResult.getFormCellResults(),
 					"mf=_(Form, {id:'"+formResult.getUniqueId()+"'},")).append(");\n");
-		} else switch (formResult.getForm().getRenderTip()) {
+		} else switch (formResult.getForm().getRenderType()) {
 		case 1:// fieldset
 		case	4://wizard
 			s.append(renderFormFieldset(formResult));
@@ -1210,9 +1207,9 @@ public class React16 implements ViewAdapter {
 		if (formResult.getForm().get_moduleList() != null){
 			for (W5FormModule m : formResult.getForm().get_moduleList())
 				if (m.getFormModuleId() != 0) {
-					if ((m.getModuleViewTip() == 0 || formResult.getAction() == m.getModuleViewTip()) 
+					if ((m.getModuleViewType() == 0 || formResult.getAction() == m.getModuleViewType()) 
 							) {
-						switch (m.getModuleTip()) {
+						switch (m.getModuleType()) {
 						case	4:break;//form 
 						case	5://grid
 							W5GridResult gridResult = formResult.getModuleGridMap().get(m.getObjectId());
@@ -1267,7 +1264,7 @@ public class React16 implements ViewAdapter {
 		StringBuilder buf = new StringBuilder();
 		for(Object o:l)if(o instanceof W5GridResult){
 			W5GridResult gr = (W5GridResult)o;
-			if(gr.getTplObj().getTemplateObjectId()!=parentObjectId && gr.getTplObj().getParentObjectId()==parentObjectId){
+			if(gr.getTplObj().getPageObjectId()!=parentObjectId && gr.getTplObj().getParentObjectId()==parentObjectId){
 				if(buf.length()==0){
 					if(level>1)buf.append("region:'west',");
 					buf.append("detailGrids:[");
@@ -1290,14 +1287,14 @@ public class React16 implements ViewAdapter {
 					if(s.charAt(0)!=',')buf.append(",");
 					buf.append(gr.getTplObj().getPostJsCode());
 				}
-				StringBuilder rbuf = recursiveTemplateObject(l, gr.getTplObj().getTemplateObjectId(), level+1);
+				StringBuilder rbuf = recursiveTemplateObject(l, gr.getTplObj().getPageObjectId(), level+1);
 				if(rbuf!=null && rbuf.length()>0)
 					buf.append(",").append(rbuf);
 				buf.append("},");
 			}
 		} else if(o instanceof W5CardResult){
 			W5CardResult gr = (W5CardResult)o;
-			if(gr.getTplObj().getTemplateObjectId()!=parentObjectId && gr.getTplObj().getParentObjectId()==parentObjectId){
+			if(gr.getTplObj().getPageObjectId()!=parentObjectId && gr.getTplObj().getParentObjectId()==parentObjectId){
 				if(buf.length()==0){
 					buf.append("detailGrids:[");
 				}
@@ -1313,7 +1310,7 @@ public class React16 implements ViewAdapter {
 					}
 					buf.append("}");
 				}
-				StringBuilder rbuf = recursiveTemplateObject(l, gr.getTplObj().getTemplateObjectId(), level+1);
+				StringBuilder rbuf = recursiveTemplateObject(l, gr.getTplObj().getPageObjectId(), level+1);
 				if(rbuf!=null && rbuf.length()>0)buf.append(",").append(rbuf);
 				buf.append("},");
 			}
@@ -1345,7 +1342,7 @@ public class React16 implements ViewAdapter {
 			buf.append(",pk:{").append(t.get_tableParamList().get(0).getDsc()).append(":'").append(t.get_tableParamList().get(0).getExpressionDsc()).append("'}");
 		}
 		if(pr.getPageObjectList().size()>1){
-			StringBuilder rbuf = recursiveTemplateObject(pr.getPageObjectList(), ((W5GridResult)pr.getPageObjectList().get(0)).getTplObj().getTemplateObjectId(), 1);
+			StringBuilder rbuf = recursiveTemplateObject(pr.getPageObjectList(), ((W5GridResult)pr.getPageObjectList().get(0)).getTplObj().getPageObjectId(), 1);
 			if(rbuf!=null && rbuf.length()>0)
 				buf.append(",").append(rbuf);
 			
@@ -1419,9 +1416,9 @@ public class React16 implements ViewAdapter {
 																																		// bodyStyle:'padding:10px'},
 		for (W5FormModule m : formResult.getForm().get_moduleList())
 			if (m.getFormModuleId() != 0) {
-				if ((m.getModuleViewTip() == 0 || formResult.getAction() == m
-						.getModuleViewTip())) {
-					switch (m.getModuleTip()) {
+				if ((m.getModuleViewType() == 0 || formResult.getAction() == m
+						.getModuleViewType())) {
+					switch (m.getModuleType()) {
 					case 4:// form
 						if (GenericUtil.uInt(formResult.getRequestParams().get(
 								"a")) == 5)
@@ -1586,9 +1583,9 @@ public class React16 implements ViewAdapter {
 		if (formResult.getForm().get_moduleList() != null)
 			for (W5FormModule m : formResult.getForm().get_moduleList())
 				if (m.getFormModuleId() != 0) {
-					if ((m.getModuleViewTip() == 0 || formResult.getAction() == m
-							.getModuleViewTip()) ) {
-						switch (m.getModuleTip()) {
+					if ((m.getModuleViewType() == 0 || formResult.getAction() == m
+							.getModuleViewType()) ) {
+						switch (m.getModuleType()) {
 						case	4: break;
 						case 5://grid
 						W5GridResult gridResult = formResult.getModuleGridMap().get(m.getObjectId());
@@ -1626,19 +1623,19 @@ public class React16 implements ViewAdapter {
 	private StringBuilder renderFormCellWithLabelTop(W5FormCellHelper fc){
 		StringBuilder buf = new StringBuilder();
 		String dsc = fc.getFormCell().getDsc();
-		if(fc.getFormCell().getControlTip() == 5){//checkbox
+		if(fc.getFormCell().getControlType() == 5){//checkbox
 			buf.append(",\n_").append(dsc).append(" && _(FormGroup, {style:{marginBottom:'0.3rem', display: _").append(dsc).append(".hidden?'none':''}}, _(Label, {style:{marginRight:'1rem'}, className:'inputLabel', htmlFor:\"")
 			.append(dsc).append("\"},_").append(dsc).append(".label), _(Label,{ className: 'switch switch-3d switch-'+(viewMode?'secondary':'primary') }, _(_").append(dsc)
 			.append(".$||Input,viewMode?Object.assign({disabled:true},_").append(dsc).append("):_").append(dsc).append("),_('span', { className: 'switch-label' }),_('span', { className: 'switch-handle' })))");
 		} else {
-			if (fc.getFormCell().getControlTip() == 102) {// displayField4info
+			if (fc.getFormCell().getControlType() == 102) {// displayField4info
 				buf.append("\n,_('div', {style:{padding:'0.45rem .85rem', borderRadius:30}, className:'alert alert-").append(labelMap[fc.getFormCell().getLookupQueryId()]).append("'}, _('i',{className:'icon-info'}),' ','").append(GenericUtil.stringToJS(fc.getValue())).append("')");
-			} else if (fc.getFormCell().getControlTip() == 100) {// button
+			} else if (fc.getFormCell().getControlType() == 100) {// button
 				buf.append("\n, _").append(dsc).append(" && !_").append(dsc).append(".hidden && _(FormGroup, null, _(Button,_").append(dsc).append("))");
 			} else {
 				buf.append("\n, _").append(dsc).append(" && _(FormGroup, _").append(dsc).append(".hidden?{style:{display:'none'}}:(errors.").append(dsc).append(" && {className:'validation-error'}), _(Label, {className:'inputLabel', htmlFor:\"").append(dsc).append("\"},_").append(dsc).append(".label");
 				buf.append(", \" \", _").append(dsc).append(".hint && _(\"span\",{className:\"xlabel-hint\", title:_").append(dsc).append(".hint},_(\"i\",{className:\"icon-question\"}))");
-				if(FrameworkSetting.reactLabelRequired && /*fc.getFormCell().getNotNullFlag()!=0 && */fc.getFormCell().getNrdTip()==0)buf.append(", \" \", !_").append(dsc).append(".readOnly && !viewMode && _").append(dsc).append(".required && _(\"span\",{className:\"xlabel-required\"},getLocMsg(\"required\"))");
+				if(FrameworkSetting.reactLabelRequired && /*fc.getFormCell().getNotNullFlag()!=0 && */fc.getFormCell().getNrdType()==0)buf.append(", \" \", !_").append(dsc).append(".readOnly && !viewMode && _").append(dsc).append(".required && _(\"span\",{className:\"xlabel-required\"},getLocMsg(\"required\"))");
 				buf.append("), viewMode ? iwb.getFieldRawValue(_").append(dsc).append(",this.state.options.").append(dsc).append(") :_(_").append(dsc).append(".$||Input,_").append(dsc).append("),errors.").append(dsc).append(" && _('small',null,errors.").append(dsc).append("))");
 			}
 		}
@@ -1682,16 +1679,16 @@ public class React16 implements ViewAdapter {
 			buf.append("_(Row, null, _(Col,{xs:'12',xl:'").append(xl).append("',lg:'").append(lg).append("',md:'").append(md).append("',sm:'").append(sm).append("'}");
 			for (int i = 0; i < formCells.size(); i++) {
 				W5FormCellHelper fc = formCells.get(i);
-				if (fc.getFormCell().getActiveFlag() == 0 || fc.getFormCell().getControlTip()==0)
+				if (fc.getFormCell().getActiveFlag() == 0 || fc.getFormCell().getControlType()==0)
 					continue;
 //				String dsc = fc.getFormCell().getDsc();
 				
-				if (i < formCells.size() - 1 && formCells.get(i + 1).getFormCell().getControlTip() != 0 && formCells.get(i + 1).getFormCell().getActiveFlag() != 0
+				if (i < formCells.size() - 1 && formCells.get(i + 1).getFormCell().getControlType() != 0 && formCells.get(i + 1).getFormCell().getActiveFlag() != 0
 						&& formCells.get(i + 1).getFormCell().getTabOrder() == fc.getFormCell().getTabOrder()) { // yanyana koymak icin. 
 					buf.append(", _(Row,null");
 					
 					int columnWidthTotal = fc.getFormCell().getControlWidth()>0 ? fc.getFormCell().getControlWidth():300;
-					for(int ji=i;ji < formCells.size() - 1 && formCells.get(ji + 1).getFormCell().getControlTip() != 0 && formCells.get(ji + 1).getFormCell().getActiveFlag() != 0 && formCells.get(ji + 1).getFormCell().getTabOrder() == fc.getFormCell().getTabOrder();ji++){
+					for(int ji=i;ji < formCells.size() - 1 && formCells.get(ji + 1).getFormCell().getControlType() != 0 && formCells.get(ji + 1).getFormCell().getActiveFlag() != 0 && formCells.get(ji + 1).getFormCell().getTabOrder() == fc.getFormCell().getTabOrder();ji++){
 						columnWidthTotal += formCells.get(ji+1).getFormCell().getControlWidth()>0 ? formCells.get(ji+1).getFormCell().getControlWidth():300;
 					}
 					
@@ -1700,7 +1697,7 @@ public class React16 implements ViewAdapter {
 					if(xs==0)xs=1;
 					totalColXs+=xs;
 					buf.append(",_(Col,{xs:12, md:").append(xs).append("}").append(renderFormCellWithLabelTop(fc)).append(")");
-					while (i < formCells.size() - 1 && formCells.get(i + 1).getFormCell().getControlTip() != 0 && formCells.get(i + 1).getFormCell().getTabOrder() == fc.getFormCell().getTabOrder()) {
+					while (i < formCells.size() - 1 && formCells.get(i + 1).getFormCell().getControlType() != 0 && formCells.get(i + 1).getFormCell().getTabOrder() == fc.getFormCell().getTabOrder()) {
 						i++;
 						fc = formCells.get(i);
 						xs = 12*(fc.getFormCell().getControlWidth()>0 ? fc.getFormCell().getControlWidth():300)/columnWidthTotal;
@@ -1728,7 +1725,7 @@ public class React16 implements ViewAdapter {
 			int order=0;
 			for (int i = 0; i < formCells.size(); i++) {
 				W5FormCellHelper fc = formCells.get(i);
-				if (fc.getFormCell().getActiveFlag() == 0 || fc.getFormCell().getControlTip()==0)
+				if (fc.getFormCell().getActiveFlag() == 0 || fc.getFormCell().getControlType()==0)
 					continue;
 				if (fc.getFormCell().getTabOrder() / 1000 != order) {
 					order = fc.getFormCell().getTabOrder() / 1000;
@@ -1749,12 +1746,12 @@ public class React16 implements ViewAdapter {
 						columnBuf.setLength(0);
 					}
 				}
-				if (i < formCells.size() - 1 && formCells.get(i + 1).getFormCell().getControlTip() != 0 && formCells.get(i + 1).getFormCell().getActiveFlag() != 0
+				if (i < formCells.size() - 1 && formCells.get(i + 1).getFormCell().getControlType() != 0 && formCells.get(i + 1).getFormCell().getActiveFlag() != 0
 						&& formCells.get(i + 1).getFormCell().getTabOrder() == fc.getFormCell().getTabOrder()) { // yanyana koymak icin. 
 					columnBuf.append(", _(Row,null");
 					
 					int columnWidthTotal = fc.getFormCell().getControlWidth()>0 ? fc.getFormCell().getControlWidth():300;
-					for(int ji=i;ji < formCells.size() - 1 && formCells.get(ji + 1).getFormCell().getControlTip() != 0 && formCells.get(ji + 1).getFormCell().getActiveFlag() != 0 && formCells.get(ji + 1).getFormCell().getTabOrder() == fc.getFormCell().getTabOrder();ji++){
+					for(int ji=i;ji < formCells.size() - 1 && formCells.get(ji + 1).getFormCell().getControlType() != 0 && formCells.get(ji + 1).getFormCell().getActiveFlag() != 0 && formCells.get(ji + 1).getFormCell().getTabOrder() == fc.getFormCell().getTabOrder();ji++){
 						columnWidthTotal += formCells.get(ji+1).getFormCell().getControlWidth()>0 ? formCells.get(ji+1).getFormCell().getControlWidth():300;
 					}
 					
@@ -1763,7 +1760,7 @@ public class React16 implements ViewAdapter {
 					if(xs==0)xs=1;
 					totalColXs+=xs;
 					columnBuf.append(",_(Col,{xs:12,md:").append(xs).append("}").append(renderFormCellWithLabelTop(fc)).append(")"); //").append(fc.getFormCell().getControlWidth()>200 ? 12:xs).append("
-					while (i < formCells.size() - 1 && formCells.get(i + 1).getFormCell().getControlTip() != 0 && formCells.get(i + 1).getFormCell().getTabOrder() == fc.getFormCell().getTabOrder()) {
+					while (i < formCells.size() - 1 && formCells.get(i + 1).getFormCell().getControlType() != 0 && formCells.get(i + 1).getFormCell().getTabOrder() == fc.getFormCell().getTabOrder()) {
 						i++;
 						fc = formCells.get(i);
 						xs = 12*(fc.getFormCell().getControlWidth()>0 ? fc.getFormCell().getControlWidth():300)/columnWidthTotal;
@@ -1828,15 +1825,15 @@ public class React16 implements ViewAdapter {
 
 			for (int i = 0; i < formCells.size(); i++) {
 				W5FormCellHelper fc = formCells.get(i);
-				if (fc.getFormCell().getActiveFlag() == 0 || fc.getFormCell().getControlTip()==0)
+				if (fc.getFormCell().getActiveFlag() == 0 || fc.getFormCell().getControlType()==0)
 					continue;
-				if(fc.getFormCell().getControlTip() == 5){
+				if(fc.getFormCell().getControlType() == 5){
 					buf.append(", _(FormGroup, {row:true}, _(Label, {").append(labelBuf).append(",htmlFor:\"")
 					.append(fc.getFormCell().getDsc()).append("\"},_").append(fc.getFormCell().getDsc()).append(".label), _(Label,{className: 'switch switch-3d switch-primary' }, _").append(fc.getFormCell().getDsc())
 					.append(",_('span', { className: 'switch-label' }),_('span', { className: 'switch-handle' })))");
 				} else {
 					buf.append(", _(FormGroup, {row:true}, _(Label, {").append(labelBuf).append(",");//
-					if (fc.getFormCell().getControlTip() == 102) {// displayField4info
+					if (fc.getFormCell().getControlType() == 102) {// displayField4info
 						buf.append("md:null}, \"").append(fc.getValue()).append("\"))");
 					} else {
 						buf.append("htmlFor:\"").append(fc.getFormCell().getDsc()).append("\"},_").append(fc.getFormCell().getDsc()).append(".label), _(Col,{").append(inputBuf).append("},_")
@@ -1868,7 +1865,7 @@ public class React16 implements ViewAdapter {
 			int order=-1;
 			for (int i = 0; i < formCells.size(); i++) {
 				W5FormCellHelper fc = formCells.get(i);
-				if (fc.getFormCell().getActiveFlag() == 0 || fc.getFormCell().getControlTip()==0)
+				if (fc.getFormCell().getActiveFlag() == 0 || fc.getFormCell().getControlType()==0)
 					continue;
 				if (fc.getFormCell().getTabOrder() / 1000 != order) {
 					order = fc.getFormCell().getTabOrder() / 1000;
@@ -1883,13 +1880,13 @@ public class React16 implements ViewAdapter {
 						columnBuf.setLength(0);
 					}
 				}
-				if(fc.getFormCell().getControlTip() == 5){
+				if(fc.getFormCell().getControlType() == 5){
 					columnBuf.append(", _(FormGroup, {row:true}, _(Label, {").append(labelBuf).append(",htmlFor:\"")
 					.append(fc.getFormCell().getDsc()).append("\"},_").append(fc.getFormCell().getDsc()).append(".label), _(Label,{ className: 'switch switch-3d switch-primary' }, _").append(fc.getFormCell().getDsc())
 					.append(",_('span', { className: 'switch-label' }),_('span', { className: 'switch-handle' })))");
 				} else {
-					columnBuf.append(", _(FormGroup, {row:true}, _(Label, {").append(fc.getFormCell().getControlTip() == 102 ? "xxmd:null":labelBuf).append(",");//
-					if (fc.getFormCell().getControlTip() == 102) {// displayField4info
+					columnBuf.append(", _(FormGroup, {row:true}, _(Label, {").append(fc.getFormCell().getControlType() == 102 ? "xxmd:null":labelBuf).append(",");//
+					if (fc.getFormCell().getControlType() == 102) {// displayField4info
 						columnBuf.append("}, \"").append(fc.getValue()).append("\"))");
 					} else {
 						columnBuf.append("htmlFor:\"").append(fc.getFormCell().getDsc()).append("\"},_").append(fc.getFormCell().getDsc()).append(".label), _(Col,{").append(inputBuf).append("},_")
@@ -1912,17 +1909,17 @@ public class React16 implements ViewAdapter {
 		buf.append("_('div',null");// ,normalde Col olmasi lazim
 		for (int i = 0; i < formCells.size(); i++) {
 			W5FormCellHelper fc = formCells.get(i);
-			if (fc.getFormCell().getActiveFlag() == 0 || fc.getFormCell().getControlTip()==0)
+			if (fc.getFormCell().getActiveFlag() == 0 || fc.getFormCell().getControlType()==0)
 				continue;
 			String dsc= fc.getFormCell().getDsc();
-			if(fc.getFormCell().getControlTip() == 5){
+			if(fc.getFormCell().getControlType() == 5){
 				buf.append(",\n_").append(dsc).append(" && _(FormGroup, {style:{marginBottom:'0.3rem', display: _").append(dsc).append(".hidden?'none':''}}, _(Label,{ className: 'switch switch-3d switch-primary' }, _(_").append(dsc)
 				.append(".$||Input,_").append(dsc).append("),_('span', { className: 'switch-label' }),_('span', { className: 'switch-handle' })), _(Label, {style:{marginLeft:'1rem'},htmlFor:\"")
 				.append(dsc).append("\"},_").append(dsc).append(".label))");
 			} else {
-				if (fc.getFormCell().getControlTip() == 102) {// displayField4info
+				if (fc.getFormCell().getControlType() == 102) {// displayField4info
 					buf.append("\n,_('div', {style:{padding:'0.45rem .85rem', borderRadius:30}, className:'alert alert-").append(labelMap[fc.getFormCell().getLookupQueryId()]).append("'}, _('i',{className:'icon-info'}),' ','").append(GenericUtil.stringToJS(fc.getValue())).append("')");
-				} else if (fc.getFormCell().getControlTip() == 100) {// button
+				} else if (fc.getFormCell().getControlType() == 100) {// button
 					buf.append("\n, _").append(dsc).append(" && !_").append(dsc).append(".hidden && _(FormGroup, null, _(Button,_").append(dsc).append("))");
 				} else {
 					buf.append("\n, _").append(dsc).append(" && _(FormGroup, _").append(dsc).append(".hidden?{style:{display:'none'}}:null, _(Label, {className:'inputLabel', htmlFor:\"").append(dsc).append("\"},_").append(dsc).append(".label), _(_").append(dsc).append(".$||Input,_").append(dsc).append("))");
@@ -1942,7 +1939,7 @@ public class React16 implements ViewAdapter {
 																		// olacak
 		if (moduleExtraInfo != null && !moduleExtraInfo.equals(key)) {
 			W5FormCell fc = new W5FormCell();
-			fc.setControlTip((short) 102);// displayField4info
+			fc.setControlType((short) 102);// displayField4info
 			fc.setTabOrder((short) -1);
 			fce = new W5FormCellHelper(fc);
 			fce.setValue(moduleExtraInfo);
@@ -1954,21 +1951,21 @@ public class React16 implements ViewAdapter {
 	private StringBuilder serializeFormCellProperty(W5FormCellHelper cellResult, W5FormResult formResult) {
 		StringBuilder buf = new StringBuilder();
 		if(!GenericUtil.isEmpty(cellResult.getFormCell().get_formCellPropertyList())) for(W5FormCellProperty fcp:cellResult.getFormCell().get_formCellPropertyList()){
-			if(fcp.getLkpPropertyTip()==3) {
+			if(fcp.getLkpPropertyType()==3) {
 				buf.append(",hint:'").append(GenericUtil.stringToJS(fcp.getVal())).append("'");				
 			} else  for(W5FormCellHelper fcr:formResult.getFormCellResults())if(fcr.getFormCell().getFormCellId()==fcp.getRelatedFormCellId()) {
-				if(fcr.getFormCell().getActiveFlag()!=0 && fcp.getLkpPropertyTip()!=3) {
-					buf.append(",").append(new String[] {"required:","hidden:!","readOnly:"}[fcp.getLkpPropertyTip()]);
-						buf.append("iwb.formElementProperty(").append(fcp.getLkpOperatorTip()).append(", values.");
+				if(fcr.getFormCell().getActiveFlag()!=0 && fcp.getLkpPropertyType()!=3) {
+					buf.append(",").append(new String[] {"required:","hidden:!","readOnly:"}[fcp.getLkpPropertyType()]);
+						buf.append("iwb.formElementProperty(").append(fcp.getLkpOperatorType()).append(", values.");
 						buf.append(fcr.getFormCell().getDsc());
-						if(fcp.getLkpOperatorTip()>=0 && fcr.getFormCell().getControlTip()!=5)buf.append(",'").append(GenericUtil.stringToJS(fcp.getVal())).append("'");
+						if(fcp.getLkpOperatorType()>=0 && fcr.getFormCell().getControlType()!=5)buf.append(",'").append(GenericUtil.stringToJS(fcp.getVal())).append("'");
 						buf.append(")");
 					
 					break;
 				}
 			}			
 		}
-		if(cellResult.getFormCell().getControlTip()==2 && cellResult.getFormCell().getParentFormCellId()!=0 && cellResult.getFormCell().getParentFormCellId()!=cellResult.getFormCell().getFormCellId()) {
+		if(cellResult.getFormCell().getControlType()==2 && cellResult.getFormCell().getParentFormCellId()!=0 && cellResult.getFormCell().getParentFormCellId()!=cellResult.getFormCell().getFormCellId()) {
 			for(W5FormCellHelper fcr:formResult.getFormCellResults())if(fcr.getFormCell().getFormCellId()==cellResult.getFormCell().getParentFormCellId()) {
 				buf.append(",isValidDate:(current)=> {return values.").append(fcr.getFormCell().getDsc()).append(" ? current.isSameOrAfter(moment(values.").append(fcr.getFormCell().getDsc()).append(",iwb.dateFormat)):true}");
 			}
@@ -1986,12 +1983,12 @@ public class React16 implements ViewAdapter {
 		// int customizationId =
 		// PromisUtil.uInt(formResult.getScd().get("customizationId"));
 		StringBuilder buf = new StringBuilder();
-		if (fc.getControlTip() == 0)return buf.append("'").append(GenericUtil.stringToJS(value)).append("'");
+		if (fc.getControlType() == 0)return buf.append("'").append(GenericUtil.stringToJS(value)).append("'");
 		buf.append("{");
 		
-		if (fc.getControlTip() == 102)
+		if (fc.getControlType() == 102)
 			return buf.append("$:'div', className:'alert alert-").append(labelMap[fc.getLookupQueryId()]).append("',children:[_('i',{className:'icon-info'}),' ','").append(GenericUtil.stringToJS(value)).append("']}");
-		else if ((fc.getControlTip() == 101 || cellResult.getHiddenValue() != null)/* && (fc.getControlTip()!=9 && fc.getControlTip()!=16) */) {
+		else if ((fc.getControlType() == 101 || cellResult.getHiddenValue() != null)/* && (fc.getControlTip()!=9 && fc.getControlTip()!=16) */) {
 			buf.append("type:'text', readOnly:true, hiddenValue:'").append(GenericUtil.stringToJS(cellResult.getHiddenValue())).append("',label:'").append(LocaleMsgCache.get2(customizationId, xlocale, fc.getLocaleMsgKey())).append("',disabled:true, value:'").append(GenericUtil.stringToJS(value)).append("'");
 			if(fc.get_sourceObjectDetail()==null && !GenericUtil.isEmpty(fc.getExtraDefinition())){
 				if(!fc.getExtraDefinition().startsWith(",")) {
@@ -2005,12 +2002,13 @@ public class React16 implements ViewAdapter {
 			
 		}
 
-		switch(fc.getControlTip()){
+		switch(fc.getControlType()){
 		case	1:buf.append("type:");
 			if(GenericUtil.safeEquals(fc.getVtype(), "email"))buf.append("'email'");
 			else if(GenericUtil.safeEquals(fc.getVtype(), "url"))buf.append("'url'");
 			else buf.append("'text'");
 			break;//string
+		case	42:buf.append("type:'password'");break;
 		case	2:buf.append("$:Datetime, dateFormat:'").append(FrameworkCache.getAppSettingStringValue(customizationId, "date_format", dateFormatMulti[formResult!=null && formResult.getScd()!=null ? GenericUtil.uInt(formResult.getScd().get("date_format")):0])).append("',timeFormat:false, closeOnSelect:true");break; //TODO:date
 		case	18:buf.append("$:Datetime, dateFormat:'").append(FrameworkCache.getAppSettingStringValue(customizationId, "date_format", dateFormatMulti[formResult!=null && formResult.getScd()!=null ? GenericUtil.uInt(formResult.getScd().get("date_format")):0])).append("',timeFormat:'HH:mm'");break; //TODO:datetime
 		case	22:buf.append("$:Datetime, dateFormat:false, className:'rdt-time', timeFormat:'hh:mm a'");break; //TODO:time
@@ -2018,7 +2016,7 @@ public class React16 implements ViewAdapter {
 		case	4://integer
 			buf.append("$:NumberFormat,style:{textAlign:'right'},className:'form-control");
 			if(fc.getNotNullFlag()!=0)buf.append("',required:true");else buf.append("'");
-			if(fc.getControlTip()==3)
+			if(fc.getControlType()==3)
 				buf.append(",thousandSeparator:',',decimalSeparator:'.',decimalScale:").append(fc.getLookupQueryId()==0?2:fc.getLookupQueryId());
 			else
 				buf.append(",decimalScale:0");
@@ -2042,7 +2040,7 @@ public class React16 implements ViewAdapter {
 		case	59://superbox lovcombo query
 			buf.append("$:").append(formResult!=null && fc.getParentFormCellId()==1?"CheckboxGroup":"Select")
 				.append(", placeholder: getLocMsg('select_placeholder'), valueKey:'id',labelKey:'dsc',options:[");//static combo
-			if ((fc.getControlTip()==6 || fc.getControlTip()==8 ||fc.getControlTip()==58) && cellResult.getLookupListValues() != null) {
+			if ((fc.getControlType()==6 || fc.getControlType()==8 ||fc.getControlType()==58) && cellResult.getLookupListValues() != null) {
 				boolean b1=false;
 				
 				for (W5Detay p : (List<W5Detay>) cellResult
@@ -2057,7 +2055,7 @@ public class React16 implements ViewAdapter {
 									: p.getDsc()).append("'");
 					buf.append("}");
 				}
-			} else if ((fc.getControlTip()==7 || fc.getControlTip()==15 ||fc.getControlTip()==59)){
+			} else if ((fc.getControlType()==7 || fc.getControlType()==15 ||fc.getControlType()==59)){
 				if(cellResult.getLookupQueryResult()!=null && cellResult.getLookupQueryResult().getData() != null) {
 					boolean b1 = false;
 					for (Object[] p : cellResult.getLookupQueryResult().getData()) {
@@ -2075,7 +2073,7 @@ public class React16 implements ViewAdapter {
 								bb = true;
 							if (z == null)z = "";
 							buf.append(f.getDsc()).append(":'")
-									.append(f.getPostProcessTip() == 2 ? LocaleMsgCache
+									.append(f.getPostProcessType() == 2 ? LocaleMsgCache
 											.get2(customizationId, xlocale,
 													z.toString()) : GenericUtil
 											.stringToJS(z.toString()))
@@ -2084,18 +2082,18 @@ public class React16 implements ViewAdapter {
 						buf.append("}");
 					}
 				}
-				if(fc.getControlTip()==15 && cellResult.getLookupQueryResult().getQueryId()==606 && formResult!=null && formResult.getForm()!=null && formResult.getForm().getObjectTip()==1) {//workflow extra records
+				if(fc.getControlType()==15 && cellResult.getLookupQueryResult().getQueryId()==606 && formResult!=null && formResult.getForm()!=null && formResult.getForm().getObjectType()==1) {//workflow extra records
 					buf.append(",{dsc:'approved', id:998},{dsc:'rejected', id:999}");
 				}
 			}
 			buf.append("], clearable:").append(fc.getNotNullFlag()==0);
-			if(fc.getControlTip()==8 ||fc.getControlTip()==58 || fc.getControlTip()==15 ||fc.getControlTip()==59)buf.append(",multi:true,closeOnSelect:false");
+			if(fc.getControlType()==8 ||fc.getControlType()==58 || fc.getControlType()==15 ||fc.getControlType()==59)buf.append(",multi:true,closeOnSelect:false");
 		break; 
 		
 		case	9://combo query remote
 		case	16://lovcombo query remote
 			buf.append("$:Select, placeholder: getLocMsg('select_placeholder'), options:options.").append(fc.getDsc()).append("||[],valueKey:'id', labelKey:'dsc',clearable:").append(fc.getNotNullFlag()==0);
-			if(fc.getControlTip()==16)buf.append(",multi:true");
+			if(fc.getControlType()==16)buf.append(",multi:true");
 			break;
 		case	10://advanced select: TODO ilk geldiginde oo loadOptions'ta atanacak
 
@@ -2138,11 +2136,11 @@ public class React16 implements ViewAdapter {
 		}
 		buf.append(",name:'").append(fc.getDsc()).append("'");//,id:'").append(fc.getDsc()).append("'");
 		
-		if(fc.getControlTip()!=3 && fc.getControlTip()!=4 && fc.getControlTip()!=5 && fc.getControlTip()!=22 && fc.getNotNullFlag()!=0)buf.append(",required:true");
+		if(fc.getControlType()!=3 && fc.getControlType()!=4 && fc.getControlType()!=5 && fc.getControlType()!=22 && fc.getNotNullFlag()!=0)buf.append(",required:true");
 		buf.append(", label:'").append(LocaleMsgCache.get2(customizationId, xlocale, fc.getLocaleMsgKey())).append("'");
 
 		if(formResult!=null){ //FORM
-			switch(fc.getControlTip()){
+			switch(fc.getControlType()){
 			case	8:	case	58: case	15:case	59://fc.getControlTip()==8 ||fc.getControlTip()==58 || fc.getControlTip()==15 ||fc.getControlTip()==59
 				buf.append(",value:values.").append(fc.getDsc()).append(" ? values.").append(fc.getDsc()).append(".split(','):[]");
 				break;
@@ -2156,7 +2154,7 @@ public class React16 implements ViewAdapter {
 			}
 		//	if(true)buf.append(",on:{onChange:function(newv, oldv){this.validate();}}");
 			
-			switch(fc.getControlTip()){
+			switch(fc.getControlType()){
 			case	6:	case	7:
 			case	9:	
 				buf.append(",onChange:this.onComboChange('").append(fc.getDsc()).append("')");
@@ -2171,7 +2169,7 @@ public class React16 implements ViewAdapter {
 				buf.append(",onValueChange:this.onNumberChange('").append(fc.getDsc()).append("')");
 				break;
 			case	2:	case	18://case	22:
-				buf.append(",onChange:this.onDateChange('").append(fc.getDsc()).append("',").append(fc.getControlTip()==18).append(")");
+				buf.append(",onChange:this.onDateChange('").append(fc.getDsc()).append("',").append(fc.getControlType()==18).append(")");
 				break;
 			case	12:	//html editor:
 				buf.append(",onHtmlChange:this.onHtmlChange('").append(fc.getDsc()).append("')");
@@ -2183,8 +2181,8 @@ public class React16 implements ViewAdapter {
 				buf.append(",onChange:this.onChange");
 			}
 		} else { //grid/toolbar/list/gantt
-			buf.append(",_control:").append(fc.getControlTip());
-			switch(fc.getControlTip()){
+			buf.append(",_control:").append(fc.getControlType());
+			switch(fc.getControlType()){
 				case	5:
 					buf.append(",defaultChecked:").append(GenericUtil.uInt(value)>0);
 					break; 
@@ -2215,14 +2213,14 @@ public class React16 implements ViewAdapter {
 				buttons.append(",");
 			else
 				b = true;
-			if (toolbarItem.getItemTip() == 0
-					|| toolbarItem.getItemTip() == 100) { // yok(0): button
+			if (toolbarItem.getControlType() == 0
+					|| toolbarItem.getControlType() == 100) { // yok(0): button
 															// +
 															// tooltip;button(100)
 															// icon+text
 			//	if (toolbarItem.getDsc().equals("-"))buttons.append("{ $template:'Spacer' }"); else 
 			//	if (toolbarItem.getDsc().equals("->"))buttons.append("{}"); else 
-				if (toolbarItem.getObjectTip() == 15) {// form toolbar
+				if (toolbarItem.getObjectType() == 15) {// form toolbar
 					buttons.append("{type:'icon' , value:'")
 							.append(LocaleMsgCache.get2(scd, toolbarItem.getLocaleMsgKey()))
 							.append("',");
@@ -2247,7 +2245,7 @@ public class React16 implements ViewAdapter {
 				}
 			} else { // controlTip
 				W5FormCell cell = new W5FormCell();
-				cell.setControlTip(toolbarItem.getItemTip());
+				cell.setControlType(toolbarItem.getControlType());
 				cell.setLookupQueryId(toolbarItem.getLookupQueryId());
 				cell.setLocaleMsgKey(toolbarItem.getLocaleMsgKey());
 				cell.setDsc(toolbarItem.getDsc());
@@ -2261,9 +2259,9 @@ public class React16 implements ViewAdapter {
 					cell.setExtraDefinition(cell.getExtraDefinition() + ","
 							+ toolbarItem.getCode());
 				W5FormCellHelper cellResult = new W5FormCellHelper(cell);
-				if (toolbarItem.getItemTip() == 6
-						|| toolbarItem.getItemTip() == 8
-						|| toolbarItem.getItemTip() == 14) {
+				if (toolbarItem.getControlType() == 6
+						|| toolbarItem.getControlType() == 8
+						|| toolbarItem.getControlType() == 14) {
 					W5LookUp lu = FrameworkCache.getLookUp(scd,
 							toolbarItem.getLookupQueryId());
 
@@ -2277,8 +2275,8 @@ public class React16 implements ViewAdapter {
 						dl.add(e);
 					}
 					cellResult.setLookupListValues(dl);
-				} else if(lookupMap!=null && (toolbarItem.getItemTip() == 7
-						|| toolbarItem.getItemTip() == 15)) {
+				} else if(lookupMap!=null && (toolbarItem.getControlType() == 7
+						|| toolbarItem.getControlType() == 15)) {
 					cellResult.setLookupQueryResult((W5QueryResult)lookupMap.get("_tlb_"+toolbarItem.getToolbarItemId()));
 					
 				}
@@ -2341,7 +2339,7 @@ public class React16 implements ViewAdapter {
 		buf.append("\nvar ")
 				.append(d.getDsc())
 				.append("={cardId:")
-				.append(d.getDataViewId())
+				.append(d.getCardId())
 				.append(",name:'")
 				.append(LocaleMsgCache.get2(scd,
 						d.getLocaleMsgKey()))
@@ -2349,7 +2347,7 @@ public class React16 implements ViewAdapter {
 				.append(d.getDsc()).append(".cmp = o;}")
 				.append(",_url:'ajaxQueryData?.w='+_webPageId+'&_qid=")
 				.append(d.getQueryId()).append("&_dvid=")
-				.append(d.getDataViewId());
+				.append(d.getCardId());
 
 		if (d.getDefaultPageRecordNumber() != 0)
 			buf.append("&firstLimit=").append(d.getDefaultPageRecordNumber());
@@ -2455,8 +2453,8 @@ public class React16 implements ViewAdapter {
 		buf.append("var ").append(dsc).append(" = {gridId:")
 				.append(g.getGridId()).append(",queryId:").append(g.getQueryId()).append(",setCmp:(o)=> {")
 				.append(dsc).append(".cmp = o;}");
-		if (!gridResult.isViewLogMode() && g.getSelectionModeTip()!=0){
-			if(g.getSelectionModeTip()==2 || g.getSelectionModeTip()==3)
+		if (!gridResult.isViewLogMode() && g.getSelectionModeType()!=0){
+			if(g.getSelectionModeType()==2 || g.getSelectionModeType()==3)
 				buf.append(", multiselect:true");
 		}
 		buf.append(",keyField:'").append(g.get_pkQueryField().getDsc()).append("'");
@@ -2488,7 +2486,7 @@ public class React16 implements ViewAdapter {
 					FrameworkCache.getAppSettingIntValue(scd,
 							"log_default_grid_height"));
 		else {
-			if (g.getSelectionModeTip() == 2 || g.getSelectionModeTip() == 3) // multi Select
+			if (g.getSelectionModeType() == 2 || g.getSelectionModeType() == 3) // multi Select
 				buf.append(",\n selectRow:{mode: 'checkbox',clickToSelect: true}");
 			if (g.getDefaultHeight() > 0)
 				buf.append(", defaultHeight:").append(g.getDefaultHeight());
@@ -2509,8 +2507,8 @@ public class React16 implements ViewAdapter {
 			buf.append(",\n formSmsMailList:[");
 			boolean b = false;
 			for (W5FormSmsMail fsm : g.get_crudFormSmsMailList())
-				if (((fsm.getSmsMailTip() == 0 && FrameworkSetting.sms) || (fsm
-						.getSmsMailTip() != 0 && FrameworkSetting.mail))
+				if (((fsm.getSmsMailType() == 0 && FrameworkSetting.sms) || (fsm
+						.getSmsMailType() != 0 && FrameworkSetting.mail))
 						&& fsm.getAlarmFlag() == 0
 						&& GenericUtil.hasPartInside2(fsm.getWebMobileTips(),
 								GenericUtil.uInt(scd.get("mobile")) != 0 ? "2"
@@ -2525,7 +2523,7 @@ public class React16 implements ViewAdapter {
 //							.append(fsm.getSmsMailTip() == 0 ? "[SMS] " : "[" + (LocaleMsgCache.get2(customizationId, xlocale,"email_upper")) + "] ")
 							.append(GenericUtil.stringToJS(LocaleMsgCache.get2(customizationId, xlocale, fsm.getDsc())))
 							.append("\",smsMailTip:")
-							.append(fsm.getSmsMailTip()).append("}");
+							.append(fsm.getSmsMailType()).append("}");
 				}
 			buf.append("]");
 		}
@@ -2577,7 +2575,7 @@ public class React16 implements ViewAdapter {
 		if (!gridResult.isViewLogMode()) {
 
 			if (g.get_defaultCrudForm() != null) { // insert update delete buttons
-				if(g.get_defaultCrudForm().getObjectTip()==2) { //table
+				if(g.get_defaultCrudForm().getObjectType()==2) { //table
 					W5Table t = FrameworkCache.getTable(scd, g.get_defaultCrudForm()
 							.getObjectId());// g.get_defaultCrudForm().get_sourceTable();
 					boolean insertFlag = GenericUtil.accessControl(scd,
@@ -2630,12 +2628,7 @@ public class React16 implements ViewAdapter {
 					// if(g.get_defaultCrudForm().get_sourceTable().getFileAttachmentFlag()!=0)
 					int tableId = t.getTableId();
 					if (tableId != 0 && scd != null) {
-						if (FrameworkCache.getAppSettingIntValue(customizationId,
-								"row_based_security_flag") != 0
-								&& (Integer) scd.get("userTip") != 3
-								&& t.getAccessTips() != null
-								&& t.getAccessTips().length() > 0)
-							buf.append(",\n accessControlFlag:true");
+
 						if (FrameworkCache.getAppSettingIntValue(customizationId,
 								"file_attachment_flag") != 0
 								&& t.getFileAttachmentFlag() != 0
@@ -2652,8 +2645,6 @@ public class React16 implements ViewAdapter {
 							buf.append(",\n makeCommentFlag:true");
 						
 					
-	//					if (FrameworkCache.roleAccessControl(scd,  11))buf.append(",\n bulkUpdateFlag:true");
-	//					if (FrameworkCache.roleAccessControl(scd, 104))buf.append(",\n bulkEmailFlag:true");
 					}
 				} else {
 					buf.append(",\n crudFormId:")
@@ -2719,7 +2710,7 @@ public class React16 implements ViewAdapter {
 			else
 				b = true;
 			html.append("{id:'");
-			switch (f.getPostProcessTip()) {
+			switch (f.getPostProcessType()) {
 			case 9:
 				html.append("_").append(f.getDsc());
 				break;
@@ -2829,7 +2820,7 @@ public class React16 implements ViewAdapter {
 					.append("'")
 					.append(", sortable: ")
 					.append(c.getSortableFlag() != 0
-							&& c.get_queryField().getPostProcessTip() != 101); // post
+							&& c.get_queryField().getPostProcessType() != 101); // post
 																				// sql
 																				// select
 																				// tip==101
@@ -2926,7 +2917,7 @@ columns:[
 			for (W5QueryField f : grid.get_postProcessQueryFields()) {
 				if(!f.getDsc().equals("ar_version_no")){
 					if (viewTable != null)
-						switch (f.getFieldTip()) {
+						switch (f.getFieldType()) {
 						case 2:// file attachment
 						case 7:// picture attachment
 							if (!FrameworkCache.roleAccessControl(
@@ -2944,18 +2935,18 @@ columns:[
 					W5GridColumn c = new W5GridColumn();
 					c.set_queryField(f);
 					c.setWidth((short)40);//f.getTabOrder()
-					c.setAlignTip((short) 0);
+					c.setAlignType((short) 0);
 					c.setLocaleMsgKey("");//:("<span class=\"webix_icon fa-"+ FrameworkSetting.postQueryGridImgMap4Webix[f.getFieldTip()]+ "\"></span>")
 					c.setVisibleFlag((short) 1);
-					String renderer = postQueryMap[f.getFieldTip()];
+					String renderer = postQueryMap[f.getFieldType()];
 					c.setRenderer(renderer);
 					if(f.getDsc().equals(FieldDefinitions.queryFieldName_Comment) && FrameworkCache.getAppSettingIntValue(scd, "make_comment_summary_flag")!=0){
 						c.setWidth((short) (f.getTabOrder() + 10));
 						c.setSortableFlag((short)1);
 					}
-					if (f.getDsc().equals(FieldDefinitions.queryFieldName_Approval)) {// approval_record_flag
+					if (f.getDsc().equals(FieldDefinitions.queryFieldName_Workflow)) {// approval_record_flag
 						c.setWidth((short) (f.getTabOrder() + 100));
-						c.setAlignTip((short) 1);
+						c.setAlignType((short) 1);
 						c.setLocaleMsgKey("approval_status");
 						newColumns.add(x, c);
 						x++;
@@ -2986,7 +2977,7 @@ columns:[
 			W5GridColumn c_dttm = new W5GridColumn();
 			c_dttm.set_queryField(qf_dttm);
 			c_dttm.setWidth((short) 120);
-			c_dttm.setAlignTip((short) 1);
+			c_dttm.setAlignType((short) 1);
 			c_dttm.setLocaleMsgKey("log_dttm");
 			c_dttm.setVisibleFlag((short) 1);
 			c_dttm.setRenderer("fmtDateTime");
@@ -2997,7 +2988,7 @@ columns:[
 			W5GridColumn c_user = new W5GridColumn();
 			c_user.set_queryField(qf_user);
 			c_user.setWidth((short) 80);
-			c_user.setAlignTip((short) 1);
+			c_user.setAlignType((short) 1);
 			c_user.setLocaleMsgKey("log_user");
 			c_user.setVisibleFlag((short) 1);
 			c_user.setRenderer("gridQwRenderer('log5_user_id')");
@@ -3096,15 +3087,16 @@ columns:[
 			}
 			boolean qwRendererFlag = false;
 			boolean boolRendererFlag = false;
+			if(c.getFilterFlag()!=0)buf.append(", filter:!0");
 			buf.append(", name: '").append(qds).append("'");
-			if(c.getSortableFlag() != 0 && c.get_queryField().getPostProcessTip() != 101){
+			if(c.getSortableFlag() != 0 && c.get_queryField().getPostProcessType() != 101){
 					buf.append(", sort:true");
-					if(c.get_queryField().getFieldTip()>1){//TODO. custom after string sorting
+					if(c.get_queryField().getFieldType()>1){//TODO. custom after string sorting
 //						? new String[]{"","string","date","int","int","",""}[c.get_queryField().getFieldTip()] : "server").append("'");
 					}
 			}
 			
-			if (c.getAlignTip() != 1)buf.append(", align:'").append(FrameworkSetting.alignMap[c.getAlignTip()]).append("'");// left'ten farkli ise
+			if (c.getAlignType() != 1)buf.append(", align:'").append(FrameworkSetting.alignMap[c.getAlignType()]).append("'");// left'ten farkli ise
 //			if(grid.getAutoExpandFieldId()!=0 && grid.getAutoExpandFieldId()==c.getQueryFieldId())buf.append(", fillspace:!0").append(", minWidth: ").append((4*c.getWidth())/3);//.append(c.getWidth());
 //			else buf.append(", width: '").append((4*c.getWidth())/3).append("%'");//.append(c.getWidth());
 			buf.append(", width: ").append((6*c.getWidth())/5);//.append(c.getWidth());
@@ -3124,16 +3116,16 @@ columns:[
 				buf.append(", formatter:").append(c.getRenderer());// browser renderer ise
 				if (c.getRenderer().equals("disabledCheckBoxHtml"))
 					boolRendererFlag = true;
-			} else if (c.get_queryField().getPostProcessTip() >= 10
-					&& c.get_queryField().getPostProcessTip() <90) {
+			} else if (c.get_queryField().getPostProcessType() >= 10
+					&& c.get_queryField().getPostProcessType() <90) {
 				if (c.get_formCell() == null || !editableFlag) {
-					if (FrameworkSetting.chat && (c.get_queryField().getPostProcessTip() == 20 || c.get_queryField().getPostProcessTip() == 53)) // user lookup ise
+					if (FrameworkSetting.chat && (c.get_queryField().getPostProcessType() == 20 || c.get_queryField().getPostProcessType() == 53)) // user lookup ise
 						buf.append(", formatter:gridUserRenderer");// browser renderer ise
-					else if (c.get_queryField().getPostProcessTip() == 12) // table lookup ise
+					else if (c.get_queryField().getPostProcessType() == 12) // table lookup ise
 						buf.append(", formatter:gridQwRendererWithLink(").append(c.get_queryField().getLookupQueryId()).append(")");// browser renderer ise
 					else {
 						boolean bx = true;
-						if(c.get_queryField().getPostProcessTip() < 11){
+						if(c.get_queryField().getPostProcessType() < 11){
 							W5LookUp lu = FrameworkCache.getLookUp(scd, c.get_queryField().getLookupQueryId());
 							if(lu!=null && lu.getCssClassFlag()!=0){
 								bx = false;
@@ -3146,7 +3138,7 @@ columns:[
 					}
 					qwRendererFlag = true;
 				} else
-					switch (c.get_formCell().getControlTip()) {
+					switch (c.get_formCell().getControlType()) {
 					case 6:
 					case 7:
 						buf.append(", formatter:editGridComboRenderer('").append(qds).append("',")
@@ -3224,16 +3216,16 @@ columns:[
 							else
 								b = true;
 							Object obj = o[f.getTabOrder() - 1];
-							if (f.getPostProcessTip() == 9)
+							if (f.getPostProcessType() == 9)
 								buf.append("_");
-							if (f.getFieldTip() == 5) {
+							if (f.getFieldType() == 5) {
 								buf.append(f.getDsc()).append(":")
 										.append(GenericUtil.uInt(obj) != 0);
 								continue;
 							}
-							buf.append(f.getPostProcessTip() == 6 ? f.getDsc().substring(1):f.getDsc()).append(":'");
+							buf.append(f.getPostProcessType() == 6 ? f.getDsc().substring(1):f.getDsc()).append(":'");
 							if (obj != null) {
-								switch (f.getPostProcessTip()) { // queryField
+								switch (f.getPostProcessType()) { // queryField
 																	// PostProcessTip
 								case 8:
 									buf.append(GenericUtil.stringToHtml(obj));
@@ -3306,7 +3298,7 @@ columns:[
 										break;
 									buf.append("',").append(f.getDsc())
 											.append("_qw_:'");
-									String[] objs = f.getPostProcessTip() == 11 ? ((String) obj)
+									String[] objs = f.getPostProcessType() == 11 ? ((String) obj)
 											.split(",") : new String[] { obj
 											.toString() };
 									boolean bz = false;
@@ -3496,22 +3488,22 @@ columns:[
 							else
 								b = true;
 							buf2.append("\"");
-							if (f.getPostProcessTip() == 9)
+							if (f.getPostProcessType() == 9)
 								buf2.append("_");
-							if (f.getFieldTip() == 5) {
+							if (f.getFieldType() == 5) {
 								buf2.append(f.getDsc()).append("\":")
 										.append(GenericUtil.uInt(obj) != 0);
 								continue;
 							}
 							if(f.getDsc().equals("xtext") || f.getDsc().equals("text"))buf2.append("value\":");//hack for webix
-							else buf2.append(f.getPostProcessTip() == 6 ? f.getDsc().substring(1):f.getDsc()).append("\":");
-							if (f.getFieldTip() != 8)
+							else buf2.append(f.getPostProcessType() == 6 ? f.getDsc().substring(1):f.getDsc()).append("\":");
+							if (f.getFieldType() != 8)
 								buf2.append("\"");
 							else {
 								buf2.append("{");
 							} // JSON ise başka
 							if (obj != null) {
-								switch (f.getPostProcessTip()) { // queryField
+								switch (f.getPostProcessType()) { // queryField
 																	// PostProcessTip
 								case 8:
 									buf2.append(GenericUtil.stringToHtml(obj));
@@ -3585,7 +3577,7 @@ columns:[
 										break;
 									buf2.append("\",\"").append(f.getDsc())
 											.append("_qw_\":\"");
-									String[] objs = f.getPostProcessTip() == 11 ? ((String) obj)
+									String[] objs = f.getPostProcessType() == 11 ? ((String) obj)
 											.split(",") : new String[] { obj
 											.toString() };
 									boolean bz = false;
@@ -3633,7 +3625,7 @@ columns:[
 											.toString()));
 								}
 							}
-							if (f.getFieldTip() != 8)
+							if (f.getFieldType() != 8)
 								buf2.append("\"");
 							else {
 								buf2.append("}");
@@ -3692,9 +3684,9 @@ columns:[
 	}
 
 	public StringBuilder serializeQueryData(W5QueryResult qr) {
-		if (qr.getQuery().getQueryTip() == 10 || (qr.getRequestParams()!=null && GenericUtil.uInt(qr.getRequestParams(), "_tqd")!=0) )
+		if (qr.getQuery().getQueryType() == 10 || (qr.getRequestParams()!=null && GenericUtil.uInt(qr.getRequestParams(), "_tqd")!=0) )
 			return serializeTreeQueryData(qr);
-		if (qr.getQuery().getQueryTip() == 14)
+		if (qr.getQuery().getQueryType() == 14)
 			return serializeTreeQueryRemoteData(qr);
 		int customizationId = (Integer) qr.getScd().get("customizationId");
 		String xlocale = (String) qr.getScd().get("locale");
@@ -3727,17 +3719,17 @@ columns:[
 							buf.append(",");
 						else
 							b = true;
-						if (f.getPostProcessTip() == 9)
+						if (f.getPostProcessType() == 9)
 							buf.append("\"_");
 						else
 							buf.append("\"");
-						buf.append(f.getPostProcessTip() == 6 ? f.getDsc()
+						buf.append(f.getPostProcessType() == 6 ? f.getDsc()
 								.substring(1) : f.getDsc());
-						if (f.getFieldTip() == 5) {// boolean
+						if (f.getFieldType() == 5) {// boolean
 							buf.append("\":").append(GenericUtil.uInt(obj) != 0);
 							continue;
 						}
-						if (f.getFieldTip() == 6) {// auto
+						if (f.getFieldType() == 6) {// auto
 							buf.append("\":");
 							if (obj == null || obj.toString().equals("0"))
 								buf.append("null");
@@ -3746,10 +3738,10 @@ columns:[
 							else
 								buf.append("\"").append(obj).append("\"");
 							continue;
-						} else if (convertDateToStr && f.getFieldTip() == 2 && obj!=null && (obj instanceof java.sql.Timestamp || obj instanceof java.util.Date)) {// date 
+						} else if (convertDateToStr && f.getFieldType() == 2 && obj!=null && (obj instanceof java.sql.Timestamp || obj instanceof java.util.Date)) {// date 
 							buf.append("\":\"").append(obj instanceof java.sql.Timestamp ? GenericUtil.uFormatDateTime((java.sql.Timestamp)obj) : GenericUtil.uFormatDateTime((java.util.Date)obj)).append("\"");
 							continue;
-						} else if(f.getFieldTip() == 8) {
+						} else if(f.getFieldType() == 8) {
 							buf.append("\":");
 							if (obj == null)buf.append("null");
 							else if(obj instanceof Map)buf.append(GenericUtil.fromMapToJsonString2Recursive((Map)obj));
@@ -3759,7 +3751,7 @@ columns:[
 						}
 						buf.append("\":\"");
 						if (obj != null)
-							switch (f.getPostProcessTip()) { // queryField
+							switch (f.getPostProcessType()) { // queryField
 																// PostProcessTip
 							case 5://decryption
 								
@@ -3770,8 +3762,8 @@ columns:[
 								if(obj==null)obj="";
 							case	4://data masking
 								int maskType = f.getLookupQueryId();
-								if(f.getMainTableFieldId()>0 && qr.getQuery().getMainTableId()>0 && qr.getQuery().getQuerySourceTip()==15) {
-									if(t == null) t = FrameworkCache.getTable(qr.getScd(), qr.getQuery().getMainTableId());
+								if(f.getMainTableFieldId()>0 && qr.getQuery().getSourceObjectId()>0 && qr.getQuery().getQuerySourceType()==15) {
+									if(t == null) t = FrameworkCache.getTable(qr.getScd(), qr.getQuery().getSourceObjectId());
 									W5TableField tf = t.get_tableFieldMap().get(f.getMainTableFieldId());
 									if(tf!=null && tf.getAccessMaskTip()>0 && GenericUtil.isEmpty(tf.getAccessMaskUserFields()) 
 											&& GenericUtil.accessControl(qr.getScd(), tf.getAccessMaskTip(), tf.getAccessMaskRoles(), tf.getAccessMaskUsers())) {
@@ -3779,7 +3771,7 @@ columns:[
 												.toString()));
 										break;
 									}
-									if(tf!=null && f.getPostProcessTip()==14)maskType = tf.getAccessMaskTip();
+									if(tf!=null && f.getPostProcessType()==14)maskType = tf.getAccessMaskTip();
 								}
 								String strMask = FrameworkCache.getAppSettingStringValue(0, "data_mask", "**********");
 								String sobj = obj.toString();
@@ -3869,7 +3861,7 @@ columns:[
 									break;
 								buf.append("\",\"").append(f.getDsc())
 										.append("_qw_\":\"");
-								String[] objs = f.getPostProcessTip() == 11 ? ((String) obj)
+								String[] objs = f.getPostProcessType() == 11 ? ((String) obj)
 										.split(",") : new String[] { obj
 										.toString() };
 								boolean bz = false;
@@ -4022,6 +4014,55 @@ columns:[
 
 		return buf.append("}");
 	}
+	
+
+	private StringBuilder serializeLookUp(W5PageResult pr) {
+		StringBuilder buf2 = new StringBuilder();
+		boolean b = false;
+		if(!GenericUtil.isEmpty(pr.getPage().get_pageObjectList()))for(W5PageObject po :pr.getPage().get_pageObjectList()) if(po.getObjectType()==6){
+			b = true;
+			break;			
+		}
+		if(b) {
+			Set<Integer> ls = new HashSet();
+			
+			if(!GenericUtil.isEmpty(pr.getPage().get_pageObjectList()))for(W5PageObject po :pr.getPage().get_pageObjectList()) if(po.getObjectType()==6){
+				ls.add(po.getObjectId());
+			}
+			if(!ls.isEmpty()) {
+				buf2.append("var _lookUps={");
+				boolean b2 = false;
+				for (Integer lookUpId : ls) {
+					W5LookUp lu = FrameworkCache.getLookUp(
+							pr.getScd(), lookUpId);
+					if(lu==null)continue;
+					if (b2)
+						buf2.append(",\n");
+					else
+						b2 = true;
+					buf2.append(lu.getDsc()).append(":[");
+					Map<String, String> tempMap = new HashMap<String, String>();
+					boolean b3=false;
+					for (W5LookUpDetay lud : lu.get_detayList()) if(lud.getActiveFlag()!=0){
+						if (b3)
+							buf2.append(", ");
+						else
+							b3 = true;
+						buf2.append("{\"").append(lud.getVal()).append("\":\"").append(LocaleMsgCache
+										.get2(pr.getScd(),lud.getDsc())).append("\"");
+						if(!GenericUtil.isEmpty(lud.getParentVal()))
+							buf2.append(",\"extra\":\"").append(lud.getParentVal()).append("\"");
+						buf2.append("}");
+						
+					}
+					buf2.append("]");
+				}
+				buf2.append("};\n");
+			}
+			
+		}
+		return buf2;
+	}
 
 	public StringBuilder serializeTemplate(W5PageResult pr) {
 		boolean replacePostJsCode = false;
@@ -4033,7 +4074,7 @@ columns:[
 		int customizationId = (Integer) pr.getScd().get(
 				"customizationId");
 		String xlocale = (String) pr.getScd().get("locale");
-		if (page.getTemplateTip() != 0) { // not html 
+		if (page.getPageType() != 0) { // not html 
 			// notification Control
 			// masterRecord Control
 			
@@ -4057,9 +4098,11 @@ columns:[
 							.append(GenericUtil.getNextId("tpi")).append("';\n");
 				}
 				
+				buf.append(serializeLookUp(pr));
+				
 				if(!GenericUtil.isEmpty(pr.getPage().getCssCode()) && pr.getPage().getCssCode().trim().length()>3){
 					buf.append("iwb.addCssString(\"")
-					.append(GenericUtil.stringToJS2(pr.getPage().getCssCode().trim())).append("\",").append(pr.getTemplateId()).append(");\n");
+					.append(GenericUtil.stringToJS2(pr.getPage().getCssCode().trim())).append("\",").append(pr.getPageId()).append(");\n");
 				}
 			}
 			
@@ -4073,7 +4116,7 @@ columns:[
 
 				int customObjectCount = 1, tabOrder = 1;
 				for (Object i : pr.getPageObjectList()) {
-					if (i instanceof W5GridResult) { // objectTip=1
+					if (i instanceof W5GridResult) { // objectType=1
 						W5GridResult gr = (W5GridResult) i;
 						buf.append(serializeGrid(gr));
 						buf.append("\n").append(gr.getGrid().getDsc())
@@ -4087,16 +4130,16 @@ columns:[
 									.append(gr.getGrid().getDsc()).append("\n");
 						}
 						// if(replacePostJsCode)
-					} else if (i instanceof W5CardResult) {// objectTip=2
+					} else if (i instanceof W5CardResult) {// objectType=2
 						W5CardResult dr = (W5CardResult) i;
 						buf.append(serializeCard(dr));
-						if (dr.getDataViewId() < 0) {
+						if (dr.getCardId() < 0) {
 							buf.append("\nvar _card")
 									.append(customObjectCount++).append("=")
 									.append(dr.getCard().getDsc())
 									.append("\n");
 						}
-					} else if (i instanceof W5ListViewResult) {// objectTip=7
+					} else if (i instanceof W5ListViewResult) {// objectType=7
 						W5ListViewResult lr = (W5ListViewResult) i;
 						buf.append(serializeListView(lr));
 						if (lr.getListId() < 0) {
@@ -4105,9 +4148,9 @@ columns:[
 									.append(lr.getListView().getDsc())
 									.append("\n");
 						}
-					} else if (i instanceof W5FormResult) {// objectTip=3
+					} else if (i instanceof W5FormResult) {// objectType=3
 						W5FormResult fr = (W5FormResult) i;
-						if (Math.abs(fr.getObjectTip()) == 3) { // form
+						if (Math.abs(fr.getObjectType()) == 3) { // form
 							buf.append("\nclass ").append(fr.getForm().getDsc())
 									.append(" extends XForm").append(serializeGetForm(fr));
 						}
@@ -4135,11 +4178,11 @@ columns:[
 							orjPageObject = o;
 							break;
 						}
-						if(q.getQueryTip()==22 || q.getQueryTip()==21) { //gauge && badge
-							if(pr.getPage().getTemplateTip()==2) {//page
+						if(q.getQueryType()==22 || q.getQueryType()==21) { //gauge && badge
+							if(pr.getPage().getPageType()==2) {//page
 								//find the origin pageObject
-								if(orjPageObject!=null && orjPageObject.getParentObjectId()!=0) for (W5PageObject o : page.get_pageObjectList())if(orjPageObject.getParentObjectId()==o.getTemplateObjectId()){
-									if(o.getObjectTip()==1) {//grid
+								if(orjPageObject!=null && orjPageObject.getParentObjectId()!=0) for (W5PageObject o : page.get_pageObjectList())if(orjPageObject.getParentObjectId()==o.getPageObjectId()){
+									if(o.getObjectType()==1) {//grid
 										for (Object ix : pr.getPageObjectList()) if(ix!=null && ix instanceof W5GridResult && ((W5GridResult)ix).getGridId()==o.getObjectId()){
 											String grName = ((W5GridResult)ix).getGrid().getDsc();
 											buf.append("\n if(!").append(grName).append(".summary)")
@@ -4154,7 +4197,7 @@ columns:[
 							} else buf.append("\nvar ")
 							.append(((W5QueryResult) i).getQuery().getDsc())
 							.append("=").append(serializeQueryData((W5QueryResult) i));
-						} else if(q.getQueryTip()==15) { //Graph Query 
+						} else if(q.getQueryType()==15) { //Graph Query 
 							buf.append("\nvar ")
 							.append(q.getDsc())
 							.append("={name:'").append(GenericUtil.stringToJS(LocaleMsgCache.get2(pr.getScd(), q.getDsc()))).append("', graphTip:").append(orjPageObject.getParentObjectId()).append(",queryId:").append(q.getQueryId()).append(serializeQueryReader(q.get_queryFields(), pr.getScd()))
@@ -4173,12 +4216,12 @@ columns:[
 								.append(";\n");
 						
 						W5PageObject orjPageObject = null;
-						for (W5PageObject o : page.get_pageObjectList())if(o.getObjectId()==gd.getGraphDashboardId() && o.getObjectTip()==9) {
+						for (W5PageObject o : page.get_pageObjectList())if(o.getObjectId()==gd.getGraphDashboardId() && o.getObjectType()==9) {
 							orjPageObject = o;
 							break;
 						}
-						if(orjPageObject!=null && orjPageObject.getParentObjectId()!=0) for (W5PageObject o : page.get_pageObjectList())if(orjPageObject.getParentObjectId()==o.getTemplateObjectId()){
-							if(o.getObjectTip()==1) {//grid
+						if(orjPageObject!=null && orjPageObject.getParentObjectId()!=0) for (W5PageObject o : page.get_pageObjectList())if(orjPageObject.getParentObjectId()==o.getPageObjectId()){
+							if(o.getObjectType()==1) {//grid
 								for (Object ix : pr.getPageObjectList()) if(ix!=null && ix instanceof W5GridResult && ((W5GridResult)ix).getGridId()==o.getObjectId()){
 									String grName = ((W5GridResult)ix).getGrid().getDsc();
 									buf.append("\n if(!").append(grName).append(".summary)")
@@ -4223,6 +4266,8 @@ columns:[
 					.append(GenericUtil.fromMapToJsonString(publishedAppSetting))
 					.append(";\n");
 
+			buf.append(serializeLookUp(pr));
+
 			int customObjectCount=1;
 			for (Object i : pr.getPageObjectList()) {
 				if (i instanceof W5GridResult) {
@@ -4231,10 +4276,10 @@ columns:[
 					buf2.append("\nvar _grid")
 					.append(customObjectCount++).append("=")
 					.append(gr.getGrid().getDsc()).append(";\n");
-				} else if (i instanceof W5CardResult) {// objectTip=2
+				} else if (i instanceof W5CardResult) {// objectType=2
 					W5CardResult dr = (W5CardResult) i;
 					buf2.append(serializeCard(dr));
-				} else if (i instanceof W5ListViewResult) {// objectTip=7
+				} else if (i instanceof W5ListViewResult) {// objectType=7
 					W5ListViewResult lr = (W5ListViewResult) i;
 					buf2.append(serializeListView(lr));
 				} else if (i instanceof W5FormResult) {
@@ -4289,15 +4334,15 @@ columns:[
 				if(!GenericUtil.isEmpty(page.getCssCode()) && page.getCssCode().trim().length()>3){
 					buf4.append(page.getCssCode()).append("\n");
 				}
-				W5LookUp c = FrameworkCache.getLookUp(pr.getScd(), 665);
-				for (W5LookUpDetay d : c.get_detayList()) {
+				/*W5LookUp c = FrameworkCache.getLookUp(pr.getScd(), 665);
+				if(c!=null)for (W5LookUpDetay d : c.get_detayList()) {
 					buf4.append(".bgColor")
 							.append(d.getVal().replace("#", ""))
 							.append("{background-color:")
 							.append(d.getVal()).append(";}\n");
-				}
-				FrameworkCache.addPageCss(pr.getScd(), page.getTemplateId(), buf4.toString());
-				code = code.replace("${promis-css}", " <link rel=\"stylesheet\" type=\"text/css\" href=\"dyn-res/"+page.getTemplateId()+".css?.x="+page.getVersionNo()+"\" />");
+				}*/
+				FrameworkCache.addPageResource(pr.getScd(), "css-"+page.getPageId(), buf4.toString());
+				code = code.replace("${promis-css}", " <link rel=\"stylesheet\" type=\"text/css\" href=\"dyn-res/css-"+page.getPageId()+".css?.x="+page.getVersionNo()+"\" />");
 
 			}
 			
@@ -4328,7 +4373,7 @@ columns:[
 		if(!GenericUtil.isEmpty(code))
 			buf.append("\n").append(code.startsWith("!") ? code.substring(1) : code);
 
-		if(!GenericUtil.isEmpty(pr.getPageObjectList()))switch(pr.getPage().getTemplateTip()){
+		if(!GenericUtil.isEmpty(pr.getPageObjectList()))switch(pr.getPage().getPageType()){
 		case	2:case	4://page, pop up
 			buf.append("\n").append(renderTemplateObject(pr));
 			break;
@@ -4383,7 +4428,7 @@ columns:[
 					po = po2;
 					break;
 				}
-				switch(po.getObjectTip()) {
+				switch(po.getObjectType()) {
 				case 15://graphic from raw query
 					rbuf.append("{gquery:").append(qr.getQuery().getDsc());
 					break;
@@ -4397,14 +4442,14 @@ columns:[
 			}else if(o instanceof W5PageResult){
 				W5PageResult pr2 = (W5PageResult)o;
 				rbuf.append("{page:").append(pr2.getPage().getDsc());
-				for(W5PageObject po2:pr.getPage().get_pageObjectList())if(po2.getObjectId()==pr2.getTemplateId()){
+				for(W5PageObject po2:pr.getPage().get_pageObjectList())if(po2.getObjectId()==pr2.getPageId()){
 					po = po2;
 					break;
 				}
 			} else if(o instanceof W5CardResult){
 				W5CardResult cr = (W5CardResult)o;
 				rbuf.append("{card:").append(cr.getCard().getDsc());
-				for(W5PageObject po2:pr.getPage().get_pageObjectList())if(po2.getObjectId()==cr.getDataViewId()){
+				for(W5PageObject po2:pr.getPage().get_pageObjectList())if(po2.getObjectId()==cr.getCardId()){
 					po = po2;
 					break;
 				}
@@ -4834,97 +4879,13 @@ columns:[
 				.append("}}");
 	}
 
-	public StringBuilder serializeException(Map<String, Object> scd,
-			IWBException ex) {
-		String locale = (scd == null) ? FrameworkCache.getAppSettingStringValue(0,
-				"locale") : (String) scd.get("locale");
-		int customizationId = (scd == null) ? FrameworkCache
-				.getAppSettingIntValue(0, "default_customization_id")
-				: GenericUtil.uInt(scd.get("customizationId"));
-		StringBuilder b = new StringBuilder();
-		b.append("{\"success\":false,\n\"errorType\":\"")
-				.append(ex.getErrorType()).append("\"");
-		String msg = ex.getMessage();
-		String cause = ex.getCause() == null ? null : ex.getCause()
-				.getMessage();
-		if (msg != null) {
-			if (FrameworkCache.getAppSettingIntValue(customizationId, "debug") != 1) {
-				if (msg.contains("ORA-")) {
-					String temp = msg.substring(0, 9);
-					if (!temp.equals("ORA-00001")) {
-						msg = LocaleMsgCache.get2(0, locale,
-								FrameworkCache.wExceptions.get(temp));
-					} else {
-						temp = msg.substring(msg.indexOf('(') + 1,
-								msg.indexOf(')'));
-						msg = LocaleMsgCache.get2(0, locale,
-								FrameworkCache.wExceptions.get(temp));
-					}
-				} else if (cause != null && cause.contains("ORA-")) {
-					String temp = cause.substring(0, 9);
-					if (temp.equals("ORA-02292")) // FOREIGN KEY
-					{
-						temp = cause.substring(cause.indexOf('(') + 1,
-								cause.indexOf(')'));
-						msg = LocaleMsgCache.get2(0, locale,
-								FrameworkCache.wExceptions.get(temp));
-					}
-				}
-			}
-
-			else {
-				int index = msg.indexOf("ORA-");
-				if (index != -1) {
-					int lastIndex = msg.indexOf(":", index + 4);
-					if (lastIndex == index + 9) {
-						String dbErrorCode = msg.substring(index, lastIndex);
-						String errorMsg = LocaleMsgCache.get2(0, locale,
-								dbErrorCode);
-						if (errorMsg != null)
-							msg = errorMsg + " (" + msg + ")";
-					}
-				}
-			}
-			if (msg == null) {
-				msg = ex.getMessage();
-				int index = msg.indexOf("ORA-");
-
-				if (index != -1) {
-					msg = LocaleMsgCache.filter2(0, locale, msg).toString();
-					int lastIndex = msg.indexOf("ORA-", index + 4);
-					msg = msg.substring(index + 10, lastIndex);
-				}
-			}
-
-			b.append(",\n\"error\":'").append(GenericUtil.stringToJS(msg))
-					.append("'");
-		}
-
-		if (ex.getObjectType() != null) {
-			b.append(",\n\"objectType\":'")
-					.append(GenericUtil.stringToJS(ex.getObjectType()))
-					.append("'");
-			if (ex.getObjectId() != 0) {
-				b.append(",\n\"objectId\":").append(ex.getObjectId());
-			}
-		}
-
-		if (FrameworkSetting.debug && ex.getSql() != null) {
-			b.append(",\n\"sql\":'").append(GenericUtil.stringToJS(ex.getSql()))
-					.append("'");
-		}
-
-		return b.append("}");
-	}
-
-
 	private StringBuilder serializeManualConversions(Map scd,
 			List<W5Conversion> l) {
 		StringBuilder s = new StringBuilder();
 		int customizationId = (Integer) scd.get("customizationId");
 		boolean b = false;
 		for (W5Conversion fsm : l)
-			if (GenericUtil.hasPartInside2(fsm.getActionTips(), 0)) { // manuel
+			if (GenericUtil.hasPartInside2(fsm.getActionTypes(), 0)) { // manuel
 																		// icin
 																		// var
 																		// mi

@@ -9,7 +9,7 @@ import iwb.domain.db.W5PageObject;
 
 public class W5CardResult implements W5MetaResult{
 	
-	private	int	dataViewId;
+	private	int	cardId;
     private int	action;
     private Map<String, Object> scd;    
 	private Map<String,String>	requestParams;	
@@ -62,12 +62,12 @@ public class W5CardResult implements W5MetaResult{
 		this.searchFormResult = searchFormResult;
 	}
 
-	public int getDataViewId() {
-		return dataViewId;
+	public int getCardId() {
+		return cardId;
 	}
 
-	public void setDataViewId(int dataViewId) {
-		this.dataViewId = dataViewId;
+	public void setCardId(int cardId) {
+		this.cardId = cardId;
 	}
 
 	public W5Card getCard() {
@@ -78,9 +78,9 @@ public class W5CardResult implements W5MetaResult{
 		this.card = card;
 	}
 
-	public W5CardResult(int dataViewId) {
+	public W5CardResult(int cardId) {
 		super();
-		this.dataViewId = dataViewId;
+		this.cardId = cardId;
 	}
 
 	public W5PageObject getTplObj() {

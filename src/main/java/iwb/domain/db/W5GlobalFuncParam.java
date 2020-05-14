@@ -17,20 +17,19 @@ import org.hibernate.annotations.Immutable;
 @Entity
 @Immutable
 @Table(name="w5_db_func_param",schema="iwb")
-public class W5GlobalFuncParam implements java.io.Serializable, W5Param {
+public class W5GlobalFuncParam implements java.io.Serializable, W5Param, W5Base {
+/*TABLE_ID: 21*/
 
-	/**
-	 * 
-	 */
+	
 	private static final long serialVersionUID = 193784239632947L;
 
-	private int dbFuncParamId;
+	private int globalFuncParamId;
 
-	private int dbFuncId;
+	private int globalFuncId;
 
 	private String dsc;
 
-	private short paramTip;
+	private short paramType;
 
 	private short tabOrder;
 
@@ -40,15 +39,17 @@ public class W5GlobalFuncParam implements java.io.Serializable, W5Param {
 
 	private Short minLength;
 
-	private Short maxLength;
+	private Integer maxLength;
 
 	private BigDecimal minValue;
 
 	private BigDecimal maxValue;
 	
-	private short sourceTip;
+	private short sourceType;
 
 	private short outFlag;
+	
+	
 	
 	@Column(name="out_flag")
 	public short getOutFlag() {
@@ -64,21 +65,21 @@ public class W5GlobalFuncParam implements java.io.Serializable, W5Param {
 
 	@Id
 	@Column(name="db_func_param_id")
-	public int getDbFuncParamId() {
-		return this.dbFuncParamId;
+	public int getGlobalFuncParamId() {
+		return this.globalFuncParamId;
 	}
 
-	public void setDbFuncParamId(int dbFuncParamId) {
-		this.dbFuncParamId = dbFuncParamId;
+	public void setGlobalFuncParamId(int globalFuncParamId) {
+		this.globalFuncParamId = globalFuncParamId;
 	}
 
 	@Column(name="db_func_id")
-	public int getDbFuncId() {
-		return this.dbFuncId;
+	public int getGlobalFuncId() {
+		return this.globalFuncId;
 	}
 
-	public void setDbFuncId(int dbFuncId) {
-		this.dbFuncId = dbFuncId;
+	public void setGlobalFuncId(int globalFuncId) {
+		this.globalFuncId = globalFuncId;
 	}
 
 	@Column(name="dsc")
@@ -91,13 +92,13 @@ public class W5GlobalFuncParam implements java.io.Serializable, W5Param {
 	}
 
 	@Column(name="param_tip")
-	public short getParamTip() {
-		return this.paramTip;
+	public short getParamType() {
+		return this.paramType;
 	}
 	
 
-	public void setParamTip(short paramTip) {
-		this.paramTip = paramTip;
+	public void setParamType(short paramType) {
+		this.paramType = paramType;
 	}
 
 	@Column(name="tab_order")
@@ -128,11 +129,11 @@ public class W5GlobalFuncParam implements java.io.Serializable, W5Param {
 	}
 
 	@Column(name="max_length")
-	public Short getMaxLength() {
+	public Integer getMaxLength() {
 		return this.maxLength;
 	}
 
-	public void setMaxLength(Short maxLength) {
+	public void setMaxLength(Integer maxLength) {
 		this.maxLength = maxLength;
 	}
 
@@ -156,12 +157,12 @@ public class W5GlobalFuncParam implements java.io.Serializable, W5Param {
 
 
 	@Column(name="source_tip")
-	public short getSourceTip() {
-		return sourceTip;
+	public short getSourceType() {
+		return sourceType;
 	}
 
-	public void setSourceTip(short sourceTip) {
-		this.sourceTip = sourceTip;
+	public void setSourceType(short sourceType) {
+		this.sourceType = sourceType;
 	}
 
 	@Column(name="not_null_flag")
@@ -194,11 +195,11 @@ public class W5GlobalFuncParam implements java.io.Serializable, W5Param {
 	public boolean equals(Object o) {
 		if(o==null || !(o instanceof W5GlobalFuncParam))return false;
 		W5GlobalFuncParam c = (W5GlobalFuncParam)o;
-		return c!=null && c.getDbFuncParamId()==getDbFuncParamId() && c.getProjectUuid().equals(projectUuid);
+		return c!=null && c.getGlobalFuncParamId()==getGlobalFuncParamId() && c.getProjectUuid().equals(projectUuid);
 	}
 	
 	public int hashCode() {
-		return projectUuid.hashCode() + 100*getDbFuncParamId();
+		return projectUuid.hashCode() + 100*getGlobalFuncParamId();
 	}
 	
 	
@@ -206,4 +207,9 @@ public class W5GlobalFuncParam implements java.io.Serializable, W5Param {
 	public int getParentId() {
 		return 0;
 	}
+	
+	public boolean safeEquals(W5Base q) {
+		return false;
+	}
+	
 }

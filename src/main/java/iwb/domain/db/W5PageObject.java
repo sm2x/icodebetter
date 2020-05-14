@@ -15,15 +15,15 @@ import iwb.util.GenericUtil;
 @Immutable
 @Table(name="w5_template_object",schema="iwb")
 public class W5PageObject implements java.io.Serializable, W5Base {
-
+/*TABLE_ID: 64*/
 
 	private static final long serialVersionUID = 77712365423231L;
-	private int templateObjectId;
-	private int templateId;
+	private int pageObjectId;
+	private int pageId;
 	private int parentObjectId;
 	private int objectId;
 	
-	private short objectTip;
+	private short objectType;
 
 	private short tabOrder;
 	private short activeFlag;
@@ -45,21 +45,21 @@ public class W5PageObject implements java.io.Serializable, W5Base {
 
 	@Id
 	@Column(name="template_object_id")
-	public int getTemplateObjectId() {
-		return templateObjectId;
+	public int getPageObjectId() {
+		return pageObjectId;
 	}
 
-	public void setTemplateObjectId(int templateObjectId) {
-		this.templateObjectId = templateObjectId;
+	public void setPageObjectId(int pageObjectId) {
+		this.pageObjectId = pageObjectId;
 	}
 	
 	@Column(name="template_id")	
-	public int getTemplateId() {
-		return templateId;
+	public int getPageId() {
+		return pageId;
 	}
 
-	public void setTemplateId(int templateId) {
-		this.templateId = templateId;
+	public void setPageId(int pageId) {
+		this.pageId = pageId;
 	}
 
 
@@ -73,12 +73,12 @@ public class W5PageObject implements java.io.Serializable, W5Base {
 	}
 
 	@Column(name="object_tip")	
-	public short getObjectTip() {
-		return objectTip;
+	public short getObjectType() {
+		return objectType;
 	}
 
-	public void setObjectTip(short objectTip) {
-		this.objectTip = objectTip;
+	public void setObjectType(short objectType) {
+		this.objectType = objectType;
 	}
 
 	@Column(name="tab_order")	
@@ -132,12 +132,12 @@ public class W5PageObject implements java.io.Serializable, W5Base {
 		if(q==null)return false;
 		W5PageObject t = (W5PageObject)q;
 		return 	
-				this.templateObjectId == t.getTemplateObjectId()  &&
-		this.templateId == t.getTemplateId() &&
+				this.pageObjectId == t.getPageObjectId()  &&
+		this.pageId == t.getPageId() &&
 
 		this.objectId == t.getObjectId()  &&
 		
-		this.objectTip == t.getObjectTip()  &&
+		this.objectType == t.getObjectType()  &&
 
 		this.tabOrder == t.getTabOrder()  &&
 		
@@ -244,10 +244,10 @@ public class W5PageObject implements java.io.Serializable, W5Base {
 	public boolean equals(Object o) {
 		if(o==null || !(o instanceof W5PageObject))return false;
 		W5PageObject c = (W5PageObject)o;
-		return c!=null && c.getTemplateObjectId()==getTemplateObjectId() && c.getProjectUuid().equals(projectUuid);
+		return c!=null && c.getPageObjectId()==getPageObjectId() && c.getProjectUuid().equals(projectUuid);
 	}
 	
 	public int hashCode() {
-		return projectUuid.hashCode() + 100*getTemplateObjectId();
+		return projectUuid.hashCode() + 100*getPageObjectId();
 	}	
 }

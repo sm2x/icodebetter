@@ -13,10 +13,8 @@ import org.hibernate.annotations.Immutable;
 @Immutable
 @Table(name="w5_form_hint",schema="iwb")
 public class W5FormHint implements java.io.Serializable, W5Base {
+/*TABLE_ID: 1168*/
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 10091283746L;
 	private int formHintId;
 	private int formId;
@@ -32,6 +30,8 @@ public class W5FormHint implements java.io.Serializable, W5Base {
 	private String actionTips;
 	private short activeFlag;
 
+
+	
 	@Column(name="form_id")
 	public int getFormId() {
 		return formId;

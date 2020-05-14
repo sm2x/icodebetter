@@ -16,24 +16,20 @@ import org.hibernate.annotations.Immutable;
 @Entity
 @Immutable
 @Table(name="w5_query",schema="iwb")
-public class W5Query implements java.io.Serializable {
-
-	/**
-	 * 
-	 */
+public class W5Query implements java.io.Serializable, W5Base {
+/*TABLE_ID: 8*/
+	
 	private static final long serialVersionUID = 1123543123L;
 
 	private int queryId;
 
-	private int querySourceTip;
-	private int mainTableId;
+	private int querySourceType;
+	private int sourceObjectId;
 
 	private String dsc;
 
 	private String sqlSelect;
 	
-	private String sqlPostSelect;
-
 	private String sqlFrom;
 
 	private String sqlWhere;
@@ -44,12 +40,12 @@ public class W5Query implements java.io.Serializable {
 
 	private String projectUuid;
 
-	private short queryTip;
+	private short queryType;
 
-	private short logLevelTip;
+	private short logLevelType;
 
 	private short showParentRecordFlag;
-	private short dataFillDirectionTip;
+	private short dataFillDirectionType;
 
 	private	short	_tableIdTabOrder;
 	private	short	_tablePkTabOrder;
@@ -57,6 +53,7 @@ public class W5Query implements java.io.Serializable {
 	private List<W5QueryField> _queryFields;
 	private	List<W5QueryParam> _queryParams;
 	private List<W5QueryField> _aggQueryFields;
+	private String tag;
 
 
 
@@ -70,8 +67,8 @@ public class W5Query implements java.io.Serializable {
 
 
 	@Column(name="log_level_tip")
-	public short getLogLevelTip() {
-		return logLevelTip;
+	public short getLogLevelType() {
+		return logLevelType;
 	}
 
 
@@ -119,8 +116,8 @@ public class W5Query implements java.io.Serializable {
 
 
 	@Column(name="main_table_id")
-	public int getMainTableId() {
-		return mainTableId;
+	public int getSourceObjectId() {
+		return sourceObjectId;
 	}
 
 	@Transient
@@ -154,8 +151,8 @@ public class W5Query implements java.io.Serializable {
 
 
 
-	public void setMainTableId(int mainTableId) {
-		this.mainTableId = mainTableId;
+	public void setSourceObjectId(int sourceObjectId) {
+		this.sourceObjectId = sourceObjectId;
 	}
 
 
@@ -192,20 +189,20 @@ public class W5Query implements java.io.Serializable {
 
 
 
-	public void setLogLevelTip(short logLevelTip) {
-		this.logLevelTip = logLevelTip;
+	public void setLogLevelType(short logLevelType) {
+		this.logLevelType = logLevelType;
 	}
 	
 
 
 
 	@Column(name="query_tip")
-	public short getQueryTip() {
-		return queryTip;
+	public short getQueryType() {
+		return queryType;
 	}
 
-	public void setQueryTip(short queryTip) {
-		this.queryTip = queryTip;
+	public void setQueryType(short queryType) {
+		this.queryType = queryType;
 	}
 
 
@@ -235,32 +232,25 @@ public class W5Query implements java.io.Serializable {
 	public void set_tablePkTabOrder(short tablePkTabOrder) {
 		_tablePkTabOrder = tablePkTabOrder;
 	}
-	@Column(name="sql_post_select")
-	public String getSqlPostSelect() {
-		return sqlPostSelect;
-	}
 
-	public void setSqlPostSelect(String sqlPostSelect) {
-		this.sqlPostSelect = sqlPostSelect;
-	}
 	@Column(name="data_fill_direction_tip")
-	public short getDataFillDirectionTip() {
-		return dataFillDirectionTip;
+	public short getDataFillDirectionType() {
+		return dataFillDirectionType;
 	}
-	public void setDataFillDirectionTip(short dataFillDirectionTip) {
-		this.dataFillDirectionTip = dataFillDirectionTip;
+	public void setDataFillDirectionType(short dataFillDirectionType) {
+		this.dataFillDirectionType = dataFillDirectionType;
 	}
 
 
 
 
 	@Column(name="query_source_tip")
-	public int getQuerySourceTip() {
-		return querySourceTip;
+	public int getQuerySourceType() {
+		return querySourceType;
 	}
 
-	public void setQuerySourceTip(int querySourceTip) {
-		this.querySourceTip = querySourceTip;
+	public void setQuerySourceType(int querySourceType) {
+		this.querySourceType = querySourceType;
 	}
 
 	@Column(name="project_uuid")
@@ -271,6 +261,16 @@ public class W5Query implements java.io.Serializable {
 
 	public void setProjectUuid(String projectUuid) {
 		this.projectUuid = projectUuid;
+	}
+
+	
+	@Column(name="tag")
+	public String getTag() {
+		return tag;
+	}
+
+	public void setTag(String tag) {
+		this.tag = tag;
 	}
 
 	@Transient
@@ -291,5 +291,11 @@ public class W5Query implements java.io.Serializable {
 	
 	public int hashCode() {
 		return projectUuid.hashCode() + 100*getQueryId();
-	}	
+	}
+
+	@Transient
+	public boolean safeEquals(W5Base q) {
+
+			return false;
+	}
 }

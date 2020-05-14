@@ -5,10 +5,8 @@
 package iwb.cache;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 
@@ -19,7 +17,7 @@ import java.util.UUID;
 public class FrameworkSetting {
 	public static  String projectId = null;
 	public static Map<String, String> argMap = new HashMap();
-	public static  boolean monaco = false;
+	public static  boolean monaco = true;
 	public	static	int	rdbmsTip= 0; //0:PostgreSQL, 1: SQL Server, 2: Oracle
 	public	static	boolean	tsdbFlag= true; //Time SeriesDB
 	public	static	int	systemStatus = 2; //0:working, 1:backup, 2:suspended
@@ -47,8 +45,6 @@ public class FrameworkSetting {
 	public static boolean workflow=true;
 //	public static boolean cacheObject = false;
 	public static boolean hibernateCloseAfterWork=false;
-	public static Set<Integer> dealerTableIds=new HashSet<Integer>();
-	public static Set<Integer> dealerDetailTableIds=new HashSet<Integer>();
 	public static int logMemoryAction=0;
 	final public static String[] operatorMap = new String[]{"=","!=","<",">","<=",">="," like "," not like "," in ", " not in "," (custom) "," like "," not like "," like "};
 	final public static String[] typeMap = new String[]{"-Yok-","varchar","date","double","int","int"};
@@ -63,7 +59,7 @@ public class FrameworkSetting {
 	public static int optimizerCount=0;
 	public static boolean advancedSelectShowEmptyText=true;
 	public static boolean simpleSelectShowEmptyText=true;
-	public static String mailSchema="promis_mail";
+//	public static String mailSchema="promis_mail";
 	public static String crudLogSchema="promis_log";
 	public static String crudLogTablePrefix="";
 	public static String revisionLogTablePrefix="rev_";
@@ -151,5 +147,8 @@ public class FrameworkSetting {
 	public static String redisHost = "localhost";//"35.226.30.186"; //
 	
 	public static boolean reactLabelRequired = true;
+	public static boolean metadata = false;
+	public static Object defaultPasswordMask = "**********";
+	public static boolean logVcs = true;
 
 }

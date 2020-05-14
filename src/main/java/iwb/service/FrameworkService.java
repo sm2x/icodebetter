@@ -10,10 +10,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.io.FilenameUtils;
@@ -35,19 +33,9 @@ import iwb.domain.db.Log5Feed;
 import iwb.domain.db.Log5GlobalNextval;
 import iwb.domain.db.Log5JobAction;
 import iwb.domain.db.Log5Transaction;
-import iwb.domain.db.W5BIGraphDashboard;
-import iwb.domain.db.W5Customization;
-import iwb.domain.db.W5ExcelImport;
-import iwb.domain.db.W5ExcelImportSheet;
-import iwb.domain.db.W5ExcelImportSheetData;
 import iwb.domain.db.W5FileAttachment;
 import iwb.domain.db.W5JobSchedule;
 import iwb.domain.db.W5Project;
-import iwb.domain.db.W5Query;
-import iwb.domain.db.W5Table;
-import iwb.domain.db.W5TableChild;
-import iwb.domain.db.W5TableField;
-import iwb.domain.db.W5VcsObject;
 import iwb.domain.db.W5WorkflowRecord;
 import iwb.domain.db.W5WorkflowStep;
 import iwb.domain.db.W5WsServer;
@@ -149,16 +137,6 @@ public class FrameworkService {
 		}
 	}
 
-	private boolean checkAccessRecordControlViolation(Map<String, Object> scd, int accessTip, int tableId,
-			String tablePk) {
-		Map<String, String> rm = new HashMap<String, String>();
-		rm.put("xaccess_tip", "" + accessTip);
-		rm.put("xtable_id", "" + tableId);
-		rm.put("xtable_pk", tablePk);
-		Map m = executeQuery2Map(scd, 588, rm);
-		return (m != null && !GenericUtil.accessControl(scd, (short) accessTip, (String) m.get("access_roles"),
-				(String) m.get("access_users")));
-	}
 
 	public W5FormResult getFormResultByQuery(Map<String, Object> scd, int formId, int queryId,
 			Map<String, String> requestParams) {
@@ -205,17 +183,17 @@ public class FrameworkService {
 	}
 
 
-	public W5GlobalFuncResult executeFunc(Map<String, Object> scd, int dbFuncId, Map<String, String> parameterMap,
+	public W5GlobalFuncResult executeFunc(Map<String, Object> scd, int globalFuncId, Map<String, String> parameterMap,
 			short accessSourceType) {
-		return scriptEngine.executeGlobalFunc(scd, dbFuncId, parameterMap, accessSourceType);
+		return scriptEngine.executeGlobalFunc(scd, globalFuncId, parameterMap, accessSourceType);
 
 	}
 	
 
 	@Transactional(propagation=Propagation.NEVER)
-	public W5GlobalFuncResult executeFuncNT(Map<String, Object> scd, int dbFuncId, Map<String, String> parameterMap,
+	public W5GlobalFuncResult executeFuncNT(Map<String, Object> scd, int globalFuncId, Map<String, String> parameterMap,
 			short accessSourceType) {
-		return scriptEngine.executeGlobalFunc(scd, dbFuncId, parameterMap, accessSourceType);
+		return scriptEngine.executeGlobalFunc(scd, globalFuncId, parameterMap, accessSourceType);
 
 	}
 
@@ -298,10 +276,7 @@ public class FrameworkService {
 		// return null;
 		// }
 		if (fa != null) { // bununla ilgili islemler
-			if (checkAccessRecordControlViolation(scd, 0, fa.getTableId(), fa.getTablePk())) {
-				throw new IWBException("security", "FileAttachment", fa.getFileAttachmentId(), null,
-						LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_security_file_authorization"), null);
-			} else if (fa.getCustomizationId() != GenericUtil.uInt(scd.get("customizationId"))) {
+			if (fa.getCustomizationId() != GenericUtil.uInt(scd.get("customizationId"))) {
 				throw new IWBException("security", "File Attachment", fa.getFileAttachmentId(), null,
 						LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_security_file_authorization"), null);
 			}
@@ -320,9 +295,9 @@ public class FrameworkService {
 
 	}
 
-	public W5GlobalFuncResult postEditGridGlobalFunc(Map<String, Object> scd, int dbFuncId, int dirtyCount,
+	public W5GlobalFuncResult postEditGridGlobalFunc(Map<String, Object> scd, int globalFuncId, int dirtyCount,
 			Map<String, String> requestParams, String prefix) {
-		return scriptEngine.postEditGridGlobalFunc(scd, dbFuncId, dirtyCount, requestParams, prefix);
+		return scriptEngine.postEditGridGlobalFunc(scd, globalFuncId, dirtyCount, requestParams, prefix);
 	}
 
 	public Map<String, Object> userRoleSelect(int userId, int userRoleId, int customizationId, String projectId,
@@ -331,6 +306,7 @@ public class FrameworkService {
 		scd.put("userId", userId);
 		scd.put("userRoleId", userRoleId);
 		scd.put("customizationId", customizationId);
+		scd.put("projectId", FrameworkSetting.devUuid);
 		Map<String, String> rm = new HashMap();
 		if (!GenericUtil.isEmpty(projectId))
 			rm.put("projectId", projectId);
@@ -660,9 +636,9 @@ public class FrameworkService {
 		return queryEngine.executeQuery4Pivot(scd, tableId, requestParams);
 	}
 
-	public W5GlobalFuncResult executeGlobalFunc4Debug(Map<String, Object> scd, int dbFuncId,
+	public W5GlobalFuncResult executeGlobalFunc4Debug(Map<String, Object> scd, int globalFuncId,
 			Map<String, String> parameterMap) {
-		return debugEngine.executeGlobalFunc4Debug(scd, dbFuncId, parameterMap);
+		return debugEngine.executeGlobalFunc4Debug(scd, globalFuncId, parameterMap);
 	}
 
 	public Map<String, Object> getWsServerMethodObjects(W5WsServer wss) {
@@ -745,7 +721,7 @@ public class FrameworkService {
 			fa.setActiveFlag((short) 1);
 			fa.setTableId(336);
 			fa.setTablePk("" + userId);
-			fa.setProjectUuid(projectUuid == null ? "067e6162-3b6f-4ae2-a221-2470b63dff00" : projectUuid);
+			fa.setProjectUuid(projectUuid == null ? FrameworkSetting.devUuid : projectUuid);
 			saveObject(fa);
 
 		} catch (Exception io) {
@@ -869,41 +845,6 @@ public class FrameworkService {
 		return queryEngine.prepareGridReport(scd, gridId, gridColumns, requestParams);
 	}
 
-	public int saveExcelImport(Map<String, Object> scd, String fileName, String systemFileName, LinkedHashMap<String, List<HashMap<String, String>>> parsedData) {
-    	W5ExcelImport im = new W5ExcelImport();
-    	im.setProjectUuid((String)scd.get("projectId"));
-    	im.setDsc(fileName);
-    	im.setInsertUserId(GenericUtil.uInt(scd.get("userId")));
-    	im.setSystemFileName(systemFileName);
-    	dao.saveObject(im);
-    	short sheetNo = 1;
-    	for(Entry<String, List<HashMap<String, String>>> sheet : parsedData.entrySet())if(sheet.getValue()!=null && sheet.getValue().size()>0){
-        	W5ExcelImportSheet ims = new W5ExcelImportSheet();
-        	ims.setProjectUuid(im.getProjectUuid());
-        	ims.setDsc(sheet.getKey());
-        	ims.setTabOrder(sheetNo++);
-        	ims.setExcelImportId(im.getExcelImportId());
-        	dao.saveObject(ims); 	
-        	
-        	List<Object> toBeSaved = new ArrayList();
-
-    		for(int i=0; i<sheet.getValue().size(); i++){
-	    		W5ExcelImportSheetData imd = new W5ExcelImportSheetData();
-	    		imd.setRowNo(i+1);
-	    		imd.setExcelImportSheetId(ims.getExcelImportSheetId());
-	    		imd.setProjectUuid(im.getProjectUuid());
-	    		for(Entry<String, String> entryCols : sheet.getValue().get(i).entrySet()){
-	    			imd.setCell(entryCols.getKey(),entryCols.getValue());	
-	    		}
-	    		toBeSaved.add(imd);
-    		}
-    		if(toBeSaved.size()>0)for(Object o:toBeSaved) dao.saveObject(o);
-    	}
-
-    	return im.getExcelImportId();
-		
-		
-	}
 
 	public int buildForm(Map<String, Object> scd, String parameter) {
 		return metadataWriter.buildForm(scd, parameter);

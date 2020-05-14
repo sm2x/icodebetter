@@ -12,27 +12,27 @@ import org.hibernate.annotations.Immutable;
 @Immutable
 @Table(name = "W5_FORM_CELL_PROPERTY",schema="iwb")
 public class W5FormCellProperty implements java.io.Serializable, W5Base {
-
-	/**
-	 * 
-	 */
+/*TABLE_ID: 5621*/
+	
 	private static final long serialVersionUID = 129834567825321L;
 	private int formCellProperyId;
 	private int formCellId;
 	private int relatedFormCellId;
 	private String val;
-	private short lkpPropertyTip;
-	private short lkpOperatorTip;
+	private short lkpPropertyType;
+	private short lkpOperatorType;
 	private short otherSetValueFlag;
 	private String otherValue;
 
+
+	
 	@Id
 	@Column(name = "FORM_CELL_PROPERTY_ID")
-	public int getFormCellProperyId() {
+	public int getFormCellPropertyId() {
 		return formCellProperyId;
 	}
 
-	public void setFormCellProperyId(int formCellProperyId) {
+	public void setFormCellPropertyId(int formCellProperyId) {
 		this.formCellProperyId = formCellProperyId;
 	}
 
@@ -55,21 +55,21 @@ public class W5FormCellProperty implements java.io.Serializable, W5Base {
 	}
 
 	@Column(name = "LKP_PROPERTY_TIP")
-	public short getLkpPropertyTip() {
-		return lkpPropertyTip;
+	public short getLkpPropertyType() {
+		return lkpPropertyType;
 	}
 
-	public void setLkpPropertyTip(short lkpPropertyTip) {
-		this.lkpPropertyTip = lkpPropertyTip;
+	public void setLkpPropertyType(short lkpPropertyType) {
+		this.lkpPropertyType = lkpPropertyType;
 	}
 
 	@Column(name = "LKP_OPERATOR_TIP")
-	public short getLkpOperatorTip() {
-		return lkpOperatorTip;
+	public short getLkpOperatorType() {
+		return lkpOperatorType;
 	}
 
-	public void setLkpOperatorTip(short lkpOperatorTip) {
-		this.lkpOperatorTip = lkpOperatorTip;
+	public void setLkpOperatorType(short lkpOperatorType) {
+		this.lkpOperatorType = lkpOperatorType;
 	}
 
 	@Id
@@ -131,11 +131,11 @@ public class W5FormCellProperty implements java.io.Serializable, W5Base {
 	public boolean equals(Object o) {
 		if(o==null || !(o instanceof W5FormCellProperty))return false;
 		W5FormCellProperty c = (W5FormCellProperty)o;
-		return c!=null && c.getFormCellProperyId()==getFormCellProperyId() && c.getProjectUuid().equals(projectUuid);
+		return c!=null && c.getFormCellPropertyId()==getFormCellPropertyId() && c.getProjectUuid().equals(projectUuid);
 	}
 	
 	public int hashCode() {
-		return projectUuid.hashCode() + 100*getFormCellProperyId();
+		return projectUuid.hashCode() + 100*getFormCellPropertyId();
 	}	
 	
 }

@@ -18,15 +18,16 @@ import iwb.util.GenericUtil;
 @Immutable
 @Table(name="w5_form",schema="iwb")
 public class W5Form implements java.io.Serializable, W5Base {
-
+/*TABLE_ID: 40*/
+	
 	private static final long serialVersionUID = 1222312312L;
 
 	private int formId;
 	
-	private short objectTip; // 2:table_id, 1:gridId, 3:dbFunc
+	private short objectType; // 2:table_id, 1:gridId, 3:dbFunc
 
-	private int objectId; //gelen table'in PK'si
-	private int sourceWsMethodId; //source 4 get
+	private int objectId; //obhect's PrimaryKey
+	private int sourceWsMethodId; //source 4 get method, in case of
 
 	private String dsc;
 
@@ -38,13 +39,13 @@ public class W5Form implements java.io.Serializable, W5Base {
 
 	private short tabOrder;
 
-	private short renderTip; // 0: straight, 1: fieldset, 2: tab 
+	private short renderType; // 0: straight, 1: fieldset, 2: tab 
 	
 	private int renderTemplateId; // default
 
 	private short labelWidth;
 
-	private short labelAlignTip;
+	private short labelAlignType;
 	
 	private short contEntryFlag;
 
@@ -61,6 +62,7 @@ public class W5Form implements java.io.Serializable, W5Base {
 	private Map<Integer,W5FormSmsMail> _formSmsMailMap;
 	private List<W5Conversion> _conversionList;
 	private List<W5FormHint> _formHintList;
+
 
 	
 	@Transient
@@ -80,11 +82,11 @@ public class W5Form implements java.io.Serializable, W5Base {
 		this.formId = formId;
 	}
 	@Column(name="object_tip")
-	public short getObjectTip() {
-		return objectTip;
+	public short getObjectType() {
+		return objectType;
 	}
-	public void setObjectTip(short objectTip) {
-		this.objectTip = objectTip;
+	public void setObjectType(short objectType) {
+		this.objectType = objectType;
 	}
 	@Column(name="object_id")
 	public int getObjectId() {
@@ -129,11 +131,11 @@ public class W5Form implements java.io.Serializable, W5Base {
 		this.tabOrder = tabOrder;
 	}
 	@Column(name="render_tip")
-	public short getRenderTip() {
-		return renderTip;
+	public short getRenderType() {
+		return renderType;
 	}
-	public void setRenderTip(short renderTip) {
-		this.renderTip = renderTip;
+	public void setRenderType(short renderType) {
+		this.renderType = renderType;
 	}
 	@Column(name="label_width")
 	public short getLabelWidth() {
@@ -143,11 +145,11 @@ public class W5Form implements java.io.Serializable, W5Base {
 		this.labelWidth = labelWidth;
 	}
 	@Column(name="label_align_tip")
-	public short getLabelAlignTip() {
-		return labelAlignTip;
+	public short getLabelAlignType() {
+		return labelAlignType;
 	}
-	public void setLabelAlignTip(short labelAlignTip) {
-		this.labelAlignTip = labelAlignTip;
+	public void setLabelAlignType(short labelAlignType) {
+		this.labelAlignType = labelAlignType;
 	}
 	@Column(name="cont_entry_flag")
 	public short getContEntryFlag() {
@@ -247,17 +249,17 @@ public class W5Form implements java.io.Serializable, W5Base {
 	public boolean safeEquals(W5Base q){
 		if(q==null)return false;
 		W5Form f = (W5Form)q;
-		if(this.formId!=f.getFormId() || this.objectTip!=f.getObjectTip() ||
+		if(this.formId!=f.getFormId() || this.objectType!=f.getObjectType() ||
 				this.objectId != f.getObjectId() ||
 				!GenericUtil.safeEquals(this.dsc,f.getDsc()) ||
 				!GenericUtil.safeEquals(this.localeMsgKey,f.getLocaleMsgKey()) ||
 				this.defaultWidth !=  f.getDefaultWidth()||
 				this.defaultHeight !=  f.getDefaultHeight()||
 				this.tabOrder !=  f.getTabOrder() ||
-				this.renderTip  !=  f.getRenderTip() ||
+				this.renderType  !=  f.getRenderType() ||
 				this.renderTemplateId !=  f.getRenderTemplateId() ||
 				this.labelWidth !=  f.getLabelWidth() ||
-				this.labelAlignTip !=  f.getLabelAlignTip() ||
+				this.labelAlignType !=  f.getLabelAlignType() ||
 				this.contEntryFlag !=  f.getContEntryFlag() ||
 				!GenericUtil.safeEquals(this.jsCode, f.getJsCode()))return false;
 		

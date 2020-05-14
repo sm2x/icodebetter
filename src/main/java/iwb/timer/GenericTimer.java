@@ -30,7 +30,7 @@ public class GenericTimer extends TimerTask {
 	private TaskExecutor taskExecutor;
 
 	private void checkJobs(){
-		for(String projectId:FrameworkCache.wJobs.keySet()) {
+		for(String projectId:FrameworkCache.wJobs.keySet()) if(FrameworkSetting.projectId==null || FrameworkSetting.projectId.equals(projectId)){
 			W5Project po = FrameworkCache.getProject(projectId);
 			if(po!=null && (po.getCustomizationId()==0 || /*po.getCustomizationId()==140 || */!FrameworkSetting.cloud)) {
 				Map<Integer, W5JobSchedule> miv = FrameworkCache.wJobs.get(projectId);

@@ -23,7 +23,6 @@ import iwb.domain.db.W5Email;
 import iwb.domain.db.W5Form;
 import iwb.domain.db.W5FormSmsMail;
 import iwb.domain.db.W5FormSmsMailAlarm;
-import iwb.domain.db.W5ObjectMailSetting;
 import iwb.domain.db.W5Table;
 import iwb.domain.db.W5TableField;
 import iwb.domain.helper.W5AccessControlHelper;
@@ -88,9 +87,9 @@ public class NotificationEngine {
 				String almStr = requestParams.get("_almStr");
 				if (GenericUtil.isEmpty(almStr)) {
 					for (W5FormSmsMail fsm : formResult.getForm().get_formSmsMailList())
-						if (fsm.getAlarmFlag() != 0 && GenericUtil.hasPartInside2(fsm.getActionTips(), action)
+						if (fsm.getAlarmFlag() != 0 && GenericUtil.hasPartInside2(fsm.getActionTypes(), action)
 								&& GenericUtil.hasPartInside2(fsm.getWebMobileTips(), mobile ? "2" : "1")
-								&& (fsm.getSmsMailSentTip() == 0 || fsm.getSmsMailSentTip() == 3)) {
+								&& (fsm.getSmsMailSentType() == 0 || fsm.getSmsMailSentType() == 3)) {
 							if (GenericUtil.isEmpty(almStr))
 								almStr = "" + fsm.getFormSmsMailId();
 							else
@@ -110,7 +109,7 @@ public class NotificationEngine {
 							ass = ass.substring(0, ass.indexOf('-'));
 						}
 						W5FormSmsMail fsm = formResult.getForm().get_formSmsMailMap().get(GenericUtil.uInt(ass));
-						if (fsm == null || !GenericUtil.hasPartInside2(fsm.getActionTips(), action)
+						if (fsm == null || !GenericUtil.hasPartInside2(fsm.getActionTypes(), action)
 								|| !GenericUtil.hasPartInside2(fsm.getWebMobileTips(), mobile ? "2" : "1"))
 							continue;
 						Date alarmDttm = null;
@@ -204,8 +203,8 @@ public class NotificationEngine {
 			Set<Integer> tplSet = new HashSet();
 			for (W5FormSmsMail m : formResult.getForm().get_formSmsMailList()) {
 				if (m.getAlarmFlag() == 0 && m.getActiveFlag() == 1
-						&& (m.getSmsMailSentTip() == 0 || m.getSmsMailSentTip() == 3)
-						&& GenericUtil.hasPartInside2(m.getActionTips(), action)) {
+						&& (m.getSmsMailSentType() == 0 || m.getSmsMailSentType() == 3)
+						&& GenericUtil.hasPartInside2(m.getActionTypes(), action)) {
 					tplSet.add(m.getFormSmsMailId());
 				}
 			}
@@ -225,7 +224,7 @@ public class NotificationEngine {
 					try {
 						W5FormSmsMail fsm = formResult.getForm().get_formSmsMailMap().get(fsmId);
 						if (fsm == null || fsm.getAlarmFlag() != 0
-								|| !GenericUtil.hasPartInside2(fsm.getActionTips(), action)
+								|| !GenericUtil.hasPartInside2(fsm.getActionTypes(), action)
 								|| !GenericUtil.hasPartInside2(fsm.getWebMobileTips(), mobile ? "2" : "1"))
 							continue;
 						if (!GenericUtil.isEmpty(fsm.getConditionSqlCode())) {
@@ -243,7 +242,7 @@ public class NotificationEngine {
 																	// geri
 																	// donecek
 							m.put("_fsmId", "" + fsm.getFormSmsMailId());
-							m.put("_fsmTip", "" + fsm.getSmsMailTip());
+							m.put("_fsmTip", "" + fsm.getSmsMailType());
 							if (previewMapList == null) {
 								previewMapList = new ArrayList();
 								formResult.setPreviewMapList(previewMapList);
@@ -251,7 +250,7 @@ public class NotificationEngine {
 							previewMapList.add(m);
 							continue;
 						}
-						switch (fsm.getSmsMailTip()) {
+						switch (fsm.getSmsMailType()) {
 						case 0: // sms
 							// parameterMap.get("phone"),parameterMap.get("body")
 							// m.putAll(dao.interprateSmsTemplate(fsm, scd,
@@ -269,7 +268,7 @@ public class NotificationEngine {
 							W5Email email = dao.interprateMailTemplate(fsm, scd, requestParams, t.getTableId(),
 									GenericUtil.uInt(ptablePk));
 
-							email.set_oms(findObjectMailSetting(scd, email.getMailSettingId()));
+							email.set_oms(metadataLoader.findObjectMailSetting(scd, email.getMailSettingId()));
 							if (fsm.getAsyncFlag() != 0)
 								result.add(new W5QueuedActionHelper(email));
 							else
@@ -427,11 +426,12 @@ public class NotificationEngine {
 				"W5FormSmsMail","formSmsMailId", formSmsMailId, projectId,
 				"FormSmsMail");
 		int tableId = 0;
+		W5Table t = null;
 		if(fsm.getFormId()> 0) {
 			W5Form f = (W5Form) metadataLoader.getMetadataObject("W5Form","formId",
 					fsm.getFormId(), projectId, "Form");
 			tableId = f.getObjectId();
-			W5Table t = FrameworkCache.getTable(scd, tableId);
+			t = FrameworkCache.getTable(scd, tableId);
 			if (!FrameworkCache.roleAccessControl(scd, 0)) {
 				throw new IWBException("security", "Module", 0, null,
 						"No Authorization for SMS/Email. Please contact Administrator", null);
@@ -439,15 +439,16 @@ public class NotificationEngine {
 		}
 
 		Map r = new HashMap();
-		if (fsm.getSmsMailTip() == 0) { // sms
+		if (fsm.getSmsMailType() == 0) { // sms
 			r.put("success", false);
 			r.put("error", "SMS Adapter Not Defined");
 			return r;
 		} else { // email
-			W5Email email = dao.interprateMailTemplate(fsm, scd, requestParams, tableId,
-					GenericUtil.uInt(requestParams.get("table_pk")));
+			int tablePk = GenericUtil.uInt(requestParams.get(t.get_tableFieldList().get(0).getDsc()));
+			if(tablePk==0)tablePk = GenericUtil.uInt(requestParams.get("table_pk"));
+			W5Email email = dao.interprateMailTemplate(fsm, scd, requestParams, tableId,tablePk);
 
-			email.set_oms(findObjectMailSetting(scd, email.getMailSettingId()));
+			email.set_oms(metadataLoader.findObjectMailSetting(scd, email.getMailSettingId()));
 			String error = MailUtil.sendMail(scd, email);
 			if (GenericUtil.isEmpty(error)) {
 				r.put("success", true);
@@ -458,10 +459,7 @@ public class NotificationEngine {
 		}
 		return r;
 	}
-	
-	public W5ObjectMailSetting findObjectMailSetting(Map<String, Object> scd, int mailSettingId) {
-		return metadataLoader.findObjectMailSetting(scd, mailSettingId);
-	}
+
 	
 	public String sendMail(Map<String, Object> scd, W5Email email){
 		return MailUtil.sendMail(scd, email);

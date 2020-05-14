@@ -13,7 +13,7 @@ import org.hibernate.annotations.Immutable;
 @Entity
 @Immutable
 @Table(name="w5_custom_grid_column_condtion", schema="iwb")
-public class W5CustomGridColumnCondition implements java.io.Serializable {
+public class W5CustomGridColumnCondition implements java.io.Serializable, W5Base {
 
 	/**
 	 * 
@@ -23,9 +23,10 @@ public class W5CustomGridColumnCondition implements java.io.Serializable {
 	private int gridId;
 	private int queryFieldId;
 	private short tabOrder;
-	private short operatorTip;
+	private short operatorType;
 	private String conditionVal;
 	private String cssVal;	
+	
 	
 	@Id
 	@Column(name="custom_grid_column_condtion_id")
@@ -51,11 +52,11 @@ public class W5CustomGridColumnCondition implements java.io.Serializable {
 		this.tabOrder = tabOrder;
 	}
 	@Column(name="operator_tip")
-	public short getOperatorTip() {
-		return operatorTip;
+	public short getOperatorType() {
+		return operatorType;
 	}
-	public void setOperatorTip(short operatorTip) {
-		this.operatorTip = operatorTip;
+	public void setOperatorType(short operatorType) {
+		this.operatorType = operatorType;
 	}
 	@Column(name="condition_val")
 	public String getConditionVal() {
@@ -99,4 +100,10 @@ public class W5CustomGridColumnCondition implements java.io.Serializable {
 	public int hashCode() {
 		return projectUuid.hashCode() + 100*getCustomGridColumnConditionId();
 	}
+
+	public boolean safeEquals(W5Base q) {
+		return true;
+	}
+	
+	
 }

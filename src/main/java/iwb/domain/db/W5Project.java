@@ -13,7 +13,7 @@ import org.hibernate.annotations.Immutable;
 @Immutable
 @Table(name="w5_project",schema="iwb")
 public class W5Project  implements java.io.Serializable {
-
+/*TABLE_ID: 1407*/
 
 	private static final long serialVersionUID = 98981231241231L;
 	private String projectUuid;
@@ -32,7 +32,7 @@ public class W5Project  implements java.io.Serializable {
 	private int uiLoginTemplateId;
 	private int sessionQueryId;
 	private int authenticationFuncId;
-	private int _defaultUserTip;
+	private int _defaultRoleGroupId;
 	private short lkpDateFormat;
 	
 	private short localeMsgKeyFlag;
@@ -151,11 +151,11 @@ public class W5Project  implements java.io.Serializable {
 	}
 	
 	@Transient
-	public int get_defaultUserTip() {
-		return _defaultUserTip;
+	public int get_defaultRoleGroupId() {
+		return _defaultRoleGroupId;
 	}
-	public void set_defaultUserTip(int _defaultUserTip) {
-		this._defaultUserTip = _defaultUserTip;
+	public void set_defaultRoleGroupId(int _defaultRoleGroupId) {
+		this._defaultRoleGroupId = _defaultRoleGroupId;
 	}
 
 	@Column(name="locale_msg_key_flag")

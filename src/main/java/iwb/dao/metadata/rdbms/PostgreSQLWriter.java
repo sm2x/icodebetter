@@ -59,22 +59,22 @@ public class PostgreSQLWriter extends BaseDAO {
 	private CRUDEngine crudEngine;
 	
 	public void deleteProjectMetadata(String delProjectId) {
-		String[] tables = new String[] { "w5_table_access_control", "w5_form_cell_property", 
-				"w5_ws_look_up_detay", "w5_ws_look_up","w5_ws_model","w5_ws_model_param",
+		String[] tables = new String[] { "w5_access_delegation", "w5_form_cell_property", 
+				"w5_ws_model","w5_ws_model_param",
 				"m5_list_template", "w5_ws_server_token", "w5_ws_server_method_param", "w5_ws_server_method",
 				"w5_ws_server", "w5_ws_method_param", "w5_ws_method", "w5_ws", "m5_list", 
-				"w5_table_access_condition_sql", "w5_table_trigger", "w5_form_hint",
-				"w5_form_sms_mail_alarm", "w5_table_field_calculated", "w5_doc", "w5_list_column", "w5_list",
+				"w5_table_trigger", "w5_form_hint",
+				"w5_form_sms_mail_alarm", "w5_table_field_calculated", "w5_list_column", "w5_list",
 				"w5_data_view", "w5_converted_object", "w5_form_sms_mail", "w5_custom_grid_column_condtion",
 				"w5_custom_grid_column_renderer", "w5_conversion_col", "w5_conversion", "w5_feed",
 				"w5_excel_import_sheet_data", "w5_excel_import_sheet", "w5_excel_import",
-				"w5_table_child", "w5_help", "w5_bi_graph_dashboard", "w5_mobile_device",
-				"w5_approval_record", "w5_approval_step", "w5_approval", "w5_jasper_report", "w5_access_control",
+				"w5_table_child", "w5_bi_graph_dashboard", "w5_mobile_device",
+				"w5_approval_record", "w5_approval_step", "w5_approval", "w5_jasper_report",
 				"w5_user_tip", "w5_role"
 				// ,"w5_user"
-				, "w5_login_rule_detail", "w5_login_rule", "w5_user_role", "w5_jasper_object", "w5_jasper",
-				"w5_comment", "w5_form_value_cell", "w5_form_value", "w5_object_menu_item", "w5_grid_module",
-				"w5_form_module", "w5_object_toolbar_item", "w5_exception_filter", "w5_xform_builder_detail",
+				, "w5_user_role", "w5_jasper_object", "w5_jasper",
+				"w5_comment", "w5_form_value_cell", "w5_form_value", "w5_object_menu_item", 
+				"w5_form_module", "w5_object_toolbar_item", "w5_exception", "w5_xform_builder_detail",
 				"w5_xform_builder", "w5_component", "m5_menu", "w5_menu", "w5_template_object", "w5_template", "w5_sms",
 				"w5_table_param", "w5_form_cell", "w5_form", "w5_db_func_param", "w5_db_func", "w5_table_field",
 				"w5_table", "w5_look_up_detay", "w5_look_up", "w5_locale_msg", "w5_query_param", "w5_query_field",
@@ -125,25 +125,25 @@ public class PostgreSQLWriter extends BaseDAO {
 			W5VcsObject vo = (W5VcsObject) l.get(0);
 			vo.setVersionDttm(new Timestamp(new Date().getTime()));
 			vo.setVersionUserId((Integer) scd.get("userId"));
-			switch (vo.getVcsObjectStatusTip()) { // zaten insert ise
+			switch (vo.getVcsObjectStatusType()) { // zaten insert ise
 			case 0:// ignored
 			case 2: // insert: direk sil
 			case 3: // zaten silinmisse boyle birsey olmamali
 				if (action == 3) {
 					removeObject(vo);
 				}
-				if (vo.getVcsObjectStatusTip() == 3)
+				if (vo.getVcsObjectStatusType() == 3)
 					formResult.getOutputMessages().add("VCS WARNING: Already Deleted VCS Object????");
 				break;
 
 			case 1:
 			case 9: // synched ve/veya edit durumunda ise
 				if (action == 3) { // delete edilidliyse
-					vo.setVcsObjectStatusTip((short) 3);
+					vo.setVcsObjectStatusType((short) 3);
 					vo.setVcsCommitRecordHash(requestParams.get("_iwb_vcs_dsc").toString());
 				} else { // update edildise simdi
 					String newHash = getObjectVcsHash(scd, t.getTableId(), tablePk);
-					vo.setVcsObjectStatusTip((short) (vo.getVcsCommitRecordHash().equals(newHash) ? 9 : 1));
+					vo.setVcsObjectStatusType((short) (vo.getVcsCommitRecordHash().equals(newHash) ? 9 : 1));
 				}
 				updateObject(vo);
 				break;
@@ -188,7 +188,7 @@ public class PostgreSQLWriter extends BaseDAO {
 						s.append(f.getDsc()).append("=?,");
 						try {
 							if (o.has(f.getDsc())) {
-								p.add(GenericUtil.getObjectByControl((String) o.get(f.getDsc()), f.getParamTip()));
+								p.add(GenericUtil.getObjectByControl((String) o.get(f.getDsc()), f.getParamType()));
 							} else
 								p.add(null);
 						} catch (JSONException e) {
@@ -218,7 +218,7 @@ public class PostgreSQLWriter extends BaseDAO {
 								try {
 									if (o.has(f.getDsc())) {
 										p.add(GenericUtil.getObjectByControl((String) o.get(f.getDsc()),
-												f.getParamTip()));
+												f.getParamType()));
 									} else
 										p.add(null);
 								} catch (JSONException e) {
@@ -256,9 +256,9 @@ public class PostgreSQLWriter extends BaseDAO {
 				scd.get("projectId"));
 		if (!l.isEmpty()) {
 			W5VcsObject o = (W5VcsObject) l.get(0);
-			if (o.getVcsObjectStatusTip() == 9) { // 1, 2, 3, 8 durumunda
+			if (o.getVcsObjectStatusType() == 9) { // 1, 2, 3, 8 durumunda
 													// hicbirsey degismiyor
-				o.setVcsObjectStatusTip((short) 1);
+				o.setVcsObjectStatusType((short) 1);
 				updateObject(o);
 			}
 		} else
@@ -271,7 +271,7 @@ public class PostgreSQLWriter extends BaseDAO {
 			List<W5QueryFieldCreation> insertList) {
 //		String projectId = (String) scd.get("projectId");
 		int userId = (Integer) scd.get("userId");
-		W5ExternalDb edb = FrameworkCache.getExternalDb(scd, query.getMainTableId());//wExternalDbs.get(projectId).get(query.getMainTableId());
+		W5ExternalDb edb = FrameworkCache.getExternalDb(scd, query.getSourceObjectId());//wExternalDbs.get(projectId).get(query.getMainTableId());
 		if(edb.getLkpDbType()==11) {
 			String[] chunks = query.getSqlSelect().split(",");
 			int i = 1, j = 0;
@@ -283,10 +283,10 @@ public class PostgreSQLWriter extends BaseDAO {
 					field.setDsc(columnName);
 					field.setCustomizationId((Integer) scd.get("customizationId"));
 					if (columnName.equals("insert_user_id") || columnName.equals("version_user_id"))
-						field.setPostProcessTip((short) 53);
+						field.setPostProcessType((short) 53);
 					field.setTabOrder((short) (i));
 					field.setQueryId(query.getQueryId());
-					field.setFieldTip((short) 1);
+					field.setFieldType((short) 1);
 					field.setInsertUserId(userId);
 					field.setVersionUserId(userId);
 					field.setVersionDttm(new java.sql.Timestamp(new java.util.Date().getTime()));
@@ -331,15 +331,15 @@ public class PostgreSQLWriter extends BaseDAO {
 					field.setDsc(columnName);
 					field.setCustomizationId((Integer) scd.get("customizationId"));
 					if (columnName.equals("insert_user_id") || columnName.equals("version_user_id"))
-						field.setPostProcessTip((short) 53);
+						field.setPostProcessType((short) 53);
 					field.setTabOrder((short) (i));
 					field.setQueryId(query.getQueryId());
-					field.setFieldTip((short) DBUtil.java2iwbType(meta.getColumnType(i)));
-					if (field.getFieldTip() == 4) {
+					field.setFieldType((short) DBUtil.java2iwbType(meta.getColumnType(i)));
+					if (field.getFieldType() == 4) {
 						// numeric değerde ondalık varsa tipi 3 yap
 						int sc = meta.getScale(i);
 						if (sc > 0)
-							field.setFieldTip((short) 3);
+							field.setFieldType((short) 3);
 					}
 					field.setInsertUserId(userId);
 					field.setVersionUserId(userId);
@@ -384,7 +384,7 @@ public class PostgreSQLWriter extends BaseDAO {
 		for (final W5Query query : (List<W5Query>) find("from W5Query t where t.queryId=?0 AND t.projectUuid=?1",
 				queryId, po.getProjectUuid())) {
 
-			if (query.getQuerySourceTip() == 1376) {
+			if (query.getQuerySourceType() == 1376) {
 				organizeQueryFields4WSMethod(scd, query, insertFlag);
 				continue;
 			}
@@ -397,159 +397,178 @@ public class PostgreSQLWriter extends BaseDAO {
 				existField.put(field.getDsc().toLowerCase(FrameworkSetting.appLocale), field);
 			}
 
-			StringBuilder sql = new StringBuilder();
-			sql.append("select ").append(query.getSqlSelect());
-			sql.append(" from ");
-			if (query.getQuerySourceTip() == 0) { // JavaScript
-				sql.append("iwb.w5_table limit 1");
+			if (query.getQuerySourceType() == 0) {
+				String[] fieldNames = query.getSqlSelect().split(",");
+				int i = 1;
+				for(String columnName:fieldNames) if(existField.get(columnName.toLowerCase(FrameworkSetting.appLocale)) == null){
+					W5QueryFieldCreation field = new W5QueryFieldCreation();
+					field.setDsc(columnName);
+					field.setCustomizationId((Integer) scd.get("customizationId"));
+					if (columnName.equals("insert_user_id") || columnName.equals("version_user_id"))
+						field.setPostProcessType((short) 53);
+					field.setTabOrder((short) (i));
+					field.setQueryId(query.getQueryId());
+					field.setFieldType((short)1);
+					field.setInsertUserId(userId);
+					field.setVersionUserId(userId);
+					field.setVersionDttm(new java.sql.Timestamp(new java.util.Date().getTime()));
+					field.setProjectUuid((String) scd.get("projectId"));
+					field.setOprojectUuid((String) scd.get("projectId"));
+					field.setQueryFieldId(GenericUtil.getGlobalNextval("iwb.seq_query_field",
+							(String) scd.get("projectId"), (Integer) scd.get("userId"),
+							(Integer) scd.get("customizationId")));
+					insertList.add(field);
+					i++;
+				}
 			} else {
+				StringBuilder sql = new StringBuilder();
+				sql.append("select ").append(query.getSqlSelect());
+				sql.append(" from ");
 				sql.append(query.getSqlFrom());
 //				if (query.getSqlWhere() != null && query.getSqlWhere().trim().length() > 0)sql.append(" where ").append(query.getSqlWhere().trim());
 				sql.append(" where 1=2");// .append(query.getSqlWhere().trim());
 				if (query.getSqlGroupby() != null && query.getSqlGroupby().trim().length() > 0
-						&& query.getQueryTip() != 9) // group
+						&& query.getQueryType() != 9) // group
 														// by
 														// connect
 														// olmayacak
 					sql.append(" group by ").append(query.getSqlGroupby().trim());
-				if (query.getSqlPostSelect() != null && query.getSqlPostSelect().trim().length() > 2) {
-					sql = new StringBuilder(sql.length() + 100).append("select z.*,").append(query.getSqlPostSelect())
-							.append(" from (").append(sql).append(") z");
-				}
-			}
-			Object[] oz = DBUtil.filterExt4SQL(sql.toString(), scd, null, null);
-			final String sqlStr = ((StringBuilder) oz[0]).toString();
-			if (oz[1] != null)
-				sqlParams.addAll((List) oz[1]);
-			else
-				for (int qi = 0; qi < sqlStr.length(); qi++)
-					if (sqlStr.charAt(qi) == '?')
-						sqlParams.add(null);
 
-			try {
-				if (query.getQuerySourceTip() == 4658) { // externalDB
-					organizeQueryFields(scd, query, sqlStr, sqlParams, existField, updateList, insertList);
-
-				} else
-					getCurrentSession().doWork(new Work() {
-
-						public void execute(Connection conn) throws SQLException {
-							PreparedStatement stmt = null;
-							ResultSet rs = null;
-							stmt = conn.prepareStatement(sqlStr);
-							if (sqlParams.size() > 0)
-								applyParameters(stmt, sqlParams);
-							rs = stmt.executeQuery();
-							ResultSetMetaData meta = rs.getMetaData();
-							Map<String, W5TableField> fieldMap = new HashMap<String, W5TableField>();
-							W5Table t = FrameworkCache.getTable(scd, query.getMainTableId());
-							if (t != null)
-								for (W5TableField f : t.get_tableFieldList()) {
-									fieldMap.put(f.getDsc().toLowerCase(), f);
-								}
-
-							int columnNumber = meta.getColumnCount();
-							for (int i = 1, j = 0; i <= columnNumber; i++) {
-								String columnName = meta.getColumnName(i).toLowerCase(FrameworkSetting.appLocale);
-								if (insertFlag != 0 && existField.get(columnName) == null) { // eger
-																								// daha
-																								// onceden
-																								// boyle
-																								// tanimlanmis
-																								// bir
-																								// field
-																								// yoksa
-									W5QueryFieldCreation field = new W5QueryFieldCreation();
-									field.setDsc(columnName);
-									field.setCustomizationId((Integer) scd.get("customizationId"));
-									if (columnName.equals("insert_user_id") || columnName.equals("version_user_id"))
-										field.setPostProcessTip((short) 53);
-									field.setTabOrder((short) (i));
-									field.setQueryId(query.getQueryId());
-									field.setFieldTip((short) DBUtil.java2iwbType(meta.getColumnType(i)));
-									if (field.getFieldTip() == 4) {
-										// numeric değerde ondalık varsa tipi 3 yap
-										int sc = meta.getScale(i);
-										if (sc > 0)
-											field.setFieldTip((short) 3);
+	
+				Object[] oz = DBUtil.filterExt4SQL(sql.toString(), scd, null, null);
+				final String sqlStr = ((StringBuilder) oz[0]).toString();
+				if (oz[1] != null)
+					sqlParams.addAll((List) oz[1]);
+				else
+					for (int qi = 0; qi < sqlStr.length(); qi++)
+						if (sqlStr.charAt(qi) == '?')
+							sqlParams.add(null);
+	
+				try {
+					if (query.getQuerySourceType() == 4658) { // externalDB
+						organizeQueryFields(scd, query, sqlStr, sqlParams, existField, updateList, insertList);
+	
+					} else
+						getCurrentSession().doWork(new Work() {
+	
+							public void execute(Connection conn) throws SQLException {
+								PreparedStatement stmt = null;
+								ResultSet rs = null;
+								stmt = conn.prepareStatement(sqlStr);
+								if (sqlParams.size() > 0)
+									applyParameters(stmt, sqlParams);
+								rs = stmt.executeQuery();
+								ResultSetMetaData meta = rs.getMetaData();
+								Map<String, W5TableField> fieldMap = new HashMap<String, W5TableField>();
+								W5Table t = FrameworkCache.getTable(scd, query.getSourceObjectId());
+								if (t != null)
+									for (W5TableField f : t.get_tableFieldList()) {
+										fieldMap.put(f.getDsc().toLowerCase(), f);
 									}
-									field.setInsertUserId(userId);
-									field.setVersionUserId(userId);
-									field.setVersionDttm(new java.sql.Timestamp(new java.util.Date().getTime()));
-									field.setProjectUuid((String) scd.get("projectId"));
-									field.setOprojectUuid((String) scd.get("projectId"));
-									if (fieldMap.containsKey(columnName.toLowerCase())) {
-										W5TableField tf = fieldMap.get(columnName.toLowerCase());
-										field.setMainTableFieldId(tf.getTableFieldId());
-										if (tf.getDefaultControlTip() == 71) {
-											field.setPostProcessTip(tf.getDefaultControlTip());
-										} else if (tf.getDefaultLookupTableId() > 0) {
-											switch (tf.getDefaultControlTip()) {
-											case 6:
-												field.setPostProcessTip((short) 10);
-												break; // combo static
-											case 8:
-											case 58:
-												field.setPostProcessTip((short) 11);
-												break; // lov-combo static
-											case 7:
-											case 10:
-												field.setPostProcessTip((short) 12);
-												break; // combo query
-											case 15:
-											case 59:
-												field.setPostProcessTip((short) 13);
-												break; // lov-combo query
-											case 51:
-											case 52:
-												field.setPostProcessTip(tf.getDefaultControlTip());
-												break; // combo static
-											}
-											if (tf.getDefaultControlTip() != 0)
-												field.setLookupQueryId(tf.getDefaultLookupTableId());
+	
+								int columnNumber = meta.getColumnCount();
+								for (int i = 1, j = 0; i <= columnNumber; i++) {
+									String columnName = meta.getColumnName(i).toLowerCase(FrameworkSetting.appLocale);
+									if (insertFlag != 0 && existField.get(columnName) == null) { // eger
+																									// daha
+																									// onceden
+																									// boyle
+																									// tanimlanmis
+																									// bir
+																									// field
+																									// yoksa
+										W5QueryFieldCreation field = new W5QueryFieldCreation();
+										field.setDsc(columnName);
+										field.setCustomizationId((Integer) scd.get("customizationId"));
+										if (columnName.equals("insert_user_id") || columnName.equals("version_user_id"))
+											field.setPostProcessType((short) 53);
+										field.setTabOrder((short) (i));
+										field.setQueryId(query.getQueryId());
+										field.setFieldType((short) DBUtil.java2iwbType(meta.getColumnType(i)));
+										if (field.getFieldType() == 4) {
+											// numeric değerde ondalık varsa tipi 3 yap
+											int sc = meta.getScale(i);
+											if (sc > 0)
+												field.setFieldType((short) 3);
 										}
+										field.setInsertUserId(userId);
+										field.setVersionUserId(userId);
+										field.setVersionDttm(new java.sql.Timestamp(new java.util.Date().getTime()));
+										field.setProjectUuid((String) scd.get("projectId"));
+										field.setOprojectUuid((String) scd.get("projectId"));
+										if (fieldMap.containsKey(columnName.toLowerCase())) {
+											W5TableField tf = fieldMap.get(columnName.toLowerCase());
+											field.setMainTableFieldId(tf.getTableFieldId());
+											if (tf.getDefaultControlType() == 71) {
+												field.setPostProcessType(tf.getDefaultControlType());
+											} else if (tf.getDefaultLookupTableId() > 0) {
+												switch (tf.getDefaultControlType()) {
+												case 6:
+													field.setPostProcessType((short) 10);
+													break; // combo static
+												case 8:
+												case 58:
+													field.setPostProcessType((short) 11);
+													break; // lov-combo static
+												case 7:
+												case 10:
+													field.setPostProcessType((short) 12);
+													break; // combo query
+												case 15:
+												case 59:
+													field.setPostProcessType((short) 13);
+													break; // lov-combo query
+												case 51:
+												case 52:
+													field.setPostProcessType(tf.getDefaultControlType());
+													break; // combo static
+												}
+												if (tf.getDefaultControlType() != 0)
+													field.setLookupQueryId(tf.getDefaultLookupTableId());
+											}
+										}
+										field.setQueryFieldId(GenericUtil.getGlobalNextval("iwb.seq_query_field",
+												(String) scd.get("projectId"), (Integer) scd.get("userId"),
+												(Integer) scd.get("customizationId")));
+										insertList.add(field);
+										j++;
+									} else if (existField.get(columnName) != null
+											&& (existField.get(columnName).getTabOrder() != i
+													|| (existField.get(columnName).getMainTableFieldId() == 0
+															&& fieldMap.containsKey(columnName.toLowerCase())))) {
+										W5QueryFieldCreation field = existField.get(columnName);
+										field.setTabOrder((short) (i));
+										field.setVersionUserId(userId);
+										field.setVersionDttm(new java.sql.Timestamp(new java.util.Date().getTime()));
+										if (field.getMainTableFieldId() == 0
+												&& fieldMap.containsKey(columnName.toLowerCase())) {
+											field.setMainTableFieldId(
+													fieldMap.get(columnName.toLowerCase()).getTableFieldId());
+										}
+										updateList.add(field);
 									}
-									field.setQueryFieldId(GenericUtil.getGlobalNextval("iwb.seq_query_field",
-											(String) scd.get("projectId"), (Integer) scd.get("userId"),
-											(Integer) scd.get("customizationId")));
-									insertList.add(field);
-									j++;
-								} else if (existField.get(columnName) != null
-										&& (existField.get(columnName).getTabOrder() != i
-												|| (existField.get(columnName).getMainTableFieldId() == 0
-														&& fieldMap.containsKey(columnName.toLowerCase())))) {
-									W5QueryFieldCreation field = existField.get(columnName);
-									field.setTabOrder((short) (i));
-									field.setVersionUserId(userId);
-									field.setVersionDttm(new java.sql.Timestamp(new java.util.Date().getTime()));
-									if (field.getMainTableFieldId() == 0
-											&& fieldMap.containsKey(columnName.toLowerCase())) {
-										field.setMainTableFieldId(
-												fieldMap.get(columnName.toLowerCase()).getTableFieldId());
-									}
-									updateList.add(field);
+									existField.remove(columnName);
 								}
-								existField.remove(columnName);
+								rs.close();
+								stmt.close();
+								if (FrameworkSetting.hibernateCloseAfterWork)
+									conn.close();
 							}
-							rs.close();
-							stmt.close();
-							if (FrameworkSetting.hibernateCloseAfterWork)
-								conn.close();
-						}
-					});
-
-				for (W5QueryFieldCreation field : existField.values()) { // icinde bulunmayanlari negatif olarak koy
-					field.setTabOrder((short) -Math.abs(field.getTabOrder()));
-					field.setPostProcessTip((short) 99);
-					field.setVersionUserId(userId);
-					field.setVersionDttm(new java.sql.Timestamp(new java.util.Date().getTime()));
-					updateList.add(field);
+						});
+	
+					for (W5QueryFieldCreation field : existField.values()) { // icinde bulunmayanlari negatif olarak koy
+						field.setTabOrder((short) -Math.abs(field.getTabOrder()));
+						field.setPostProcessType((short) 99);
+						field.setVersionUserId(userId);
+						field.setVersionDttm(new java.sql.Timestamp(new java.util.Date().getTime()));
+						updateList.add(field);
+					}
+				} catch (Exception e) {
+					if (FrameworkSetting.debug)
+						e.printStackTrace();
+					if (queryId != -1)
+						throw new IWBException("sql", "QueryField.Creation", queryId, sql.toString(), "Error Creating", e);
 				}
-			} catch (Exception e) {
-				if (FrameworkSetting.debug)
-					e.printStackTrace();
-				if (queryId != -1)
-					throw new IWBException("sql", "QueryField.Creation", queryId, sql.toString(), "Error Creating", e);
 			}
 		}
 		boolean vcs = FrameworkSetting.vcs;
@@ -581,11 +600,11 @@ public class PostgreSQLWriter extends BaseDAO {
 		}
 		if (q.getSqlSelect().equals("*")) {
 			W5WsMethodParam parentParam = (W5WsMethodParam) metadataLoader.getMetadataObject(
-					"W5WsMethodParam","outFlag=1 AND t.paramTip=10 AND t.wsMethodId",
-					q.getMainTableId(), projectId, "Parent WSMethodParam");
+					"W5WsMethodParam","outFlag=1 AND t.paramType=10 AND t.wsMethodId",
+					q.getSourceObjectId(), projectId, "Parent WSMethodParam");
 			List<W5WsMethodParam> outParams = find(
 					"from W5WsMethodParam p where p.outFlag=1 AND p.wsMethodId=?0 AND p.parentWsMethodParamId=?1 AND p.projectUuid=?2 order by p.tabOrder",
-					q.getMainTableId(), parentParam.getWsMethodParamId(), projectId);
+					q.getSourceObjectId(), parentParam.getWsMethodParamId(), projectId);
 			int j = 0;
 			for (W5WsMethodParam wsmp : outParams) {
 				String columnName = wsmp.getDsc().toLowerCase(FrameworkSetting.appLocale);
@@ -594,7 +613,7 @@ public class PostgreSQLWriter extends BaseDAO {
 					field.setDsc(columnName);
 					field.setTabOrder((short) (j + 1));
 					field.setQueryId(q.getQueryId());
-					field.setFieldTip(wsmp.getParamTip());
+					field.setFieldType(wsmp.getParamType());
 					field.setInsertUserId((Integer) scd.get("userId"));
 					field.setVersionUserId((Integer) scd.get("userId"));
 					field.setVersionDttm(new java.sql.Timestamp(new java.util.Date().getTime()));
@@ -619,7 +638,7 @@ public class PostgreSQLWriter extends BaseDAO {
 						field.setDsc(columnName);
 						field.setTabOrder((short) (j + 1));
 						field.setQueryId(q.getQueryId());
-						field.setFieldTip((short) 1);
+						field.setFieldType((short) 1);
 						field.setInsertUserId((Integer) scd.get("userId"));
 						field.setVersionUserId((Integer) scd.get("userId"));
 						field.setVersionDttm(new java.sql.Timestamp(new java.util.Date().getTime()));
@@ -1118,10 +1137,10 @@ public class PostgreSQLWriter extends BaseDAO {
 				+ "query_id, dsc, main_table_id, sql_select, sql_from, sql_where,"
 				+ "sql_groupby, sql_orderby, query_tip, log_level_tip, version_no,"
 				+ "insert_user_id, insert_dttm, version_user_id, version_dttm,"
-				+ "show_parent_record_flag, sql_post_select,"
+				+ "show_parent_record_flag, "
 				+ "data_fill_direction_tip, opt_query_field_ids, opt_tip, project_uuid,oproject_uuid, customization_id)"
 				+ "select ?, 'qry_'||XFORM_BUILDER.form_name||'1', XFORM_BUILDER.table_id, 'x.*', (select t.dsc from iwb.w5_table t where t.table_id=XFORM_BUILDER.table_id AND t.customization_id=?)||' x', null,"
-				+ "null, 1, 1, 1, 1," + "?, current_timestamp, ?, current_timestamp, " + "0,  null,"
+				+ "null, 1, 1, 1, 1," + "?, current_timestamp, ?, current_timestamp, 0,"
 				+ "0, null, 0, XFORM_BUILDER.project_uuid,XFORM_BUILDER.project_uuid, XFORM_BUILDER.customization_id from iwb.w5_xform_builder XFORM_BUILDER where XFORM_BUILDER.xform_builder_id=?",
 				queryId, customizationId, userId, userId, xformBuilderId);
 		if (vcs)
@@ -1278,10 +1297,10 @@ public class PostgreSQLWriter extends BaseDAO {
 		}
 
 		// if(pmaster_flag=1)then
-		int templateId = 0, menuId = 0;
+		int pageId = 0, menuId = 0;
 		if (parentTableId == 0) {
 			// XTEMPLATE_ID := nextval('seq_template');
-			templateId = GenericUtil.getGlobalNextval("iwb.seq_template", projectUuid, userId, customizationId); // 1000000+GenericUtil.uInt(executeSQLQuery("select
+			pageId = GenericUtil.getGlobalNextval("iwb.seq_template", projectUuid, userId, customizationId); // 1000000+GenericUtil.uInt(executeSQLQuery("select
 			// nextval('seq_template')").get(0));
 			executeUpdateSQLQuery(
 					"INSERT INTO iwb.w5_template(" + "template_id, customization_id, template_tip, dsc, object_id,"
@@ -1289,9 +1308,9 @@ public class PostgreSQLWriter extends BaseDAO {
 							+ "version_dttm, locale_msg_flag, project_uuid, oproject_uuid)"
 							+ "VALUES (?, ?, 2, 'pg_'||?||'1', 0, " + "0, null, 1, ?, current_timestamp, ?,"
 							+ "current_timestamp, 1, ?, ?)",
-					templateId, customizationId, tableName, userId, userId, projectUuid, projectUuid);
+					pageId, customizationId, tableName, userId, userId, projectUuid, projectUuid);
 			if (vcs)
-				saveObject(new W5VcsObject(scd, 63, templateId));
+				saveObject(new W5VcsObject(scd, 63, pageId));
 
 			int templateObjectId = GenericUtil.getGlobalNextval("iwb.seq_template_object", projectUuid, userId,
 					customizationId); // 1000000+GenericUtil.uInt(executeSQLQuery("select
@@ -1303,7 +1322,7 @@ public class PostgreSQLWriter extends BaseDAO {
 					+ "parent_object_id, src_query_field_id, dst_query_param_id,"
 					+ "dst_static_query_param_val, dst_static_query_param_id, active_flag, project_uuid, oproject_uuid)"
 					+ "VALUES (?, ?, ?, ?, 1, 1," + "1, ?, current_timestamp, ?, current_timestamp,"
-					+ "null, null, 0, null," + "0, null, null,null, null, 1, ?, ?)", templateObjectId, templateId,
+					+ "null, null, 0, null," + "0, null, null,null, null, 1, ?, ?)", templateObjectId, pageId,
 					customizationId, gridId, userId, userId, projectUuid, projectUuid);
 			if (vcs)
 				saveObject(new W5VcsObject(scd, 64, templateObjectId));
@@ -1317,7 +1336,7 @@ public class PostgreSQLWriter extends BaseDAO {
 					+ "VALUES (?, 0, ?, 4, ?, "
 					+ "coalesce((select max(q.tab_order) from iwb.w5_menu q where q.customization_id=? AND q.user_tip=?),0)+10, ?, 'showPage?_tid='||?::text, 1, ?, current_timestamp, "
 					+ "?, current_timestamp, ?, 0, ?, ?)", menuId, userTip, gridName, customizationId, userTip, iconName,
-					templateId, userId, userId, customizationId, projectUuid, projectUuid);
+					pageId, userId, userId, customizationId, projectUuid, projectUuid);
 			if (vcs)
 				saveObject(new W5VcsObject(scd, 65, menuId));
 		} else {
@@ -1406,7 +1425,7 @@ public class PostgreSQLWriter extends BaseDAO {
 				+ "where tf.query_id=? AND tf.customization_id=?", tableId, tableId, tableId, queryId, customizationId);
 
 		if (parentTableId == 0) { // main Template
-			return templateId;
+			return pageId;
 		} else {
 			return gridId;
 		}
@@ -1531,32 +1550,34 @@ public class PostgreSQLWriter extends BaseDAO {
 						break;
 					}
 				}
-			} else {//insert
+			} else if(false){//insert
 				String tableFieldName = formResult.getRequestParams().get("dsc"+prefix);
 				if(!GenericUtil.isEmpty(tableFieldName)){
 					List<Object> ll =  executeSQLQuery("select lower(t.dsc) tdsc from iwb.w5_table t where t.table_id=? AND t.project_uuid=?"
 							, GenericUtil.uInt(formResult.getRequestParams(),"table_id"+prefix), prj.getProjectUuid());
-					String tableName = ll.get(0).toString();
-					if(tableName.indexOf('.')>0)tableName = tableName.substring(tableName.indexOf('.')+1);
-					int cntField = GenericUtil.uInt(executeSQLQuery("SELECT count(1) from information_schema.columns qz where lower(qz.COLUMN_NAME)=? AND lower(qz.table_name) = ? and qz.table_schema = ?"
-							, tableFieldName, tableName, prj.getRdbmsSchema()).get(0));
-					if(cntField==0){
-						int fieldType = GenericUtil.uInt(formResult.getRequestParams().get("field_tip"+prefix));
-//						int defaultControlType = GenericUtil.uInt(formResult.getRequestParams().get("default_control_tip"+prefix));
-						
-						String addTableColumnSql = "alter table " + tableName + " add column " + tableFieldName + " " + DBUtil.iwb2dbType(fieldType, GenericUtil.uInt(formResult.getRequestParams().get("max_length"+prefix)));
-						if(customizationId!=0/* && customizationId!=140*/)executeUpdateSQLQuery(addTableColumnSql);
-	
-						if(FrameworkSetting.vcs){
-							W5VcsCommit commit = new W5VcsCommit();
-							commit.setCommitTip((short)2);
-							commit.setExtraSql(addTableColumnSql);
-							commit.setProjectUuid(prj.getProjectUuid());
-							commit.setComment("AutoAddColumn Scripts for TableField: " + tableName + "." + tableFieldName);
-							commit.setCommitUserId((Integer)formResult.getScd().get("userId"));
-							Object oi = executeSQLQuery("select nextval('iwb.seq_vcs_commit')").get(0);
-							commit.setVcsCommitId(-GenericUtil.uInt(oi));commit.setRunLocalFlag((short)1);
-							saveObject(commit);
+					if(!GenericUtil.isEmpty(ll)) {
+						String tableName = ll.get(0).toString();
+						if(tableName.indexOf('.')>0)tableName = tableName.substring(tableName.indexOf('.')+1);
+						int cntField = GenericUtil.uInt(executeSQLQuery("SELECT count(1) from information_schema.columns qz where lower(qz.COLUMN_NAME)=? AND lower(qz.table_name) = ? and qz.table_schema = ?"
+								, tableFieldName, tableName, prj.getRdbmsSchema()).get(0));
+						if(cntField==0){
+							int fieldType = GenericUtil.uInt(formResult.getRequestParams().get("field_tip"+prefix));
+	//						int defaultControlType = GenericUtil.uInt(formResult.getRequestParams().get("default_control_tip"+prefix));
+							
+							String addTableColumnSql = "alter table " + tableName + " add column " + tableFieldName + " " + DBUtil.iwb2dbType(fieldType, GenericUtil.uInt(formResult.getRequestParams().get("max_length"+prefix)));
+							if(customizationId!=0/* && customizationId!=140*/)executeUpdateSQLQuery(addTableColumnSql);
+		
+							if(FrameworkSetting.vcs){
+								W5VcsCommit commit = new W5VcsCommit();
+								commit.setCommitTip((short)2);
+								commit.setExtraSql(addTableColumnSql);
+								commit.setProjectUuid(prj.getProjectUuid());
+								commit.setComment("AutoAddColumn Scripts for TableField: " + tableName + "." + tableFieldName);
+								commit.setCommitUserId((Integer)formResult.getScd().get("userId"));
+								Object oi = executeSQLQuery("select nextval('iwb.seq_vcs_commit')").get(0);
+								commit.setVcsCommitId(-GenericUtil.uInt(oi));commit.setRunLocalFlag((short)1);
+								saveObject(commit);
+							}
 						}
 					}
 				}
@@ -1891,7 +1912,7 @@ public class PostgreSQLWriter extends BaseDAO {
 						"insert into iwb.w5_project(project_uuid, customization_id, dsc, access_users,  rdbms_schema, vcs_url, vcs_user_name, vcs_password, oproject_uuid)"
 								+ " values (?,?,?, ?, ?,?,?,?, ?)",
 						projectId, cusId, p.get("dsc"), "" + userId, schema, vcsUrl, nickName, "1", oprojectId);
-				executeUpdateSQLQuery("create schema " + schema + " AUTHORIZATION iwb");
+				executeUpdateSQLQuery("create schema IF NOT EXISTS " + schema + " AUTHORIZATION iwb");
 			}
 
 			metadataLoader.addProject2Cache(projectId);
@@ -1919,7 +1940,7 @@ public class PostgreSQLWriter extends BaseDAO {
 				newScd.put("customizationId", cusId);
 				newScd.put("userId", userId);
 				W5VcsObject vo = new W5VcsObject(newScd, 369, userTip);
-				vo.setVcsObjectStatusTip((short) 9);
+				vo.setVcsObjectStatusType((short) 9);
 				saveObject(vo);
 				if (GenericUtil.isEmpty(executeSQLQuery(
 						"select 1 from iwb.w5_role p where p.role_id=0 AND customization_id=?", cusId))) {
