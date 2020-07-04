@@ -75,6 +75,7 @@ public class FrameworkCache {
 	final private static Map<String, Map<Integer, W5Form>> wForms = new HashMap<String, Map<Integer, W5Form>>();
 	final private static Map<String, Map<Integer, W5GlobalFunc>> wGlobalFuncs = new HashMap<String, Map<Integer, W5GlobalFunc>>();
 	final public static Map<String, Map<Integer, W5Page>> wTemplates = new HashMap<String, Map<Integer, W5Page>>();
+	final public static Map<String, Map<String, W5Page>> wTemplates2 = new HashMap<String, Map<String, W5Page>>();
 	final private static Map<String, Map<Integer, W5Component>> wComponents = new HashMap<String, Map<Integer, W5Component>>();
 
 	final private static Map<String, Map<Integer, W5Table>> wTables = new HashMap<String, Map<Integer, W5Table>>();
@@ -101,6 +102,7 @@ public class FrameworkCache {
 	final public static List<String> publishAppSettings= new ArrayList<String>();
 //	final public static Map<String, List<Integer>> publishLookUps= new HashMap<String, List<Integer>>();
 	final public static Map<Integer, Map<Integer, String>> wRoles = new HashMap<Integer, Map<Integer, String>>();
+	final public static Map<Integer, Set<Integer>> xRoleACL = new HashMap<Integer, Set<Integer>>();//RoleId, ACLType
 	final public static Map<String, List<Log5Feed>> wFeeds = new HashMap<String, List<Log5Feed>>();
 	final public static Map<String, Map<Integer, W5JobSchedule>> wJobs= new HashMap<String, Map<Integer, W5JobSchedule>>();
 	final private static Map<String, Map<String, Long>> wQueuedReloadCache = new HashMap<String, Map<String, Long>>();
@@ -139,6 +141,7 @@ public class FrameworkCache {
 		wq = wForms.get(projectId); if(wq!=null)wq.clear();
 		wq = wGlobalFuncs.get(projectId); if(wq!=null)wq.clear();
 		wq = wTemplates.get(projectId); if(wq!=null)wq.clear();
+		wq = wTemplates2.get(projectId); if(wq!=null)wq.clear();
 		wq = wCards.get(projectId); if(wq!=null)wq.clear();
 		wq = wListViews.get(projectId); if(wq!=null)wq.clear();
 		wq = mListViews.get(projectId); if(wq!=null)wq.clear();
@@ -220,6 +223,14 @@ public class FrameworkCache {
 			return null;
 		} else
 			return wComponents.get(projectId).get(componentId);
+	}
+
+	public static void setComponent(Object o, W5Component component) {
+		String projectId = getProjectId(o, "3351."+component.getComponentId());
+		if(!wComponents.containsKey(projectId)){
+			wComponents.put(projectId, new HashMap());
+		}
+		wComponents.get(projectId).put(component.getComponentId(), component);
 	}
 	public static void setComponentMap(Object o, Map<Integer, W5Component> m){
 		String projectId = getProjectId(o, null);
@@ -435,12 +446,16 @@ public class FrameworkCache {
 			return wTemplates.get(projectId).get(pageId);
 	}
 	
-	public static void addX(Map m,String projectId, int id, Object obj){
-		if(m.get(projectId)==null){
-			m.put(projectId, new HashMap());
-		}
-		((Map<Integer, Object>)m.get(projectId)).put(id, obj);
+	
+	public static W5Page getPageByName(Object o, String pageName){
+		String projectId = getProjectId(o, "63."+pageName);
+		if(wTemplates2.get(projectId)==null){
+			wTemplates2.put(projectId, new HashMap());
+			return null;
+		} else
+			return wTemplates2.get(projectId).get(pageName);
 	}
+	
 	
 	public static void addPage(Object o, W5Page page){
 		int pageId = page.getPageId();
@@ -450,6 +465,10 @@ public class FrameworkCache {
 			wTemplates.put(projectId, new HashMap());
 		}
 		wTemplates.get(projectId).put(pageId, page);
+		if(wTemplates2.get(projectId)==null){
+			wTemplates2.put(projectId, new HashMap());
+		}
+		wTemplates2.get(projectId).put(page.getDsc(), page);
 	}
 	
 	public static W5LookUp getLookUp(Object o, int lookUpId){
@@ -533,8 +552,15 @@ public class FrameworkCache {
 		return map.get(lookUpId);
 	}*/
 	
-	public static boolean roleAccessControl(Map scd,  int action){ 
-		return true;
+	public static boolean roleAccessControl(Map scd,  int action){
+		if(action==0)return true;
+		if(FrameworkSetting.projectId==null || FrameworkSetting.projectId.equals("1"))return true;
+		if(scd==null)return false;
+		int roleId = GenericUtil.uInt(scd.get("roleId"));
+		if(roleId==0)return true;
+		Set<Integer> ss = xRoleACL.get(roleId);
+		if(ss==null)return false;
+		return ss.contains(action);
 		//0:view, 1:edit, 2:insert, 3:delete, 11:bulkUpdateFlag; 
 		//101:fileViewFlag;102:fileUploadFlag;103:commentMakeFlag;104:bulkEmailFlag; 105:gridReportViewFlag;106:showRelatedEmailFlag;107:lookupManageFlag;108:logViewFlag;109:smsEmailTemplateCrudFlag
 
@@ -1517,13 +1543,20 @@ public class FrameworkCache {
 	public static String getExceptionMessage(Object o, String exceptionMessage) {
 		if(exceptionMessage==null)return null;
 		String projectId = o == null ? FrameworkSetting.devUuid : getProjectId(o, "-");
+		String locale = null;
+		if(o!=null && o instanceof Map)locale = (String)(((Map)o).get("locale"));
+		if(locale==null)locale =  "en";
 		List<W5Exception> l = wExceptions.get(projectId);
 		if(l!=null) {
-			String locale = null;
-			if(o!=null && o instanceof Map)locale = (String)(((Map)o).get("locale"));
-			if(locale==null)locale =  "en";
 			for(W5Exception e:l)if(e.getLocale().equals(locale) && exceptionMessage.contains(e.getExceptionMessage()))
 				return e.getUserMessage();
+		}
+		if(!projectId.equals(FrameworkSetting.devUuid)) {
+			l = wExceptions.get(FrameworkSetting.devUuid);
+			if(l!=null) {
+				for(W5Exception e:l)if(e.getLocale().equals(locale) && exceptionMessage.contains(e.getExceptionMessage()))
+					return e.getUserMessage();
+			}
 		}
 		return exceptionMessage;
 	}

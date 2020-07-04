@@ -33,6 +33,7 @@ public class W5Project  implements java.io.Serializable {
 	private int sessionQueryId;
 	private int authenticationFuncId;
 	private int _defaultRoleGroupId;
+	private short _customFile;
 	private short lkpDateFormat;
 	
 	private short localeMsgKeyFlag;
@@ -179,6 +180,14 @@ public class W5Project  implements java.io.Serializable {
 	}
 	public void setLkpDateFormat(short lkpDateFormat) {
 		this.lkpDateFormat = lkpDateFormat;
+	}
+	
+	@Transient
+	public short get_customFile() {
+		return _customFile;
+	}
+	public void set_customFile(short _customFile) {
+		this._customFile = _customFile;
 	}
 
 }

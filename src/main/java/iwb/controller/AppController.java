@@ -589,7 +589,7 @@ public class AppController implements InitializingBean {
 		requestParams.put("_remote_ip", request.getRemoteAddr());
 		W5GlobalFuncResult result = service.executeFunc(scd, 250, requestParams, (short) 7);
 		boolean success = GenericUtil.uInt(result.getResultMap().get("success")) != 0;
-		String errorMsg = result.getResultMap().get("errorMsg");
+		String errorMsg = (String)result.getResultMap().get("errorMsg");
 		if (!success)
 			errorMsg = LocaleMsgCache.get2(0, GenericUtil.uStrNvl((String) scd.get("locale"),
 					FrameworkCache.getAppSettingStringValue(0, "locale")), errorMsg);
@@ -634,7 +634,7 @@ public class AppController implements InitializingBean {
 		 * 4 success 5 errorMsg 6 userId 7 expireFlag 8 smsFlag 9 roleCount
 		 */
 		boolean success = GenericUtil.uInt(result.getResultMap().get("success")) != 0;
-		String errorMsg = result.getResultMap().get("errorMsg");
+		String errorMsg = (String)result.getResultMap().get("errorMsg");
 		int userId = GenericUtil.uInt(result.getResultMap().get("userId"));
 		boolean expireFlag = GenericUtil.uInt(result.getResultMap().get("expireFlag")) != 0;
 		boolean smsFlag = GenericUtil.uInt(result.getResultMap().get("smsFlag")) != 0;

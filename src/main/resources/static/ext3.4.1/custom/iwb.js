@@ -218,7 +218,7 @@ function fileAttachmentRenderer(a) {
     return ax
       ? '<div style="background-position-x:center" border=0 onclick="mainPanel.loadTab({attributes:{modalWindow:true, _title_:\'' +
           a.name +
-          "',href:'showPage?_tid=9&_gid458_a=1',_pk:{tfile_attachment_id:'file_attachment_id'},baseParams:{xtable_id:" +
+          "',href:'showPage?_tid="+(_scd.customFile ? 6813:9)+"&_gid458_a=1',baseParams:{xtable_id:" +
           a.crudTableId +
           ", xtable_pk:" +
           cx.id +
@@ -659,7 +659,7 @@ function grid2grid(gridMaster, gridDetail, params, tp) {
       gridDetail.initialConfig.editMode
     )
       gridDetail.btnEditMode.toggle(); 
-    if (a.hasSelection ?  a.hasSelection() : a.getSelectionCount()) { //
+    if (a.getSelections ? a.getSelections().length==1: a.hasSelection ?  a.hasSelection() : (a.getSelectionCount()==1)) { //
       if (params || gridDetail._baseParams) {
         gridDetail.store.baseParams = Ext.apply(
           gridDetail._baseParams || {},
@@ -1615,7 +1615,7 @@ function fnNewFileAttachment(a) {
   for (var key in a._grid._pk) table_pk += "|" + sel.data[a._grid._pk[key]];
 
    var href =
-      "showForm?a=2&_fid=43&table_id=" +
+      (_scd.customFile ? "showPage?_tid=6827":"showForm?a=2&_fid=43")+"&table_id=" +
       a._grid.crudTableId +
       "&table_pk=" +
       table_pk.substring(1) +
@@ -1667,7 +1667,7 @@ function fnNewFileAttachment4Form(tid, tpk, not_image_flag) {
   }
 
     var href =
-      "showForm?a=2&_fid=43&table_id=" + tid + "&table_pk=" + tpk + image_param;
+      (_scd.customFile ? "showPage?_tid=6827":"showForm?a=2&_fid=43")+"&table_id=" + tid + "&table_pk=" + tpk + image_param;
   mainPanel.loadTab({
     attributes: {
       modalWindow: true,
@@ -1691,8 +1691,7 @@ function fnFileAttachmentList(a) {
   var cfg = {
     attributes: {
       modalWindow: true,
-      href: "showPage?_tid=9&_gid458_a=1",
-      _pk: { tfile_attachment_id: "file_attachment_id" },
+      href: "showPage?_tid="+ (_scd.customFile ? 6813:9) + "&_gid458_a=1",
       baseParams: {
         xtable_id: a._grid.crudTableId,
         xtable_pk: table_pk.substring(1)
@@ -2335,10 +2334,7 @@ function addDefaultSpecialButtons(xbuttons, xgrid) {
                 var cfg = {
                   attributes: {
                     modalWindow: true,
-                    href: "showPage?_tid=9",
-                    _pk: {
-                      tfile_attachment_id: "file_attachment_id"
-                    },
+                    href: "showPage?_tid="+ (_scd.customFile ? 6813:9),
                     baseParams: {
                       xtable_id: xgrid.crudTableId,
                       xtable_pk: sel.id
@@ -3446,7 +3442,7 @@ function addTab4GridWSearchFormWithDetailGrids(obj, master_flag) {
 													// searchFormu olamaz.
 													// Patlıyor.
 
-      var xmxm = addTab4GridWSearchFormWithDetailGrids(obj.detailGrids[i], 1);
+      var xmxm = addTab4GridWSearchFormWithDetailGrids(Ext.apply({t:obj.t&&obj.detailGrids[i].grid?obj.t+'-'+obj.detailGrids[i].grid.gridId:null}, obj.detailGrids[i]), 1);
       obj.detailGrids[i].grid._masterGrid = mainGrid;
       if (xmxm.items.items[0].xtype == "form") {
         // ilk sıradaki gridin ,detail gridi varsa Search Formunu yok ediyor
@@ -3653,7 +3649,7 @@ function addTab4GridWSearchFormWithDetailGrids(obj, master_flag) {
   var subTab = {
     region: "center",
     enableTabScroll: true,
-    activeTab: _posId2, cls:'iwb-detail-tab',
+    activeTab: 0/*_posId2*/, cls:'iwb-detail-tab',
     border: false,
     visible: false,
     items: detailGridPanels, 
@@ -4159,8 +4155,8 @@ function ajaxAuthenticateUser() {
 
 function showLoginDialog(xobj) {
   if (1 * _scd.customizationId > 0) {
-//    document.location = "login.htm?.r="+Math.random();
-    document.location = "/index.html?.r="+Math.random();
+    if(document.location.href.indexOf('/preview/')>-1)document.location = "login.htm?.r="+Math.random();
+    else document.location = "/index.html?.r="+Math.random();
     return;
   }
   if (lw && lw.isVisible()) return;
@@ -4219,7 +4215,7 @@ function showLoginDialog(xobj) {
 function formSubmit(submitConfig) {
   var cfg = {
 // waitMsg: getLocMsg("js_please_wait"),
-    clientValidation: typeof iwb.submitClientValidation != 'undefined' ? iwb.submitClientValidation:true,
+    clientValidation: false,//typeof iwb.submitClientValidation != 'undefined' ? iwb.submitClientValidation:true,
     success: function(form, action) {
       iwb.mask();
       var myJson = JSON.parse(action.response.responseText);// eval("(" +
@@ -4357,7 +4353,7 @@ function formSubmit(submitConfig) {
         case Ext.form.Action.CLIENT_INVALID:
           Ext.infoMsg.msg(
             "error",
-            getLocMsg("js_form_alan_veri_dogrulama_hatasi")
+            getLocMsg("js_form_field_validation_error")
           );
           break;
         case Ext.form.Action.CONNECT_FAILURE:
@@ -4912,7 +4908,7 @@ function approveTableRecords(aa, a) {
     if (aa != 901 && step_id == 901) {
       Ext.Msg.show({
         title: getLocMsg("error"),
-        msg: getLocMsg("approval_hatali_islem"),
+        msg: getLocMsg("workflow_wrong_action"),
         icon: Ext.MessageBox.ERROR
       });
       return;
@@ -5689,7 +5685,7 @@ function addTab4DetailGridsWSearchForm(obj) {
 	if (obj.detailGrids[i].detailGrids) {
       // master/detail olacak
       obj.detailGrids[0].grid.searchForm = undefined;
-      var xmxm = addTab4GridWSearchFormWithDetailGrids(obj.detailGrids[i]);
+      var xmxm = addTab4GridWSearchFormWithDetailGrids(Ext.apply({t:obj.t&&obj.detailGrids[i].grid?obj.t+'-'+obj.detailGrids[i].grid.gridId:null},obj.detailGrids[i]));
       if (xmxm.items.items[0].xtype == "form") {
         // ilk sıradaki gridin ,detail gridi varsa Search Formunu yok ediyor
         xmxm.items.items[0].destroy();
@@ -6186,118 +6182,24 @@ function timeDifDt(cd, timeTip, timeDif) {
 }
 
 function fileNameRender(a, b, c) {
-  var externalUrl = c.data.external_url ? c.data.external_url : "";
-  if (
-    _app.file_attach_view_access_flag &&
-    1 * _app.file_attach_view_access_flag &&
-    _app.file_attach_view_file_tips &&
-    _app.file_attach_view_roles &&
-    c.data.file_type_id &&
-    ("," + _app.file_attach_view_file_tips + ",").indexOf(
-      "," + c.data.file_type_id + ","
-    ) > -1 &&
-    ("," + _app.file_attach_view_roles + ",").indexOf("," + _scd.roleId + ",") >
-      -1
-  ) {
-    if (externalUrl.length > 5)
       return (
-        "<a target=_blank href=" +
-        externalUrl +
-        " onclick=\"return openPopup('" +
-        externalUrl +
-        "','1',800,600,1);\"><b style=\"color:green\">" +
-        a +
-        "</b></a>"
-      );
-    else
-      return (
-        "<a target=_blank href=# onclick=\"return openPopup('showPage?_tid=975&_fai=" +
-        c.data.file_attachment_id +
-        "','1',800,600,1);\"><b style=\"color:#F00\">" +
-        a +
-        "</b></a>"
-      );
-  } else {
-    if (externalUrl.length > 5)
-      return (
-        "<a target=_blank href=" +
-        externalUrl +
-        " onclick=\"return openPopup('" +
-        externalUrl +
-        "','1',800,600,1);\"><b style=\"color:green\">" +
-        a +
-        "</b></a>"
-      );
-    else
-      return (
-        '<a target=_blank href="dl/' +
+        '<a style="font-weight:bold" target=_blank href="dl/' +
         encodeURIComponent(a) +
         "?_fai=" +
-        c.data.file_attachment_id +
-        '"><b>' +
-        a +
-        "</b></a>"
+        (c.get('file_id') || c.get('file_attachment_id')) +
+        '">' + a + "</a>"
       );
-  }
 }
 
 function fileNameRenderWithParent(a, b, c) {
-  var externalUrl = c.data.external_url ? c.data.external_url : "";
-  if (
-    _app.file_attach_view_access_flag &&
-    1 * _app.file_attach_view_access_flag &&
-    _app.file_attach_view_file_tips &&
-    _app.file_attach_view_roles &&
-    c.data.file_type_id &&
-    ("," + _app.file_attach_view_file_tips + ",").indexOf(
-      "," + c.data.file_type_id + ","
-    ) > -1 &&
-    ("," + _app.file_attach_view_roles + ",").indexOf("," + _scd.roleId + ",") >
-      -1
-  ) {
-    if (externalUrl.length > 5)
-      return (
-        "<a target=_blank href=" +
-        externalUrl +
-        " onclick=\"return openPopup('" +
-        externalUrl +
-        "','1',800,600,1);\"><b style=\"color:green\">" +
-        a +
-        "</b></a>" +
-        (c.data._record ? renderParentRecords(c.data._record) : "")
-      );
-    else
-      return (
-        "<a target=_blank href=# onclick=\"return openPopup('showPage?_tid=975&_fai=" +
-        c.data.file_attachment_id +
-        "','1',800,600,1);\"><b style=\"color:#F00\">" +
-        a +
-        "</b></a>"
-      );
-  } else {
-    if (externalUrl.length > 5)
-      return (
-        "<a target=_blank href=" +
-        externalUrl +
-        " onclick=\"return openPopup('" +
-        externalUrl +
-        "','1',800,600,1);\"><b style=\"color:green\">" +
-        a +
-        "</b></a>" +
-        (c.data._record ? renderParentRecords(c.data._record) : "")
-      );
-    else
-      return (
-        '<a target=_blank href="dl/' +
-        encodeURIComponent(a) +
-        "?_fai=" +
-        c.data.file_attachment_id +
-        '"><b>' +
-        a +
-        "</b></a>" +
-        (c.data._record ? renderParentRecords(c.data._record) : "")
-      );
-  }
+  return (
+    '<a style="font-weight:bold" target=_blank href="dl/' +
+    encodeURIComponent(a) +
+    "?_fai=" +
+    (c.get('file_id') || c.get('file_attachment_id')) +
+    '">' + a +"</a>" +
+    (c.data._record ? renderParentRecords(c.data._record) : "")
+  );
 }
 
 var usersBorderChat = ["#37cc00", "#5fcbff", "pink"];
@@ -6838,7 +6740,8 @@ iwb.ui.buildCRUDForm = function(getForm, callAttributes, _page_tab_id) {
         id: "sb_" + getForm.id,
         iconAlign: "top",
         scale: "medium",
-// style: {margin: "0px 5px 0px 5px"},
+        //style:"margin-left:5px",
+        cls:"isave-toolbar",
         iconCls: "ikaydet",
         handler: function(a, b, c) {
           if (
@@ -6879,7 +6782,7 @@ iwb.ui.buildCRUDForm = function(getForm, callAttributes, _page_tab_id) {
                       var r = null;
                       var bm = false;
                       if (extDef.componentWillPost || bm) {
-                        if (getForm._cfg.formPanel.getForm().isValid()) {
+                        if (getForm._cfg.formPanel.getForm().findInvalid()) {
                           var vals = getForm._cfg.formPanel
                             .getForm()
                             .getValues();
@@ -6888,12 +6791,12 @@ iwb.ui.buildCRUDForm = function(getForm, callAttributes, _page_tab_id) {
                             if (!r) return;
                           }
                         } else {
-                          getForm._cfg.formPanel.getForm().findInvalid();
+                          //getForm._cfg.formPanel.getForm().findInvalid();
                           return;
                         }
                       }
-                      if (!getForm._cfg.formPanel.getForm().isValid()) {
-                        getForm._cfg.formPanel.getForm().findInvalid();
+                      if (!getForm._cfg.formPanel.getForm().findInvalid()) {
+                        //getForm._cfg.formPanel.getForm().findInvalid();
                         return null;
                       }
                       getForm._cfg.dontClose = 0;
@@ -6927,19 +6830,19 @@ iwb.ui.buildCRUDForm = function(getForm, callAttributes, _page_tab_id) {
           var bm = false;
 
           if (extDef.componentWillPost || bm) {
-            if (getForm._cfg.formPanel.getForm().isValid()) {
+            if (getForm._cfg.formPanel.getForm().findInvalid()) {
               var vals = getForm._cfg.formPanel.getForm().getValues();
               if (extDef.componentWillPost) {
                 r = extDef.componentWillPost(vals);
                 if (!r) return;
               }
             } else {
-              getForm._cfg.formPanel.getForm().findInvalid();
+              //getForm._cfg.formPanel.getForm().findInvalid();
               return;
             }
           }
-          if (!getForm._cfg.formPanel.getForm().isValid()) {
-            getForm._cfg.formPanel.getForm().findInvalid();
+          if (!getForm._cfg.formPanel.getForm().findInvalid()) {
+            //getForm._cfg.formPanel.getForm().findInvalid();
             return null;
           }
           getForm._cfg.dontClose = 0;
@@ -6957,11 +6860,12 @@ iwb.ui.buildCRUDForm = function(getForm, callAttributes, _page_tab_id) {
     // post & continue
     if (getForm.contFlag && 1 * getForm.contFlag == 1 && realAction == 2) {
       btn.push({
-        text: "Save&Continue".toUpperCase(),
+        text: getLocMsg("save_continue"),
         id: "cc_" + getForm.id,
         iconAlign: "top",
         scale: "medium",
-//        iconCls: "isave_cont",
+        style:"margin-left:15px",
+        iconCls: "isave_cont",
         handler: function(a, b, c) {
           if (
             !getForm._cfg.formPanel.getForm().isDirty() &&
@@ -6970,23 +6874,23 @@ iwb.ui.buildCRUDForm = function(getForm, callAttributes, _page_tab_id) {
             return;
           var r = null;
           if (extDef.componentWillPost) {
-            if (getForm._cfg.formPanel.getForm().isValid()) {
+            if (getForm._cfg.formPanel.getForm().findInvalid()) {
               r = extDef.componentWillPost(
                 getForm._cfg.formPanel.getForm().getValues()
               );
               if (!r) return;
             } else {
-              getForm._cfg.formPanel.getForm().findInvalid();
+              //getForm._cfg.formPanel.getForm().findInvalid();
               return;
             }
           }
-          if (!getForm._cfg.formPanel.getForm().isValid()) {
-            getForm._cfg.formPanel.getForm().findInvalid();
+          if (!getForm._cfg.formPanel.getForm().findInvalid()) {
+            //getForm._cfg.formPanel.getForm().findInvalid();
             return null;
           }
           if (!getForm._cfg.callback)
             getForm._cfg.callback = function(js, conf) {
-              if (js.success) Ext.infoMsg.msg("info", "${operation_successful}");
+              if (js.success) Ext.infoMsg.msg("info", getLocMsg("operation_successful"));
               if(extDef._tab_order.getValue)extDef._tab_order.setValue(extDef._tab_order.getValue()+1)
             };
           getForm._cfg.dontClose = 1;
@@ -6997,7 +6901,7 @@ iwb.ui.buildCRUDForm = function(getForm, callAttributes, _page_tab_id) {
         }
       });
 
-      btn.push({
+      if(false)btn.push({
         text: "Save&New".toUpperCase(),
         id: "cn_" + getForm.id,
         iconAlign: "top",
@@ -7007,23 +6911,23 @@ iwb.ui.buildCRUDForm = function(getForm, callAttributes, _page_tab_id) {
         handler: function(a, b, c) {
           var r = null;
           if (extDef.componentWillPost) {
-            if (getForm._cfg.formPanel.getForm().isValid()) {
+            if (getForm._cfg.formPanel.getForm().findInvalid()) {
               r = extDef.componentWillPost(
                 getForm._cfg.formPanel.getForm().getValues()
               );
               if (!r) return;
             } else {
-              getForm._cfg.formPanel.getForm().findInvalid();
+              //getForm._cfg.formPanel.getForm().findInvalid();
               return;
             }
           }
-          if (!getForm._cfg.formPanel.getForm().isValid()) {
-            getForm._cfg.formPanel.getForm().findInvalid();
+          if (!getForm._cfg.formPanel.getForm().findInvalid()) {
+            //getForm._cfg.formPanel.getForm().findInvalid();
             return null;
           }
           if (!getForm._cfg.callback)
             getForm._cfg.callback = function(js, conf) {
-              if (js.success) Ext.infoMsg.msg("info", "${operation_successful}");
+              if (js.success) Ext.infoMsg.msg("info", getLocMsg("operation_successful"));
               if(extDef._tab_order.getValue)extDef._tab_order.setValue(extDef._tab_order.getValue()+1)
             };
           getForm._cfg.dontClose = 1;
@@ -7063,81 +6967,7 @@ iwb.ui.buildCRUDForm = function(getForm, callAttributes, _page_tab_id) {
     }
   });
 
-  if (1 * getForm.a == 2 && getForm.manualStartDemand) {
-    btn.push({
-      text: "${kaydet_onay_baslatma_talebi}",
-      id: "sapp_" + getForm.id,
-      iconAlign: "top",
-      scale: "medium",
-
-      iconCls: "app_req",
-      handler: function(a, b, c) {
-        var r = null;
-        if (extDef.componentWillPost) {
-          if (getForm._cfg.formPanel.getForm().isValid()) {
-            r = extDef.componentWillPost(
-              getForm._cfg.formPanel.getForm().getValues()
-            );
-            if (!r) return;
-          } else {
-            getForm._cfg.formPanel.getForm().findInvalid();
-            return;
-          }
-        }
-        if (!getForm._cfg.formPanel.getForm().isValid()) {
-          getForm._cfg.formPanel.getForm().findInvalid();
-          return null;
-        }
-        getForm._cfg.extraParams = {};
-        if (typeof r == "object") getForm._cfg.extraParams = r;
-        submitAndApproveTableRecord(
-          -1,
-          getForm,
-          getForm.approval && getForm.approval.dynamic
-            ? getForm.approval.dynamic
-            : null
-        );
-      }
-    });
-  }
-  if (1 * getForm.a == 1 && getForm.manualStartDemand) {
-    btn.push({
-      text: "${guncelle_onay_baslatma_talebi}",
-      id: "uapp_" + getForm.id,
-      iconAlign: "top",
-      scale: "medium",
-
-      iconCls: "app_req",
-      handler: function(a, b, c) {
-        var r = null;
-        if (extDef.componentWillPost) {
-          if (getForm._cfg.formPanel.getForm().isValid()) {
-            r = extDef.componentWillPost(
-              getForm._cfg.formPanel.getForm().getValues()
-            );
-            if (!r) return;
-          } else {
-            getForm._cfg.formPanel.getForm().findInvalid();
-            return;
-          }
-        }
-        if (!getForm._cfg.formPanel.getForm().isValid()) {
-          getForm._cfg.formPanel.getForm().findInvalid();
-          return null;
-        }
-        getForm._cfg.extraParams = {};
-        if (typeof r == "object") getForm._cfg.extraParams = r;
-        submitAndApproveTableRecord(
-          -1,
-          getForm,
-          getForm.approval && getForm.approval.dynamic
-            ? getForm.approval.dynamic
-            : null
-        );
-      }
-    });
-  }
-
+ 
   // approval
   if (1 * getForm.a == 1 && getForm.approval) {
     btn.push("-");
@@ -7167,18 +6997,18 @@ iwb.ui.buildCRUDForm = function(getForm, callAttributes, _page_tab_id) {
           if (!getForm.viewMode) {
             var r = null;
             if (extDef.componentWillPost) {
-              if (getForm._cfg.formPanel.getForm().isValid()) {
+              if (getForm._cfg.formPanel.getForm().findInvalid()) {
                 r = extDef.componentWillPost(
                   getForm._cfg.formPanel.getForm().getValues()
                 );
                 if (!r) return;
               } else {
-                getForm._cfg.formPanel.getForm().findInvalid();
+                //getForm._cfg.formPanel.getForm().findInvalid();
                 return;
               }
             }
-            if (!getForm._cfg.formPanel.getForm().isValid()) {
-              getForm._cfg.formPanel.getForm().findInvalid();
+            if (!getForm._cfg.formPanel.getForm().findInvalid()) {
+              //getForm._cfg.formPanel.getForm().findInvalid();
               return null;
             }
             getForm._cfg.dontClose = 0;
@@ -7271,10 +7101,7 @@ iwb.ui.buildCRUDForm = function(getForm, callAttributes, _page_tab_id) {
             var cfg = {
               attributes: {
                 modalWindow: true,
-                href: "showPage?_tid=9",
-                _pk: {
-                  tfile_attachment_id: "file_attachment_id"
-                },
+                href: "showPage?_tid="+ (_scd.customFile ? 6813:9),
                 baseParams: {
                   xtable_id: getForm.crudTableId,
                   xtable_pk: table_pk.substring(1)
@@ -7395,7 +7222,7 @@ iwb.ui.buildCRUDForm = function(getForm, callAttributes, _page_tab_id) {
   btn.push("->");
 
 
-  if(!getForm.viewMode)btn.push({
+  if(!getForm.viewMode && _app.form_template && 1*_app.form_template)btn.push({
 	tooltip: getLocMsg("templates"),
     id: "ttemp_" + getForm.id,
     iconAlign: "top",
@@ -7658,7 +7485,7 @@ iwb.ui.buildCRUDForm = function(getForm, callAttributes, _page_tab_id) {
         menu: toolButtons
       });
     } else {
-      btn.push({
+      if(_scd.customizationId==0)btn.push({
     	tooltip: "Record Info",
         iconAlign: "top",
         scale: "medium",

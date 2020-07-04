@@ -11,6 +11,7 @@ import iwb.domain.helper.W5TableRecordHelper;
 public class W5PageResult implements W5MetaResult{
 	
 	private	int	pageId;
+	private String name;
 	private W5Page page;
 	private	List<Object> pageObjectList;
 	
@@ -64,4 +65,12 @@ public class W5PageResult implements W5MetaResult{
 	public void setMasterRecordList(List<W5TableRecordHelper> masterRecordList) {
 		this.masterRecordList = masterRecordList;
 	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	
+	
 }

@@ -24,7 +24,15 @@ public class FrameworkSetting {
 	public static final Map<String, Integer> projectSystemStatus = new HashMap<String, Integer>();//
 	public final static Locale appLocale = new Locale("en");
 	public final static String instanceUuid=UUID.randomUUID().toString();
+	
 	public final static String devUuid="067e6162-3b6f-4ae2-a221-2470b63dff00";
+	public final static String rbacUuid="4147a129-06ad-4983-9b1c-8e88826454ac";
+	public final static String fileUuid="59b0b784-6dbb-48bb-8e61-0948dee1817f";
+	public final static String commentUuid="4094b109-bcc8-470a-b794-93a4b6b932b5";
+	public final static String workflowUuid="10c3db7e-1045-4359-854b-a939fc9ae872";
+	public final static String emailUuid="04fc4100-d464-41b8-bb78-e3672e761e3d";
+	
+	
 	public static boolean mq=true;
 	public static boolean cloud=false;
 	public static boolean debug=true;
@@ -124,23 +132,7 @@ public class FrameworkSetting {
 
 	public static boolean localTimer = true;
 	
-	/**
-     * This is your auth0 domain (tenant you have created when registering with auth0 - account name)
-     */
-    //@Value(value = "${com.auth0.domain}")
-	public static  String domain = "iwb.auth0.com";
-
-    /**
-     * This is the client id of your auth0 application (see Settings page on auth0 dashboard)
-     */
-    //@Value(value = "${com.auth0.clientId}")
-	public static  String clientId = "eucJR6BM7WzoG336tT5MYCew6YpxJMyv";
-
-    /**
-     * This is the client secret of your auth0 application (see Settings page on auth0 dashboard)
-     */
-    //@Value(value = "${com.auth0.clientSecret}")
-	public static  String clientSecret = "U5qMXxnQ9jr2Hm7AGg7COwikaWGcOhl28fLpVfUEqe6_bVjJ1A2FnWCbmjNN8BzR";
+		
 	public static boolean showOnlineStatus = true;
 	
 	public static boolean redisCache = false;
@@ -148,7 +140,11 @@ public class FrameworkSetting {
 	
 	public static boolean reactLabelRequired = true;
 	public static boolean metadata = false;
-	public static Object defaultPasswordMask = "**********";
+	final public static String defaultPasswordMask = "**********";
 	public static boolean logVcs = true;
+	final public static int customFileTableId = 6973;
+	final public static int customCommentTableId = 6975;
+	final public static int customWorkflowTableId = 6976;
+	final public static int customEmailTableId = 6977;
 
 }

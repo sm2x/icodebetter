@@ -91,7 +91,7 @@ public class RestController implements InitializingBean {
 				requestParams.put("_remote_ip", request.getRemoteAddr());
 				String transactionId =  GenericUtil.getTransactionId();
 				requestParams.put("_trid_", transactionId);
-				if(FrameworkSetting.logType>0)LogUtil.logObject(new Log5Transaction(po.getProjectUuid(), "rest", transactionId), true);
+				if(FrameworkSetting.logType>0)LogUtil.logObject(new Log5Transaction(po.getProjectUuid(), "rest("+serviceName+".login)", transactionId), true);
 				String xlocale = GenericUtil.uStrNvl(request.getParameter("locale"),FrameworkCache.getAppSettingStringValue(0, "locale"));
 				Map scd = new HashMap();
 				scd.put("customizationId", po.getCustomizationId());
@@ -107,7 +107,7 @@ public class RestController implements InitializingBean {
 				boolean success = GenericUtil.uInt(result.getResultMap().get("success")) != 0;
 				boolean expireFlag = GenericUtil.uInt(result.getResultMap().get("expireFlag")) != 0;
 				if (!success || expireFlag){
-					String errorMsg = LocaleMsgCache.get2(0, xlocale, expireFlag ? "pass_expired":result.getResultMap().get("errorMsg"));
+					String errorMsg = LocaleMsgCache.get2(0, xlocale, expireFlag ? "pass_expired":(String)result.getResultMap().get("errorMsg"));
 					response.getWriter().write("{\"success\":false,\"error\":\"" + GenericUtil.stringToJS2(errorMsg) + "\"}");
 					return;
 				}
@@ -157,7 +157,15 @@ public class RestController implements InitializingBean {
 			
 			Map<String, Object> scd = null;
 			if(GenericUtil.isEmpty(wsm.getAccessSourceTypes()) || GenericUtil.hasPartInside2(wsm.getAccessSourceTypes(), "1")){
-				scd = GenericUtil.isEmpty(token) ? null : GenericUtil.fromJSONObjectToMap(new JSONObject(EncryptionUtil.decryptAES(token)));
+				if(!GenericUtil.isEmpty(token)) {
+					token = EncryptionUtil.decryptAES(token);
+					if(!GenericUtil.isEmpty(token)) try{
+						scd = GenericUtil.fromJSONObjectToMap(new JSONObject(token));
+					} catch(Exception ee) {
+						if(FrameworkSetting.debug)ee.printStackTrace();
+						throw new IWBException("session","Invalid.Token",0,null, "No valid token: " + ee.getMessage(), ee);
+					}
+				}
 				if(!GenericUtil.hasPartInside2(wsm.getAccessSourceTypes(), "6") && GenericUtil.isEmpty(scd)){
 					throw new IWBException("session","No Session",0,null, "No valid token", null);
 				}
@@ -181,9 +189,10 @@ public class RestController implements InitializingBean {
 					requestParams.putAll(GenericUtil.fromJSONObjectToMap(jo));
 			} else 
 				requestParams = GenericUtil.getParameterMap(request);
-			String transactionId =  GenericUtil.getTransactionId();
+			String transactionId =  (String)request.getAttribute("_trid_");
+			if(transactionId==null) transactionId = GenericUtil.getTransactionId();
 			requestParams.put("_trid_", transactionId);
-			if(FrameworkSetting.logType>0)LogUtil.logObject(new Log5Transaction(po.getProjectUuid(), "rest", transactionId), true);
+			if(FrameworkSetting.logType>0)LogUtil.logObject(new Log5Transaction(po.getProjectUuid(), "rest("+serviceName+"."+methodName+")", transactionId), true);
 
 			W5FormResult fr=null; 
 			switch(wsm.getObjectType()){
@@ -230,8 +239,8 @@ public class RestController implements InitializingBean {
 			}
 		} catch (Exception e) {
 			if(FrameworkSetting.debug)e.printStackTrace();
-			response.getWriter().write("{\"error\":\""+GenericUtil.stringToJS(e.getMessage())+"\"}");
-//			response.getWriter().write(new IWBException("framework","REST Def",0,null, "Error", e).toJsonString(request.getRequestURI()));
+//			response.getWriter().write("{\"error\":\""+GenericUtil.stringToJS(e.getMessage())+"\"}");
+			response.getWriter().write(new IWBException("framework","REST Def",0,null, "Error", e).toJsonString(request.getRequestURI(), null));
 		}
 	}
 	
@@ -278,7 +287,8 @@ public class RestController implements InitializingBean {
 		String[] elementTypes = new String[]{"string","string","string","float","integer","boolean","string","number","object","object","array"};
 
 		StringBuilder buf = new StringBuilder();
-		buf.append("{\"swagger\": \"2.0\",\"paths\": {");
+		buf.append("{\"swagger\": \"2.0\",\"basePath\":\"/rest/").append(ws.getProjectUuid())
+		.append("/").append(ws.getDsc()).append("\",\"paths\": {");
 		StringBuilder definitions = new StringBuilder();
 		boolean b = false;
 		for(W5WsServerMethod wsm:ws.get_methods()){
@@ -298,7 +308,7 @@ public class RestController implements InitializingBean {
 //			case	2:consumes = "application/json";
 			case	6:consumes = "application/x-yaml";break;
 			}
-			buf.append("\n\"").append(wsm.getDsc()).append("\":{ \"").append(methodType).append("\":{\"produces\": [\"application/json\"],\"consumes\":[\"")
+			buf.append("\n\"/").append(wsm.getDsc()).append("\":{ \"").append(methodType).append("\":{\"produces\": [\"application/json\"],\"consumes\":[\"")
 				.append(consumes).append("\"],\"parameters\": [");
 //			buf.append("\n<method name=\"").append(wsm.getObjectTip()<19 ? "POST":"GET").append("\" id=\"").append(wsm.getDsc()).append("\">");
 			
@@ -312,6 +322,10 @@ public class RestController implements InitializingBean {
 				continue;
 			}else switch(wsm.getObjectType()){
 			case	0:case 1:case 2:case 3://TODO
+				if(GenericUtil.isEmpty(wsm.getAccessSourceTypes()) || GenericUtil.hasPartInside(wsm.getAccessSourceTypes(), "1")) {
+					W5WsServerMethodParam tokenKey =new W5WsServerMethodParam(-998, "tokenKey", (short)1);tokenKey.setOutFlag((short)0);tokenKey.setNotNullFlag((short)1);
+					lwsmp.add(tokenKey);
+				}
 				W5FormResult fr=(W5FormResult)o;
 				lwsmp.add(new W5WsServerMethodParam(-999, "result", (short)9));
 				t = FrameworkCache.getTable(ws.getProjectUuid(), fr.getForm().getObjectId());
@@ -338,8 +352,13 @@ public class RestController implements InitializingBean {
 					
 					break;
 				}
+				if(dfr.getGlobalFunc().getGlobalFuncId()!=3 && (GenericUtil.isEmpty(wsm.getAccessSourceTypes()) || GenericUtil.hasPartInside(wsm.getAccessSourceTypes(), "1"))) {
+					W5WsServerMethodParam tokenKey =new W5WsServerMethodParam(-998, "tokenKey", (short)1);tokenKey.setOutFlag((short)0);tokenKey.setNotNullFlag((short)1);
+					lwsmp.add(tokenKey);
+				}
+
 				for(W5GlobalFuncParam dfp:dfr.getGlobalFunc().get_dbFuncParamList())if(dfp.getSourceType()==1 && dfp.getOutFlag()==0){
-					lwsmp.add(new W5WsServerMethodParam(dfp, dfp.getOutFlag(), dfp.getOutFlag()==0 ? 0:-999));
+					lwsmp.add(new W5WsServerMethodParam(dfp, dfp.getOutFlag(), 0));
 				}
 				break;
 			case	19:
@@ -396,9 +415,9 @@ public class RestController implements InitializingBean {
 					else if(wsmp.getDsc().equals("result") && wsmp.getParamType()==9 ) 
 						buf.append("\"$ref\":\"#/definitions/").append(wsm.getDsc()).append("Result\"");
 				} 
-				buf.append("}}");
 				break;
 			}
+			buf.append("}}");
 //			if(buf.charAt(buf.length()-1)==',')buf.setLength(buf.length()-1);
 			buf.append("}}}");
 		}

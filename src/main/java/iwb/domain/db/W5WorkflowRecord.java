@@ -41,7 +41,6 @@ public class W5WorkflowRecord implements java.io.Serializable {
 	private short accessViewTip;
 	private String accessViewRoles;
 	private String accessViewUsers;
-	private Integer hierarchicalLevel;
   	
 	@SequenceGenerator(name="sex_approval_record",sequenceName="iwb.seq_approval_record",allocationSize=1)
 	@Id
@@ -191,13 +190,6 @@ public class W5WorkflowRecord implements java.io.Serializable {
 	public void setVersionNo(int versionNo) {
 		this.versionNo = versionNo;
 	}	
-	@Column(name="hierarchical_level")
-	public Integer getHierarchicalLevel() {
-		return hierarchicalLevel;
-	}
-	public void setHierarchicalLevel(Integer hierarchicalLevel) {
-		this.hierarchicalLevel = hierarchicalLevel;
-	}
 	
 	public W5WorkflowRecord() {
 		super();

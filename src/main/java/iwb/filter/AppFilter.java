@@ -1,6 +1,7 @@
 package iwb.filter;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.Filter;
@@ -27,7 +28,7 @@ import iwb.util.GenericUtil;
 import iwb.util.LogUtil;
 
 @Component
-@WebFilter(urlPatterns = {"/app","/preview"})
+@WebFilter(urlPatterns = {"/app","/preview","/rest"})
 public class AppFilter implements Filter {
 //	public static int	transactionCount = 0;
 	
@@ -56,29 +57,44 @@ public class AppFilter implements Filter {
 				String transactionId =  GenericUtil.getTransactionId();
 				request.setAttribute("_trid_", transactionId);
 				HttpSession session = ((HttpServletRequest)request).getSession(false);
-				scd = session!=null ? (Map)session.getAttribute("scd-dev"): null;
-				if(FrameworkSetting.logType>0 && (uri.contains("/app/") || uri.contains("/preview/"))){
-					if(scd!=null) {
+				if(session!=null) {
+					if(uri.contains("/app/"))scd = (Map)session.getAttribute("scd-dev");
+					else if(uri.contains("/preview/"))scd = (Map)session.getAttribute("preview-"+uri.split("/")[2]);
+				}
+				if(FrameworkSetting.logType>0){
+					
+					if(scd!=null && (uri.contains("/app/") || uri.contains("/preview/"))) {
 						String[] uuri = uri.split("/");
-						
-						if(uuri.length>1) {
-							String newUri = uuri[uuri.length-1];
-							if(!newUri.equals("ajaxLiveSync")) {
-								LogUtil.logObject(new Log5Transaction((String)scd.get("projectId"), newUri, transactionId), true);
-
-								int pageId = 0;
-								if(newUri.equals("ajaxQueryData"))pageId=GenericUtil.uInt((HttpServletRequest) request, "_qid");
-								else if(newUri.equals("ajaxExecDbFunc"))pageId=GenericUtil.uInt((HttpServletRequest) request, "_did");
-								else if(newUri.equals("showForm") || uri.equals("ajaxPostForm"))pageId=GenericUtil.uInt((HttpServletRequest) request, "_fid");
-								else if(newUri.equals("showPage"))pageId=GenericUtil.uInt((HttpServletRequest) request, "_tid");
-								else if(newUri.startsWith("pic") && newUri.endsWith(".png")) {
-									pageId=GenericUtil.uInt(newUri.substring(3,newUri.length()-4));
-									newUri = "showPic";
+						if(FrameworkSetting.logType>0 && uri.contains("/preview/") && uri.contains("/dl/")) {
+							int pageId = GenericUtil.uInt((HttpServletRequest) request, "_fai");
+							if(pageId>0) {
+								lvp = new Log5VisitedPage(scd, "download", pageId, request.getRemoteAddr(), transactionId);
+							}
+						} else {
+							
+							if(uuri.length>1) {
+								String newUri = uuri[uuri.length-1];
+								if(!newUri.equals("ajaxLiveSync")) {
+	
+									int pageId = 0;
+									if(newUri.equals("ajaxQueryData"))pageId=GenericUtil.uInt((HttpServletRequest) request, "_qid");
+									else if(newUri.equals("ajaxExecDbFunc"))pageId=GenericUtil.uInt((HttpServletRequest) request, "_did");
+									else if(newUri.equals("showForm") || uri.equals("ajaxPostForm"))pageId=GenericUtil.uInt((HttpServletRequest) request, "_fid");
+									else if(newUri.equals("showPage"))pageId=GenericUtil.uInt((HttpServletRequest) request, "_tid");
+									else if(newUri.startsWith("pic") && newUri.endsWith(".png")) {
+										pageId=GenericUtil.uInt(newUri.substring(3,newUri.length()-4));
+										newUri = "showPic";
+									}
+									LogUtil.logObject(new Log5Transaction((String)scd.get("projectId"), newUri+(pageId>0?"("+pageId+")":""), transactionId), true);
+									lvp = new Log5VisitedPage(scd, newUri, pageId, request.getRemoteAddr(), transactionId);
+									
 								}
-								lvp = new Log5VisitedPage(scd, newUri, pageId, request.getRemoteAddr(), transactionId);
-								
 							}
 						}
+					} else if(uri.contains("/rest/")) {
+						if(scd==null)scd = new HashMap();
+						scd.put("projectId", uri.split("/")[2]);
+						lvp = new Log5VisitedPage(scd, uri, 0, request.getRemoteAddr(), transactionId);
 					}
 				}
 				filterChain.doFilter( request, response );

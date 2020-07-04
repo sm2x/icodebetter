@@ -168,6 +168,8 @@ public interface MetadataLoader {
 	 * @see iwb.dao.metadata.rdbms.MetadataLoader#getMetadataObject(java.lang.String, java.lang.String, int, java.lang.Object, java.lang.String)
 	 */
 	Object getMetadataObject(String objectName, String pkFieldName, int objectId, Object projectId, String onErrorMsg);
+	
+	Object getMetadataObjectByName(String objectName, String name, Object projectId, String onErrorMsg);
 
 	/* (non-Javadoc)
 	 * @see iwb.dao.metadata.rdbms.MetadataLoader#loadProject(java.lang.String)

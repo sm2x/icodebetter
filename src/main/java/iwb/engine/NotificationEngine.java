@@ -45,6 +45,13 @@ public class NotificationEngine {
 	@Autowired
 	private MetadataLoader metadataLoader;
 	
+
+
+	@Lazy
+	@Autowired
+	private CRUDEngine crudEngine;
+	
+	
 	public void sendSms(int customizationId, int userId, String phoneNumber, String message, int tableId, int tablePk) {
 		Map<String, String> smsMap = new HashMap<String, String>();
 		smsMap.put("customizationId", customizationId + "");
@@ -272,7 +279,7 @@ public class NotificationEngine {
 							if (fsm.getAsyncFlag() != 0)
 								result.add(new W5QueuedActionHelper(email));
 							else
-								MailUtil.sendMail(scd, email);
+								sendMail(scd, email, requestParams);
 							break;
 						}
 					} catch (Exception e) {
@@ -444,12 +451,15 @@ public class NotificationEngine {
 			r.put("error", "SMS Adapter Not Defined");
 			return r;
 		} else { // email
-			int tablePk = GenericUtil.uInt(requestParams.get(t.get_tableFieldList().get(0).getDsc()));
-			if(tablePk==0)tablePk = GenericUtil.uInt(requestParams.get("table_pk"));
+			int tablePk = 0;
+			if(t!=null) {
+				tablePk = GenericUtil.uInt(requestParams.get(t.get_tableFieldList().get(0).getDsc()));
+				if(tablePk==0)tablePk = GenericUtil.uInt(requestParams.get("table_pk"));
+			}
 			W5Email email = dao.interprateMailTemplate(fsm, scd, requestParams, tableId,tablePk);
 
 			email.set_oms(metadataLoader.findObjectMailSetting(scd, email.getMailSettingId()));
-			String error = MailUtil.sendMail(scd, email);
+			String error = sendMail(scd, email, requestParams);
 			if (GenericUtil.isEmpty(error)) {
 				r.put("success", true);
 			} else {
@@ -461,8 +471,24 @@ public class NotificationEngine {
 	}
 
 	
-	public String sendMail(Map<String, Object> scd, W5Email email){
-		return MailUtil.sendMail(scd, email);
-		
+	public String sendMail(Map<String, Object> scd, W5Email email, Map<String, String> requestParams){
+		String error = MailUtil.sendMail(scd, email);
+		if(FrameworkCache.getTable(scd, FrameworkSetting.customEmailTableId)!=null) {
+			Map newRequestMap = new HashMap();
+			newRequestMap.putAll(requestParams);
+			if(GenericUtil.isEmpty(error)) {
+				email.setStatus((short)1);
+				newRequestMap.put("send_retry_count", 0);
+			} else {
+				email.setStatus((short)2);
+				newRequestMap.put("last_error_msg", error);
+				newRequestMap.put("send_retry_count", 1);
+			}
+			newRequestMap.putAll(email.get_asHashMap());
+			newRequestMap.put("from_user_id", scd.get("userId"));
+			W5FormResult fr =crudEngine.postForm4Table(scd, 10235, 2, newRequestMap, "");
+			fr = null;
+		}
+		return error;
 	}
 }

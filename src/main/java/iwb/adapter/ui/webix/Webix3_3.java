@@ -1243,17 +1243,6 @@ public class Webix3_3 implements ViewAdapter {
 										.getDsc()) : "-")
 						.append("'}");
 			}
-		} else { // Onay mekanizması başlamamış ama acaba başlatma isteği manual
-					// yapılabilir mi ? Formun bağlı olduğu tablonun onay
-					// mekanizması manualStart + Elle Başlatma İsteği aktif mi
-			W5Table t = FrameworkCache.getTable(customizationId, f.getObjectId());
-			if (t != null && t.get_approvalMap() != null
-					&& t.get_approvalMap().get((short) 2) != null) {
-				W5Workflow a = t.get_approvalMap().get((short) 2);
-				if (a.getManualDemandStartAppFlag() != 0
-						&& a.getApprovalRequestTip() == 2)
-					s.append(",\n manualStartDemand:true");
-			}
 		}
 		if (f.get_toolbarItemList().size() > 0) { // extra buttonlari var mi yok
 													// mu?

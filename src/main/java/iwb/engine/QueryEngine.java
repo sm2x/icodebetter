@@ -55,6 +55,12 @@ public class QueryEngine {
 	@Autowired
 	private ExternalDBSql externalDB;
 	
+
+	@Lazy
+	@Autowired
+	private RESTEngine restEngine;
+	
+	
 	public Map executeQuery4Stat(Map<String, Object> scd, int gridId, Map<String, String> requestParams) {
 		dao.checkTenant(scd);
 		return dao.executeQuery4Stat(scd, gridId, requestParams);
@@ -136,13 +142,19 @@ public class QueryEngine {
 				if (!GenericUtil.isEmpty(requestParams.get(qp.getDsc()))) {
 					m2.put(qp.getExpressionDsc(), requestParams.get(qp.getDsc()));
 				}
-			StringBuilder rc = new StringBuilder();
-			rc.append("function _x_(x){\nreturn {").append(query.getSqlSelect())
-					.append("\n}}\nvar result=[], q=$.REST('").append(wsm.get_ws().getDsc() + "." + wsm.getDsc())
-					.append("',").append(GenericUtil.fromMapToJsonString2(m2))
-					.append(");\nif(q && q.get('success')){var q2=q.get('").append(parentParam.getDsc())
-					.append("');if(q2)for(var i=0;i<q2.size();i++)result.push(_x_(q2.get(i)));}");
-			scriptEngine.executeQueryAsScript(queryResult, rc.toString());
+			if(query.getSqlFrom().equals("!")) {
+				m2.put("_iwb_raw", "1");
+				Map res = restEngine.REST(scd, wsm.get_ws().getDsc()+"."+wsm.getDsc(), m2);
+				queryResult.setExtraOutMap(res);
+			} else {
+				StringBuilder rc = new StringBuilder();
+				rc.append("function _x_(x){\nreturn {").append(query.getSqlSelect())
+						.append("\n}}\nvar result=[], q=$.REST('").append(wsm.get_ws().getDsc() + "." + wsm.getDsc())
+						.append("',").append(GenericUtil.fromMapToJsonString2(m2))
+						.append(");\nif(q && q.get('success')){var q2=q.get('").append(parentParam.getDsc())
+						.append("');if(q2)for(var i=0;i<q2.size();i++)result.push(_x_(q2.get(i)));}");
+				scriptEngine.executeQueryAsScript(queryResult, rc.toString());
+			}
 			break;
 
 		case 0: // Rhino Query

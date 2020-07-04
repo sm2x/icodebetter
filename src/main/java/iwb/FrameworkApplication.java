@@ -87,8 +87,6 @@ public class FrameworkApplication {
 		FrameworkService service = (FrameworkService)appContext.getBean("frameworkService");
 		VcsService vcsService = (VcsService)appContext.getBean("vcsService");
 
-		boolean oldLogVcs = FrameworkSetting.logVcs;
-		FrameworkSetting.logVcs = false;
 		if(GenericUtil.uInt(FrameworkSetting.argMap.get("metadata"))!=0) {
 			FrameworkSetting.systemStatus=0;
 			if(FrameworkSetting.projectId == null) FrameworkSetting.projectId = FrameworkSetting.devUuid;
@@ -109,12 +107,9 @@ public class FrameworkApplication {
 					}
 				}
 			}
-			else
-				if(FrameworkSetting.logVcs)vcsService.vcsCheck4VCSLogSchema();
 
 			service.reloadCache(-1);
 		}
-		FrameworkSetting.logVcs = oldLogVcs;
 		if(FrameworkSetting.logVcs)vcsService.vcsCheck4VCSLogSchema();
 		
 		if(FrameworkSetting.localTimer) {

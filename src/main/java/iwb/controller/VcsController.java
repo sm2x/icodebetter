@@ -276,7 +276,7 @@ public class VcsController implements InitializingBean {
 		if(!GenericUtil.isEmpty(request.getParameter("anode"))){
 	    	response.getWriter().write("{\"success\":false}");
 		} else {
-	    	W5QueryResult qr= vcsEngine.vcsClientObjectsAllTree(scd, request.getParameter("_schema"), GenericUtil.uInt(request,"_u"), request.getParameter("_ds"), request.getParameter("_de"));
+	    	W5QueryResult qr= vcsEngine.vcsClientObjectsAllTree(scd, GenericUtil.uInt(request,"action"), GenericUtil.uInt(request,"_u"), request.getParameter("_ds"), request.getParameter("_de"));
 	    	response.getWriter().write(getViewAdapter(scd, request).serializeQueryData(qr).toString());
 		}
 		response.getWriter().close();

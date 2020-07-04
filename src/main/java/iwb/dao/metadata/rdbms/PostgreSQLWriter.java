@@ -29,6 +29,7 @@ import iwb.cache.LocaleMsgCache;
 import iwb.dao.metadata.MetadataLoader;
 import iwb.dao.rdbms_impl.BaseDAO;
 import iwb.dao.rdbms_impl.PostgreSQL;
+import iwb.domain.db.W5Component;
 import iwb.domain.db.W5Customization;
 import iwb.domain.db.W5ExternalDb;
 import iwb.domain.db.W5Project;
@@ -45,6 +46,7 @@ import iwb.engine.CRUDEngine;
 import iwb.exception.IWBException;
 import iwb.util.DBUtil;
 import iwb.util.GenericUtil;
+import iwb.util.NashornUtil;
 import iwb.util.UserUtil;
 
 @Repository
@@ -1550,7 +1552,7 @@ public class PostgreSQLWriter extends BaseDAO {
 						break;
 					}
 				}
-			} else if(false){//insert
+			} else if(true){//insert
 				String tableFieldName = formResult.getRequestParams().get("dsc"+prefix);
 				if(!GenericUtil.isEmpty(tableFieldName)){
 					List<Object> ll =  executeSQLQuery("select lower(t.dsc) tdsc from iwb.w5_table t where t.table_id=? AND t.project_uuid=?"
@@ -1609,6 +1611,19 @@ public class PostgreSQLWriter extends BaseDAO {
 		}
     	msg = LocaleMsgCache.get2(scd, "reload_cache_manually");
 		if(fr.getErrorMap()!=null && fr.getErrorMap().isEmpty() && fr.getForm()!=null)switch(fr.getForm().getObjectId()){
+		case	3351: //component
+			if(fr.getAction()!=3) {
+				W5Component comp = (W5Component)metadataLoader.getMetadataObject("W5Component", "componentId", GenericUtil.uInt(fr.getRequestParams().get("tcomponent_id")), projectId, null);
+				if(!GenericUtil.isEmpty(comp.getCode())) try{
+					if(comp.getFrontendLang()!=1)comp.setCode(NashornUtil.babelTranspileJSX(comp.getCode()));
+					FrameworkCache.setComponent(projectId, comp);
+				} catch(Exception ee) {
+					if (!fr.getRequestParams().containsKey("_confirmId_" + comp.getComponentId()))
+						throw new IWBException("confirm", "ConfirmId", comp.getComponentId(), null, "Error while transpiling JSX (" +ee.getCause().getMessage()+"). Still want to save?", null);
+				}
+			}
+			
+			break;
 		case	1277: //user_related_project
 			if(fr.getAction()==2){
 				int userId = GenericUtil.uInt(fr.getRequestParams().get("user_id"));
@@ -1789,7 +1804,7 @@ public class PostgreSQLWriter extends BaseDAO {
 			doneSet.add(co);
 		List<W5VcsCommit> sqlCommits = find(
 				"from W5VcsCommit t where t.commitTip=2 AND t.projectUuid=?0 order by abs(t.vcsCommitId)", srcProjectId);
-		for (W5VcsCommit o : sqlCommits) {
+		for (W5VcsCommit o : sqlCommits)if(o.getVcsCommitId()>0) {
 			if (!GenericUtil.isEmpty(o.getExtraSql()) && !doneSet.contains(o.getExtraSql())) {
 				W5VcsCommit no = o.newInstance(dstProjectId);
 				if (o.getVcsCommitId() > 0)

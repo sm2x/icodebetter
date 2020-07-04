@@ -923,25 +923,21 @@ try {
 
 try {
   Ext.override(Ext.form.BasicForm, {
-    findInvalid: function() {
+    findInvalid: function() {//isvalid
       var result = "",
         it = this.items.items,
         l = it.length,
         i,
         f;
       for (i = 0; i < l; i++) {
-        if (!(f = it[i]).disabled && !f.isValid()) {
+        if (!(f = it[i]).disabled && !f.isValid() && !f.hidden) {
           f.ensureVisible();
           result += '<li>' + f.fieldLabel;
         }
       }
-      if (l > 0)
-/*        Ext.Msg.show({
-          title: getLocMsg("js_alan_hatali_girilmistir"),
-          msg: result,
-          icon: Ext.MessageBox.ERROR
-        });*/
-    	  Ext.infoMsg.msg('error','<b>Validation Errors</b><br>'+result,4)
+      if (result)
+    	  Ext.infoMsg.msg('error','<b>Validation Errors</b><br>'+result,4);
+      return !result;
     }
   });
 } catch (eq) {
@@ -1966,6 +1962,7 @@ Ext.extend(Ext.ux.NumericField, Ext.form.NumberField,
      */
     onFocus: function(){
 		this.setRawValue(this.removeFormat(this.getRawValue()));
+		if(this.selectOnFocus)this.selectText();
     }
 });
 Ext.reg('numericfield', Ext.ux.NumericField);

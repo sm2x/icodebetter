@@ -51,8 +51,6 @@ import iwb.util.LogUtil;
 @RequestMapping("/graphql")
 public class GraphQLController implements InitializingBean {
 	private static Logger logger = Logger.getLogger(GraphQLController.class);
-
-	private ViewAdapter ext3_4 = new ExtJs3_4();
 	
 	@Autowired
 	private FrameworkService service;

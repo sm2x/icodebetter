@@ -1,7 +1,9 @@
 package iwb.domain.db;
 
 import java.sql.Timestamp;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -251,6 +253,21 @@ public class W5Email implements java.io.Serializable, Log5Base {
 
 	public void set_oms(W5ObjectMailSetting _oms) {
 		this._oms = _oms;
+	}
+
+	@Transient
+	public Map get_asHashMap() {
+		Map r = new HashMap();
+		r.put("mail_setting_id", mailSettingId);
+		r.put("table_id", tableId);
+		r.put("table_pk", tablePk);
+		r.put("mail_to", mailTo);
+		r.put("mail_cc", mailCc);
+		r.put("mail_bcc", mailBcc);
+		r.put("mail_subject", mailSubject);
+		r.put("mail_body", mailBody);
+		r.put("lkp_send_status", status);
+		return r;
 	}
 	
 	

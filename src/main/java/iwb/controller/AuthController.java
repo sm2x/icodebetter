@@ -40,26 +40,31 @@ import iwb.util.HttpUtil;
 @RequestMapping("/auth")
 public class AuthController {
 
-  @Autowired private FrameworkService engine;
+  @Autowired private FrameworkService service;
 
-  private final String domain = FrameworkSetting.domain;
-  private final String clientId = FrameworkSetting.clientId;
-  private final String clientSecret = FrameworkSetting.clientSecret;
-
-  private final AuthenticationController originController =
-      AuthenticationController.newBuilder(domain, clientId, clientSecret).build();
-  private final String userInfoAudience = String.format("https://%s/userinfo", domain);
+  private AuthenticationController originController = null;
+  private String userInfoAudience = null;
 
   private final String redirectOnFail = "../auth/login";
   private final String redirectOnSuccess = "/app/main.htm";
 
   Map<String, String> inviteMap = new ConcurrentHashMap<>();
+  
+  private void initialize() {
+	  originController = AuthenticationController.newBuilder(FrameworkCache.getAppSettingStringValue(0, "auth0_domain"), 
+    		  FrameworkCache.getAppSettingStringValue(0, "auth0_client_id"), 
+			  FrameworkCache.getAppSettingStringValue(0, "auth0_client_secret")).build();
+	  userInfoAudience = String.format("https://%s/userinfo", FrameworkCache.getAppSettingStringValue(0, "auth0_domain"));
+	  
+  }
 
   public Tokens handleRequest(HttpServletRequest request) throws IdentityVerificationException {
+	  if(originController==null)initialize();
     return originController.handle(request);
   }
 
   public String buildAuthorizeUrl(HttpServletRequest request, String redirectUri) {
+	  if(originController==null)initialize();
     return originController
         .buildAuthorizeUrl(request, redirectUri)
         .withAudience(userInfoAudience)
@@ -87,7 +92,7 @@ public class AuthController {
       String idToken = tokens.getIdToken();
       String issuer = "https://iwb.auth0.com/";
 
-      Algorithm algorithm = Algorithm.HMAC256(clientSecret);
+      Algorithm algorithm = Algorithm.HMAC256(FrameworkCache.getAppSettingStringValue(0, "auth0_client_secret"));
       JWTVerifier verifier = JWT.require(algorithm).withIssuer(issuer).acceptLeeway(300).build();
       DecodedJWT jwt = verifier.verify(idToken);
 
@@ -120,7 +125,7 @@ public class AuthController {
       HttpSession session = req.getSession(true);
       String there = (String) session.getAttribute("hello");
       session.setAttribute("authToken", email);
-      Map scd = engine.generateScdFromAuth(socialCon, email);
+      Map scd = service.generateScdFromAuth(socialCon, email);
       if (scd == null) {
         Map m = checkVcsTenant(socialCon, email, nickname, socialNet);
         int customizationId = GenericUtil.uInt(m.get("customizationId"));
@@ -128,7 +133,7 @@ public class AuthController {
 
         List<Map> projectList = (List<Map>) m.get("projects");
         List<Map> userTips = (List<Map>) m.get("userTips");
-        engine.saveCredentials(
+        service.saveCredentials(
             customizationId,
             userId,
             pictureUrl,
@@ -145,7 +150,7 @@ public class AuthController {
             Entry<String, String> entry = (Entry<String, String>) it.next();
             String invitationEmail = entry.getValue();
             String inviteProjectId = entry.getKey();
-            engine.addToProject(userId, inviteProjectId, invitationEmail);
+            service.addToProject(userId, inviteProjectId, invitationEmail);
             it.remove();
           }
         }
@@ -156,7 +161,7 @@ public class AuthController {
         int userId = GenericUtil.uInt(scd.get("userId"));
 
         if (profilePictureId < 3) {
-          engine.saveImage(pictureUrl, userId, cusId, (String) scd.get("projectId"));
+          service.saveImage(pictureUrl, userId, cusId, (String) scd.get("projectId"));
         }
         session.setAttribute("iwb-scd", scd);
 
@@ -166,7 +171,7 @@ public class AuthController {
             Entry<String, String> entry = (Entry<String, String>) it.next();
             String invitationEmail = entry.getValue();
             String inviteProjectId = entry.getKey();
-            engine.addToProject(userId, inviteProjectId, invitationEmail);
+            service.addToProject(userId, inviteProjectId, invitationEmail);
             it.remove();
           }
         }
@@ -248,7 +253,8 @@ public class AuthController {
     invalidateSession(req);
     String returnTo = req.getScheme() + "://" + req.getServerName() + ":" + req.getServerPort();
     String logoutUrl =
-        String.format("https://%s/v2/logout?client_id=%s&returnTo=%s", domain, clientId, returnTo);
+        String.format("https://%s/v2/logout?client_id=%s&returnTo=%s", FrameworkCache.getAppSettingStringValue(0, "auth0_domain"), 
+        		FrameworkCache.getAppSettingStringValue(0, "auth0_client_id"), returnTo);
     return "redirect:" + logoutUrl;
   }
 

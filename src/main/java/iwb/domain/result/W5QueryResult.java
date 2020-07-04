@@ -928,7 +928,12 @@ public class W5QueryResult implements W5MetaResult{
 	   			s.append(" order by ");
 	   			String strOrder = null;
 	   			if(mainTable!=null && getOrderBy().equals(FieldDefinitions.queryFieldName_Comment) && FrameworkCache.getAppSettingIntValue(scd, "make_comment_summary_flag")!=0){
-	   				strOrder = "coalesce((select qz.last_comment_id from iwb.w5_comment_summary qz where qz.table_pk=x."+mainTable.get_tableFieldList().get(0).getDsc()+" AND qz.table_id="+mainTable.getTableId()+" AND qz.customization_id=${scd.customizationId}),0) DESC";
+	   				//TODO
+/*	   				if (FrameworkCache.getTable(scd, FrameworkSetting.customCommentTableId)==null)
+	   					strOrder = "coalesce((select qz.last_comment_id from iwb.w5_comment_summary qz where qz.table_pk=x."+mainTable.get_tableFieldList().get(0).getDsc()+" AND qz.table_id="+mainTable.getTableId()+" AND qz.project_uuid='${scd.projectId}'),0) DESC";
+	   				else
+	   					strOrder = "coalesce((select qz.last_comment_id from iwb.w5_comment_summary qz where qz.table_pk=x."+mainTable.get_tableFieldList().get(0).getDsc()+" AND qz.table_id="+mainTable.getTableId()+" AND qz.project_uuid='${scd.projectId}'),0) DESC";
+*/	   					
 	   			} else {
 	   				strOrder = getOrderBy();
 	   			}

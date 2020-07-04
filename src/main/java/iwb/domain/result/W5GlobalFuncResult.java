@@ -18,7 +18,7 @@ public class W5GlobalFuncResult implements W5MetaResult{
 	private	List<Object> sqlParams;
 	private Map<String, Object> scd;
 	private Map<String,String>	requestParams;
-	private Map<String,String>	resultMap;
+	private Map<String,Object>	resultMap;
 	private Map<String,String>	errorMap;
 	private	boolean success;
 	private List<W5ReportCellHelper> reportList;
@@ -61,10 +61,10 @@ public class W5GlobalFuncResult implements W5MetaResult{
 	public void setSuccess(boolean success) {
 		this.success = success;
 	}
-	public Map<String, String> getResultMap() {
+	public Map<String, Object> getResultMap() {
 		return resultMap;
 	}
-	public void setResultMap(Map<String, String> resultMap) {
+	public void setResultMap(Map<String, Object> resultMap) {
 		this.resultMap = resultMap;
 	}
 	public Map<String, String> getErrorMap() {

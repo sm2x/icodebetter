@@ -195,7 +195,7 @@ public class RESTEngine {
 					if(errorMap.isEmpty()) {
 						if(p.getParamType()==5) {//checkbox
 							m.put(p.getDsc(), GenericUtil.uInt(o)!=0);
-						} else if (o != null && o.toString().length() > 0) {
+						} else /*if (o != null && o.toString().length() > 0)*/ {
 	/*						if (p.getCredentialsFlag() == 1)//header
 								reqPropMap.put(p.getDsc(), o.toString());
 							else if (p.getCredentialsFlag() == 0){//request*/
@@ -209,7 +209,7 @@ public class RESTEngine {
 		return m;
 	}
 
-	public Map REST(Map<String, Object> scd, String name, Map requestParams) throws IOException {
+	public Map REST(Map<String, Object> scd, String name, Map requestParams) {
 		String[] u = name.replace('.', ',').split(",");
 		if (u.length < 2)
 			throw new IWBException("ws", "Wrong ServiceName", 0, null, "Call should be [serviceName].[methodName]",
@@ -249,7 +249,6 @@ public class RESTEngine {
 			throw new IWBException("security", "WS Method Call", wsm.getWsMethodId(), null, "Access Forbidden", null);
 		}
 		try {
-			String projectId = (String) scd.get("projectId");
 
 			String tokenKey = null;
 			Map m = new HashMap();
@@ -374,22 +373,26 @@ public class RESTEngine {
 								log.setResponse(x.length()>maxLength ? x.substring(0, maxLength)+"...": x);
 							}
 						}
-						String xx = x.trim();
-						if (xx.length() > 0)
-							switch (xx.charAt(0)) {
-							case '{':
-								JSONObject jo = new JSONObject(x);
-								result.putAll(GenericUtil.fromJSONObjectToMap(jo));
-								break;
-							case '[':
-								JSONArray ja = new JSONArray(x);
-								result.put("data", GenericUtil.fromJSONArrayToList(ja));
-								break;
-							default:
-								if (x.indexOf('\r') > -1)
-									x = x.replace('\r', '\n');
-								result.put("data", x);
-							}
+						if (GenericUtil.uInt(requestParams.get("_iwb_raw")) != 0) {
+							result.put("_raw", x);
+						} else {
+							String xx = x.trim();
+							if (xx.length() > 0)
+								switch (xx.charAt(0)) {
+								case '{':
+									JSONObject jo = new JSONObject(x);
+									result.putAll(GenericUtil.fromJSONObjectToMap(jo));
+									break;
+								case '[':
+									JSONArray ja = new JSONArray(x);
+									result.put("data", GenericUtil.fromJSONArrayToList(ja));
+									break;
+								default:
+									if (x.indexOf('\r') > -1)
+										x = x.replace('\r', '\n');
+									result.put("data", x);
+								}
+						}
 						if (GenericUtil.uInt(requestParams.get("_iwb_cfg")) != 0) {
 							result.put("_iwb_cfg_rest_method", wsm);
 						}

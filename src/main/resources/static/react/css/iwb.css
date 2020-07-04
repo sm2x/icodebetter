@@ -1111,3 +1111,9 @@ main.inbox > div.card-header {
     font-weight: 400;
     font-size: 0.8rem;
 }
+
+.xfile-input{
+	height: 200px;
+    width: 200px;
+    position: relative;
+}

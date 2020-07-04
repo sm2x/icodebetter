@@ -1512,7 +1512,7 @@ public class UserUtil {
 		Map newScd = null;
 		if(session!=null){
 			newScd =(Map<String, Object>)session.getAttribute(newScdKey);
-			if(newScd==null || GenericUtil.uInt(newScd.get("renderer"))!=po.getUiWebFrontendTip() || GenericUtil.uInt(newScd.get("mainTemplateId"))!=po.getUiMainTemplateId()){
+			if(newScd==null || (GenericUtil.uInt(newScd.get("success"))==0 && (GenericUtil.uInt(newScd.get("renderer"))!=po.getUiWebFrontendTip() || GenericUtil.uInt(newScd.get("mainTemplateId"))!=po.getUiMainTemplateId()))){
 				scd =(Map<String, Object>)session.getAttribute(scdKey); //developer
 				if(scd!=null){
 					if((Integer)scd.get("roleId")!=0){
@@ -1544,7 +1544,7 @@ public class UserUtil {
 			}
 		}
 		if(newScd!=null)return newScd;
-		if(po.getSessionQueryId()==0){
+		if(po.getAuthenticationFuncId()==0){
 			newScd=new HashMap<String, Object>();
 			newScd.put("customizationId",po.getCustomizationId());newScd.put("ocustomizationId",po.getCustomizationId());newScd.put("userId",10);newScd.put("completeName","XXX");
 			newScd.put("projectId",po.getProjectUuid());newScd.put("projectName", po.getDsc());newScd.put("roleId",10);newScd.put("roleDsc", "XXX Role");

@@ -535,7 +535,7 @@ public class WorkflowEngine {
 						W5Email email = dao.interprateMailTemplate(fsm, scd, newParamMap, ar.getTableId(), ar.getTablePk());
 						if(email!=null) {
 							email.set_oms(metadataLoader.findObjectMailSetting(scd, email.getMailSettingId()));
-							notificationEngine.sendMail(scd, email);
+							notificationEngine.sendMail(scd, email, parameterMap);
 						}
 					}
 				}

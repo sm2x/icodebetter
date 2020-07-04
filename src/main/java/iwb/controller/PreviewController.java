@@ -42,6 +42,7 @@ import iwb.adapter.ui.ViewMobileAdapter;
 import iwb.adapter.ui.extjs.ExtJs3_4;
 import iwb.adapter.ui.f7.F7_4;
 import iwb.adapter.ui.react.GReact16;
+import iwb.adapter.ui.react.PrimeReact16;
 import iwb.adapter.ui.react.React16;
 import iwb.adapter.ui.vue.Vue2;
 import iwb.adapter.ui.webix.Webix3_3;
@@ -59,6 +60,7 @@ import iwb.domain.helper.W5ReportCellHelper;
 import iwb.domain.result.M5ListResult;
 import iwb.domain.result.W5FormResult;
 import iwb.domain.result.W5GlobalFuncResult;
+import iwb.domain.result.W5GridResult;
 import iwb.domain.result.W5PageResult;
 import iwb.domain.result.W5QueryResult;
 import iwb.domain.result.W5TableRecordInfoResult;
@@ -86,6 +88,7 @@ public class PreviewController implements InitializingBean {
 	private ViewAdapter ext3_4;
 	private	ViewAdapter	webix3_3;
 	private	ViewAdapter	react16;
+	private	ViewAdapter	preact16;
 	private	ViewAdapter	greact16;
 	private	ViewAdapter	vue2;
 	private ViewMobileAdapter f7;
@@ -96,6 +99,7 @@ public class PreviewController implements InitializingBean {
 		webix3_3 = new Webix3_3();
 		f7 = new F7_4();
 		react16 = new React16();
+		preact16 = new PrimeReact16();
 		greact16 = new GReact16();
 		vue2 = new Vue2();
 	}
@@ -109,6 +113,7 @@ public class PreviewController implements InitializingBean {
 			if(renderer!=null && renderer.startsWith("webix"))return webix3_3;
 			if(renderer!=null && renderer.equals("react16"))return react16;
 			if(renderer!=null && renderer.equals("greact16"))return greact16;
+			if(renderer!=null && renderer.equals("preact16"))return preact16;
 			if(renderer!=null && renderer.equals("vue2"))return vue2;
 		}
 		if(scd!=null){
@@ -117,6 +122,7 @@ public class PreviewController implements InitializingBean {
 			if(renderer!=null && renderer.startsWith("webix"))return webix3_3;			
 			if(renderer!=null && renderer.equals("react16"))return react16;
 			if(renderer!=null && renderer.equals("greact16"))return greact16;
+			if(renderer!=null && renderer.equals("preact16"))return preact16;
 			if(renderer!=null && renderer.equals("vue2"))return vue2;
 		}
 		return defaultRenderer;
@@ -225,57 +231,7 @@ public class PreviewController implements InitializingBean {
 				scd.put("mobile", session.getAttribute("mobile"));
 			scd.put("customizationId", session.getAttribute("customizationId"));
 		} else {
-			if (queryId == 142) { // online users
-				scd = UserUtil.getScd4Preview(request, "scd-dev", false);
-				W5QueryResult qr = new W5QueryResult(142);
-				W5Query q = new W5Query();
-				q.setQueryType((short) 0);
-				qr.setQuery(q);
-				qr.setScd(scd);
-				qr.setErrorMap(new HashMap());
-				qr.setNewQueryFields(FrameworkCache.cachedOnlineQueryFields);
-				List<Object[]> lou = UserUtil.listOnlineUsers(scd);
-				if (FrameworkSetting.chatShowAllUsers) {
-					Map<Integer, Object[]> slou = new HashMap();
-					slou.put((Integer) scd.get("userId"), new Object[] { scd.get("userId") });
-					for (Object[] o : lou)
-						slou.put(GenericUtil.uInt(o[0]), o);
-					W5QueryResult allUsers = service.executeQuery(scd, queryId, requestMap);
-					for (Object[] o : allUsers.getData()) {
-						String msg = (String) o[6];
-						if (msg != null && msg.length() > 18) {
-							o[3] = msg.substring(0, 19); // last_msg_date_time
-							if (msg.length() > 19)
-								o[6] = msg.substring(20);// msg
-							else
-								o[6] = null;
-						} else {
-							o[6] = null;
-							o[3] = null;
-						}
-
-						int u = GenericUtil.uInt(o[0]);
-
-						Object[] o2 = slou.get(u);
-						if (o2 == null)
-							lou.add(o);
-						else if (u != (Integer) scd.get("userId")) {
-							if (o2.length > 3)
-								o2[3] = o[3];
-							if (o2.length > 6)
-								o2[6] = o[6];
-							if (o2.length > 7)
-								o2[7] = o[7];
-						}
-					}
-				}
-				qr.setData(lou);
-				response.setContentType("application/json");
-				response.getWriter().write(getViewAdapter(scd, request).serializeQueryData(qr).toString());
-				response.getWriter().close();
-				return;
-			} else
-				scd = UserUtil.getScd4Preview(request, "scd-dev", true);// TODO not auto
+			scd = UserUtil.getScd4Preview(request, "scd-dev", true);// TODO not auto
 		}
 
 		ViewAdapter va = getViewAdapter(scd, request);
@@ -290,7 +246,10 @@ public class PreviewController implements InitializingBean {
 		W5QueryResult queryResult = service.executeQuery(scd, queryId, requestMap);
 
 		response.setContentType("application/json");
-		response.getWriter().write(va.serializeQueryData(queryResult).toString());
+		if(queryResult.getErrorMap().isEmpty() && queryResult.getQuery().getQuerySourceType()==1376 && queryResult.getQuery().getSqlFrom().equals("!"))
+			response.getWriter().write((String)queryResult.getExtraOutMap().get("_raw"));
+		else
+			response.getWriter().write(va.serializeQueryData(queryResult).toString());
 		response.getWriter().close();
 
 	}
@@ -810,9 +769,10 @@ public class PreviewController implements InitializingBean {
 	public void hndAjaxAuthenticateUser(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		logger.info("hndAjaxAuthenticateUser(" + request.getParameter("userName") + ")");
+		response.setContentType("application/json");
 		String projectId = UserUtil.getProjectId(request,"preview/");
 		W5Project po = FrameworkCache.getProject(projectId,"Wrong Project");
-		if(po.getSessionQueryId()==0)try{
+		if(po.getAuthenticationFuncId()==0)try{
 			Map<String, Object> scd = UserUtil.getScd4Preview(request, "scd-dev", true);
 			if(scd!=null)
 				response.getWriter().write("{\"success\":true,\"session\":" + GenericUtil.fromMapToJsonString2(scd)); // hersey duzgun
@@ -854,39 +814,47 @@ public class PreviewController implements InitializingBean {
 		 * 4 success 5 errorMsg 6 userId 7 expireFlag 8 smsFlag 9 roleCount
 		 */
 		boolean success = GenericUtil.uInt(result.getResultMap().get("success")) != 0;
-		String errorMsg = result.getResultMap().get("errorMsg");
+		String errorMsg = (String)result.getResultMap().get("errorMsg");
 		int userId = GenericUtil.uInt(result.getResultMap().get("userId"));
 
 		int deviceType = GenericUtil.uInt(request.getParameter("_mobile"));
 		if (!success)errorMsg = LocaleMsgCache.get2(0, xlocale, errorMsg);
 		int userRoleId = GenericUtil.uInt(requestParams, "userRoleId");
-		response.setContentType("application/json");
 		scd = null;
 		if (success) { // basarili simdi sira diger islerde
-			scd = service.userRoleSelect4App2(po, userId, userRoleId, result.getResultMap());
+			if(po.getSessionQueryId()!=0 || (result.getResultMap()!=null && GenericUtil.uInt(result.getResultMap().get("sessionQueryId"))!=0))
+				scd = service.userRoleSelect4App2(po, userId, userRoleId, result.getResultMap());
+			else {
+				scd = result.getResultMap();
+			}
 
 			if (scd == null) {
 				if (FrameworkSetting.debug)logger.info("empty scd");
-				response.getWriter().write("{\"success\":false"); // error
+				response.getWriter().write("{\"success\":false, \"errorMsg\":\"Session not created\""); // error
 			} else {
-				if(GenericUtil.uInt(scd.get("renderer"))>1)scd.put("_renderer",GenericUtil.getRenderer(scd.get("renderer")));
 				HttpSession session = request.getSession(true);
 //				session.removeAttribute(scdKey);
 				if(deviceType!=0) {
 					scd.put("mobile", deviceType);
 					scd.put("mobileDeviceId", request.getParameter("_mobile_device_id"));
-				} else {
+				} else if(GenericUtil.uInt(scd.get("renderer"))>1)
+					scd.put("_renderer",GenericUtil.getRenderer(scd.get("renderer")));
+				else{
 					scd.put("renderer", po.getUiWebFrontendTip());
 					scd.put("_renderer", GenericUtil.getRenderer(po.getUiWebFrontendTip()));
 				}
-				scd.put("locale", xlocale);
+				if(!scd.containsKey("userName"))scd.put("userName", request.getParameter("userName"));
+				if(!scd.containsKey("mainTemplateId"))scd.put("mainTemplateId", po.getUiMainTemplateId());
+				if(!scd.containsKey("locale"))scd.put("locale", xlocale);
 				scd.put("customizationId", po.getCustomizationId());
 				scd.put("ocustomizationId", po.getCustomizationId());
 				scd.put("projectId", po.getProjectUuid());scd.put("projectName", po.getDsc());
-				scd.put("mainTemplateId", po.getUiMainTemplateId());
 				scd.put("sessionId", session.getId());
 				scd.put("path", "../");
 				if(!scd.containsKey("date_format"))scd.put("date_format", po.getLkpDateFormat());
+				if(FrameworkCache.getTable(scd, FrameworkSetting.customFileTableId)!=null)scd.put("customFile", 1);
+				if (FrameworkCache.getTable(scd, FrameworkSetting.customCommentTableId)!=null)scd.put("customComment", 1);
+
 				session.setAttribute(scdKey, scd);
 
 //				UserUtil.onlineUserLogin(scd, request.getRemoteAddr(), session.getId(), (short) 0, request.getParameter(".w"));
@@ -907,7 +875,7 @@ public class PreviewController implements InitializingBean {
 		logger.info("hndLoginPage");
 		String projectId = UserUtil.getProjectId(request,"preview/");
 		W5Project po = FrameworkCache.getProject(projectId,"Wrong Project");
-		if(po.getSessionQueryId()==0)
+		if(po.getAuthenticationFuncId()==0)
 			response.sendRedirect("main.htm");
 			
 		HttpSession session = request.getSession(false);
@@ -977,17 +945,56 @@ public class PreviewController implements InitializingBean {
 		Map<String, Object> scd = UserUtil.getScd4Preview(request, "scd-dev", true);
 
 		W5PageResult pageResult = service.getPageResult(scd, pageId, GenericUtil.getParameterMap(request));
-		// if(pageResult.getTemplate().getTemplateTip()!=2 && pageId!=218 &&
-		// pageId!=611 && pageId!=551 && pageId!=566){ //TODO:cok
-		// amele
-		// throw new PromisException("security","Template",0,null, "Wrong
-		// Template Tip (must be page)", null);
-		// }
+
 
 		if(pageResult.getPage().getPageType()!=0)
-			response.setContentType("application/json");
+			response.setContentType("application/javascript");
 
 		response.getWriter().write(getViewAdapter(scd, request).serializeTemplate(pageResult).toString());
+		response.getWriter().close();
+
+	}
+
+	
+	
+	@RequestMapping("/*/pages/*")
+	public void hndShowPage2(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		String[] uuri = request.getRequestURI().split("/");
+		int pageId = GenericUtil.uInt(uuri[uuri.length-1]);
+		logger.info("hndShowPage2(" + pageId + ")");
+
+		Map<String, Object> scd = UserUtil.getScd4Preview(request, "scd-dev", true);
+
+		W5PageResult pageResult = service.getPageResult(scd, pageId, GenericUtil.getParameterMap(request));
+
+
+		if(pageResult.getPage().getPageType()!=0)
+			response.setContentType("application/javascript");
+
+		response.getWriter().write(getViewAdapter(scd, request).serializeTemplate(pageResult).toString());
+		response.getWriter().close();
+
+	}
+
+	
+	
+	@RequestMapping("/*/grids/*")
+	public void hndShowGrid2(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		String[] uuri = request.getRequestURI().split("/");
+		int gridId = GenericUtil.uInt(uuri[uuri.length-1]);
+		logger.info("hndShowGrid2(" + gridId + ")");
+
+		Map<String, Object> scd = UserUtil.getScd4Preview(request, "scd-dev", true);
+
+		W5GridResult gridResult = service.getGridResult(scd, gridId);
+
+
+		response.setContentType("application/javascript");
+
+		response.getWriter().write(getViewAdapter(scd, request).serializeGrid(gridResult).toString());
+		response.getWriter().write("\nreturn "+gridResult.getGrid().getDsc());
 		response.getWriter().close();
 
 	}
@@ -1167,13 +1174,13 @@ public class PreviewController implements InitializingBean {
 		if (fileAttachmentId == 1 || fileAttachmentId == 2) { // male or female
 			filePath = fileAttachmentId == 2 ? AppController.womanPicPath : AppController.manPicPath;
 		} else {
+			if (scd == null)scd = UserUtil.getScd4Preview(request, "scd-dev", true);
 			W5FileAttachment fa = fileAttachmentId>0?service.loadFile(scd, fileAttachmentId):null;
 			if (fa == null) { // not found TODO
 				throw new IWBException("validation", "File Attachment", fileAttachmentId, null,
 						"Wrong Id: " + fileAttachmentId, null);
 			}
 
-			if (scd == null)scd = UserUtil.getScd4Preview(request, "scd-dev", true);
 			
 			
 			String customizationId = String.valueOf((scd.get("customizationId") == null) ? 0 : scd.get("customizationId"));
@@ -1185,8 +1192,13 @@ public class PreviewController implements InitializingBean {
 				filePath = fa.getSystemFileName();
 			
 		}
-		if (request.getParameter("_ct") == null)
+		String lfilePath = filePath.toLowerCase(FrameworkSetting.appLocale);
+		if (lfilePath.endsWith(".jpg") || lfilePath.endsWith(".png") || lfilePath.endsWith(".gif"))
 			response.setContentType("image/jpeg");
+		else  if (lfilePath.endsWith(".txt") || lfilePath.endsWith(".csv")) {
+			response.setContentType("text/plain; charset=UTF-8");
+		} else  if (lfilePath.endsWith(".pdf"))
+			response.setContentType("application/pdf");
 		ServletOutputStream out = response.getOutputStream();
 		try {
 			/*
@@ -1291,9 +1303,23 @@ public class PreviewController implements InitializingBean {
 					fa.setFileSize(totalBytesRead);
 					fa.setActiveFlag((short) 1);
 					lfa.add(fa);
-					service.saveObject(fa);
+					if(FrameworkCache.getTable(fa.getProjectUuid(), FrameworkSetting.customFileTableId)!=null) {//custom file attachment (table_id:6973)
+						Map<String,String> requestMap = GenericUtil.getParameterMap(request);
+						requestMap.put("table_id", ""+fa.getTableId());
+						requestMap.put("table_pk", fa.getTablePk());
+						requestMap.put("dsc", fa.getOrijinalFileName());
+						requestMap.put("system_path", path + File.separator + fa.getSystemFileName());
+						requestMap.put("file_size", ""+fa.getFileSize());
+						requestMap.put("upload_user_id", ""+fa.getUploadUserId());
+						Map<String, Object> scd = UserUtil.getScd4Preview(request, "scd-dev", true);
+						W5FormResult fr = service.postForm4Table(scd, 10230, 2, requestMap, "");
+						if(fr.getErrorMap().isEmpty())
+							fa.setFileAttachmentId(GenericUtil.uInt(fr.getOutputFields().get("file_id")));
+						//else return getViewAdapter(scd, request).serializePostForm(fr).toString();
+					} else
+						service.saveObject(fa);
 					String webPageId = request.getParameter(".w");
-					if (!GenericUtil.isEmpty(webPageId))
+					if (false && !GenericUtil.isEmpty(webPageId))
 						try {
 							Map m = new HashMap();
 							m.put(".w", webPageId);
@@ -1342,7 +1368,7 @@ public class PreviewController implements InitializingBean {
 	@RequestMapping(value = "/*/upload.form", method = RequestMethod.POST)
 	@ResponseBody
 	public String singleFileUpload(@RequestParam("file") MultipartFile file, @RequestParam("table_pk") String table_pk,
-			@RequestParam("table_id") Integer table_id, @RequestParam("profilePictureFlag") Integer profilePictureFlag,
+			@RequestParam("table_id") Integer table_id, 
 			HttpServletRequest request, HttpServletResponse response) throws IOException {
 		logger.info("singleFileUpload");
 
@@ -1362,17 +1388,9 @@ public class PreviewController implements InitializingBean {
 		int totalBytesRead = (int) file.getSize();
 
 		W5FileAttachment fa = new W5FileAttachment(scd);
-		boolean ppicture = (GenericUtil.uInt(scd.get("customizationId")) == 0 || FrameworkCache
-						.getAppSettingIntValue(scd.get("customizationId"), "profile_picture_flag") != 0)
-				&& profilePictureFlag != null && profilePictureFlag != 0;
+
 		try {
-			if (ppicture) {
-				int maxFileSize = FrameworkCache.getAppSettingIntValue(0, "profile_picture_max_file_size", 51200);
-				if (maxFileSize < totalBytesRead)
-					return "{ \"success\": false , \"msg\":\"" + LocaleMsgCache.get2(scd, "max_file_size") + " = "
-							+ Math.round(maxFileSize / 1024) + " KB\"}";
-				fa.setFileTypeId(-999);// profile picture upload etti
-			} else if (table_id == 338) {
+			if (table_id == 338) {
 				int maxFileSize = FrameworkCache.getAppSettingIntValue(0, "company_picture_max_file_size", 512000);
 				if (maxFileSize < totalBytesRead)
 					return "{ \"success\": false , \"msg\":\"" + LocaleMsgCache.get2(scd, "max_file_size") + " = "
@@ -1388,18 +1406,28 @@ public class PreviewController implements InitializingBean {
 			fa.setFileSize(totalBytesRead);
 			fa.setActiveFlag((short) 1);
 			try {
-				if(!ppicture)if (GenericUtil.uStrNvl(requestParams.get("file_type_id"), "") != null) {
-					fa.setFileTypeId(Integer.parseInt(GenericUtil.uStrNvl(requestParams.get("file_type_id"), "")));
-				}
 				if (GenericUtil.uStrNvl(requestParams.get("file_comment"), "") != null) {
 					fa.setFileComment(GenericUtil.uStrNvl(requestParams.get("file_comment"), ""));
 				}
 			} catch (Exception e) {
 
 			}
-			service.saveObject(fa);
+			if(FrameworkCache.getTable(fa.getProjectUuid(), FrameworkSetting.customFileTableId)!=null) {//custom file attachment (table_id:6973)
+				Map<String,String> requestMap = GenericUtil.getParameterMap(request);
+				requestMap.put("table_id", ""+fa.getTableId());
+				requestMap.put("table_pk", fa.getTablePk());
+				requestMap.put("dsc", fa.getOrijinalFileName());
+				requestMap.put("system_path", path + File.separator + fa.getSystemFileName());
+				requestMap.put("file_size", ""+fa.getFileSize());
+				requestMap.put("upload_user_id", ""+fa.getUploadUserId());
+				W5FormResult fr = service.postForm4Table(scd, 10230, 2, requestMap, "");
+				if(fr.getErrorMap().isEmpty())
+					fa.setFileAttachmentId(GenericUtil.uInt(fr.getOutputFields().get("file_id")));
+				else return getViewAdapter(scd, request).serializePostForm(fr).toString();
+			} else
+				service.saveObject(fa);
 			String webPageId = request.getParameter(".w");
-			if (!GenericUtil.isEmpty(webPageId)) {
+			if (false && !GenericUtil.isEmpty(webPageId)) {
 				Map m = new HashMap();
 				m.put(".w", webPageId);
 				m.put(".pk", table_id + "-" + table_pk);
@@ -1412,7 +1440,7 @@ public class PreviewController implements InitializingBean {
 			}
 			return "{ \"success\": true, \"fileId\": " + fa.getFileAttachmentId() + ", \"fileName\": \""
 					+ GenericUtil.stringToJS(file.getOriginalFilename()) + "\", \"fileUrl\": \"" + "sf/"
-					+ fa.getSystemFileName() + "?_fai=" + fa.getFileAttachmentId() + "\"}";
+					+ GenericUtil.stringToJS(file.getOriginalFilename()) + "?_fai=" + fa.getFileAttachmentId() + "\"}";
 		} catch (Exception e) {
 			if (true || FrameworkSetting.debug)
 				e.printStackTrace();
@@ -1637,20 +1665,37 @@ public class PreviewController implements InitializingBean {
     	if(uri.endsWith(".css")){
     		uri = uri.substring(uri.lastIndexOf('/')+1);
     		uri = uri.substring(0, uri.length()-4);
-        	String css = FrameworkCache.getComponentCss(scd, GenericUtil.uInt(uri));
+    		String[] ids = uri.split(",");
+    		StringBuilder totalCss = new StringBuilder();
+    		for(String id:ids) {
+    			int i = GenericUtil.uInt(id);
+    			if(i!=0) {
+    				String js = FrameworkCache.getComponentCss(scd, i);	
+    				if(js!=null)totalCss.append("\n").append(js);
+    			}
+    		}
+    		
     		response.setContentType("text/css; charset=UTF-8");
-        	if(css!=null){
-        		response.getWriter().write(css);
+    		if(totalCss.length()>0){
+        		response.getWriter().write(totalCss.toString());
         	} else {
         		
         	}
     	} else if(uri.endsWith(".js")){
     		uri = uri.substring(uri.lastIndexOf('/')+1);
     		uri = uri.substring(0, uri.length()-3);
-        	String js = FrameworkCache.getComponentJs(scd, GenericUtil.uInt(uri));
+    		String[] ids = uri.split(",");
+    		StringBuilder totalJs = new StringBuilder();
+    		for(String id:ids) {
+    			int i = GenericUtil.uInt(id);
+    			if(i!=0) {
+    				String js = FrameworkCache.getComponentJs(scd, i);	
+    				if(js!=null)totalJs.append("\n").append(js);
+    			}
+    		}
     		response.setContentType("text/javascript; charset=UTF-8");
-        	if(js!=null){
-        		response.getWriter().write(js);
+        	if(totalJs.length()>0){
+        		response.getWriter().write(totalJs.toString());
         	} else {
         		
         	}

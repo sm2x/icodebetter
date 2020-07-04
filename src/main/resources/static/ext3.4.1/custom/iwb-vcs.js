@@ -298,6 +298,60 @@ iwb.fnTblRecVCSDiff = function (tid, tpk, a, dsc) {
 
 }
 
+iwb.fnTblRecVCSDiff2 = function (tid, tpk, fieldName, vcsCommitId) {
+	iwb.request({
+    url: 'ajaxQueryData?_qid=991', params: { xtable_id: tid, xtable_pk: tpk, xvcs_commit_id:vcsCommitId, xfield_name:fieldName }, requestWaitMsg: true, successCallback: function (j) {
+      if (j.data) {
+    		if(!window.monaco){
+    			Ext.infoMsg.msg("info", "Loading Monaco", 2);
+    			require.config({ paths: { vs: "/monaco/min/vs" } });
+    			require(["/monaco/min/vs/editor/editor.main"], function() {
+    	// iwb.showValsDiffinMonaco(qi);
+    			});
+    			return;
+    		}
+    		var rec=j.data[0];
+    	  var win = new Ext.Window({
+    	    layout: 'fit',
+    	    width: 900,
+    	    height: 800, title: '<span style="color:red">'+fieldName+'</span> Code Differences',
+    	    closeAction: 'destroy',
+    	    plain: true,
+
+    	    html: '<div id="idx-mnc2-' + _page_tab_id + '" style="height:770px"></div>',
+    	    listeners: {
+    	      'afterrender': function () {
+    	    	monaco.editor.setTheme(iwb.monacoTheme || "vs-dark");
+    	        var originalModel = monaco.editor.createModel(rec.local, "javascript");
+    	        var modifiedModel = monaco.editor.createModel(rec.remote, "javascript");
+
+    	        var diffEditor = monaco.editor.createDiffEditor(document.getElementById("idx-mnc2-" + _page_tab_id), {
+    	          // You can optionally disable the resizing
+    	          enableSplitViewResizing: false,
+
+    	          // Render the diff inline
+    	          renderSideBySide: false
+    	        });
+    	        diffEditor.setModel({
+    	          original: originalModel,
+    	          modified: modifiedModel
+    	        });
+    	      }
+    	    },
+    	    buttons: [{
+    	      text: 'Close',
+    	      handler: function () {
+    	        win.close();
+    	      }
+    	    }]
+    	  });
+    	  win.show();
+    	 }
+
+    }
+  });
+	return false;
+}
 
 function fncMnuVcs(xgrid) {
   return [
@@ -460,4 +514,11 @@ function fncMnuVcs(xgrid) {
           }
         }
   ];
+}
+
+iwb.fnTblRecColumnVCSUpdate2 = (tbid, tbpk, fieldName, vcsid, xgrid_id)=>{
+	if(confirm('You are about to pull old value of ['+fieldName+']. Are you sure?'))iwb.ajax.execFunc(647,{xtable_id:tbid, xtable_pk:tbpk, xfield_name:fieldName, xvcs_commit_id:vcsid},(jj)=>{
+		Ext.infoMsg.msg('success','['+fieldName+'] field pulled from Local VCS');
+		Ext.getCmp(xgrid_id).store.reload();
+	});
 }

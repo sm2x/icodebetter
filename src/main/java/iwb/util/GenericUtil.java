@@ -1239,14 +1239,13 @@ public class GenericUtil {
 		return str.toString();
 	}
 
-	public static boolean uBoolean(String x) {
-		if (x == null || x.trim().length() == 0)
+	public static boolean uBoolean(Object x) {
+		if (x == null)
 			return false;
-		try {
-			return Boolean.parseBoolean(x.trim());
-		} catch (Exception e) {
-			return false;
-		}
+		if(x instanceof Boolean)
+			return (Boolean)x;
+		else if(x instanceof String)return ((String)x).toLowerCase(FrameworkSetting.appLocale).equals("true");
+		else return uInt(x)!=0;
 	}
 
 	public static String uUrl2Str(String source) {
@@ -2637,7 +2636,7 @@ public class GenericUtil {
 					o = ss.substring(1,ss.length()-1);
 				}
 				html.append(q).append("=").append(URLEncoder.encode(o.toString(),"UTF-8"));
-			}
+			} else html.append(q).append("=");
 		} catch(Exception ee) {}
 		return html.toString();
 	}
@@ -2653,7 +2652,7 @@ public class GenericUtil {
 	}
 
 	public static String getRenderer(Object renderer) {
-		return new String[] { "0", "ext3_4", "webix3_3", "open1_4", "webix4_2", "react16", "vue2", "f7", "greact16" }[uInt(renderer)];
+		return new String[] { "0", "ext3_4", "webix3_3", "open1_4", "webix4_2", "react16", "vue2", "f7", "greact16", "preact16" }[uInt(renderer)];
 	}
 
 	public static String fromMapToYamlString2Recursive(Map s, int level) {// TODO

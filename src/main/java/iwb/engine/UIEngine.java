@@ -223,7 +223,10 @@ public class UIEngine {
 										W5TableField tf2 = (W5TableField)fc2.get_sourceObjectDetail();
 										if(tf2.getTabOrder()!=1)sql.append(", x.").append(tf2.getDsc());
 										if(fc2.getControlType()==71) {//file
-											sql.append(", (select a.original_file_name from iwb.w5_file_attachment a where a.project_uuid='").append(scd.get("projectId")).append("' AND a.file_attachment_id=x.").append(tf2.getDsc()).append(") ").append(tf2.getDsc()).append("_qw_");
+											if(FrameworkCache.getTable(scd, FrameworkSetting.customFileTableId)==null)
+												sql.append(", (select a.original_file_name from iwb.w5_file_attachment a where a.project_uuid='").append(scd.get("projectId")).append("' AND a.file_attachment_id=x.").append(tf2.getDsc()).append(") ").append(tf2.getDsc()).append("_qw_");
+											else 
+												sql.append(", (select a.dsc from x_file a where a.file_id=x.").append(tf2.getDsc()).append(") ").append(tf2.getDsc()).append("_qw_");
 											
 										}
 									}
@@ -806,6 +809,9 @@ public class UIEngine {
 					+ (formResult != null && formResult.getForm() != null ? " " + formResult.getForm().getDsc() : ""),
 					e);
 		}
+	}
+	public W5GridResult getGridResult(Map<String, Object> scd, int gridId, Map<String, String> requestParams) {
+		return metadataLoader.getGridResult(scd, gridId, requestParams, false);
 	}
 	
 	public W5PageResult getPageResult(Map<String, Object> scd, int pageId, Map<String, String> requestParams) {

@@ -224,7 +224,7 @@ public class GlobalScriptEngine {
 
 				if (hasOutParam) {
 					// JSONObject jo=new JSONObject();
-					Map<String, String> res = new HashMap<String, String>();
+					Map<String, Object> res = new HashMap<String, Object>();
 					if (funcResult != null && funcResult instanceof ScriptObjectMirror) {
 						Map resultMap = NashornUtil.fromScriptObject2Map((ScriptObjectMirror) funcResult);
 						for (W5GlobalFuncParam p1 : r.getGlobalFunc().get_dbFuncParamList())
@@ -234,7 +234,7 @@ public class GlobalScriptEngine {
 									String v = em.toString();
 									if (p1.getParamType() == 4 && v.endsWith(".0"))
 										v = v.substring(0, v.length() - 2);
-									res.put(p1.getDsc(), v);
+									res.put(p1.getDsc(), GenericUtil.getObjectByTip(v, p1.getParamType()));
 								}
 							}
 					}
@@ -399,8 +399,8 @@ public class GlobalScriptEngine {
 
 		if (r.getErrorMap().isEmpty()) { // sorun yok
 			// post sms
-			if (!GenericUtil.isEmpty(r.getResultMap()))
-				parameterMap.putAll(r.getResultMap());
+			if (!GenericUtil.isEmpty(r.getResultMap()))for(String k:r.getResultMap().keySet())
+				parameterMap.put(k,r.getResultMap().get(k)!=null?r.getResultMap().get(k).toString():null);
 
 		}
 		GlobalFuncTrigger.afterExec(r, "");
@@ -1211,7 +1211,7 @@ public class GlobalScriptEngine {
 
 				if (hasOutParam) {
 					// JSONObject jo=new JSONObject();
-					Map<String, String> res = new HashMap<String, String>();
+					Map<String, Object> res = new HashMap<String, Object>();
 					if (funcResult != null && funcResult instanceof ScriptObjectMirror) {
 						Map resultMap = NashornUtil.fromScriptObject2Map((ScriptObjectMirror) funcResult);
 						r.setResultMap(resultMap);

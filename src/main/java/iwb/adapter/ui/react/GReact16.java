@@ -642,17 +642,6 @@ public class GReact16 implements ViewAdapter {
 					if(wfs.getAccessDeleteTip()!=0 && GenericUtil.isEmpty(wfs.getAccessDeleteUserFields()) && !GenericUtil.accessControl(scd, wfs.getAccessDeleteTip(), wfs.getAccessDeleteRoles(), wfs.getAccessDeleteUsers()))s.append(", deletable:false");
 
 				}
-			} else { // Onay mekanizması başlamamış ama acaba başlatma isteği manual
-						// yapılabilir mi ? Formun bağlı olduğu tablonun onay
-						// mekanizması manualStart + Elle Başlatma İsteği aktif mi
-//				W5Table t = FrameworkCache.getTable(customizationId, f.getObjectId());
-				if (t != null && t.get_approvalMap() != null
-						&& t.get_approvalMap().get((short) 2) != null) {
-					W5Workflow a = t.get_approvalMap().get((short) 2);
-					if (a.getManualDemandStartAppFlag() != 0
-							&& a.getApprovalRequestTip() == 2)
-						s.append(",\n manualStartDemand:true");
-				}
 			}
 		}
 		boolean b = false;

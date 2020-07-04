@@ -670,7 +670,7 @@ iwb = {
                 // only-if-cached
                 credentials: "same-origin", // include, same-origin, *omit
                 headers: {
-                    "content-type": "application/json"
+                    "Content-Type": "application/json"
                 },
                 method: "POST", // *GET, POST, PUT, DELETE, etc.
                 mode: "cors", // no-cors, cors, *same-origin
@@ -712,7 +712,7 @@ iwb = {
                 case "session":
                     return iwb.showLoginDialog();
                 case "validation":
-                    toastr.error(obj.errors.join("<br/>"), "Validation Error",{ timeOut: 7000 });
+                    toastr.error(obj.errors.map(o=>(o.dsc||o.id)+': <b>'+o.msg+'</b>').join("<br/>"), "Validation Error",{ timeOut: 7000 });
                     break;
                 case "sql":
                 case "rhino":
@@ -2213,7 +2213,7 @@ XLazyScriptLoader.propTypes = {
 const XPreviewFile = ({ file }) => {
     let type = file ? file.type : null;
     let style = {
-        fontSize: "12em"
+        fontSize: "6em"
     };
     if(type == "image/png" || type == "image/jpeg" || type == "image/jpg" || type == "image/gif" ){
     	return _("img", {
@@ -2250,7 +2250,7 @@ const XPreviewFile = ({ file }) => {
             _("i", { className: "far fa-file", style }) :
             _("i", { className: "fas fa-upload", style }),
             _("br", null),
-            getLocMsg(file ? "undefined_type" : "choose_file_or_drag_it_here")
+            getLocMsg(file ? "undefined_type" : "choose_file")
         );
 };
 class XListFiles extends React.Component {
@@ -2265,47 +2265,71 @@ class XListFiles extends React.Component {
         }
         /** run query to get data based on pk and id */
     getFileList() {
-        iwb.request({
-            url: "ajaxQueryData?_qid=61&xtable_id=" +
-                this.props.cfg.crudTableId +
-                "&xtable_pk=" +
-                (this.props.cfg.tmpId ?
-                    this.props.cfg.tmpId :
-                    json2pk(this.props.cfg.pk)) +
-                "&.r=" +
-                Math.random(),
-            successCallback: ({ data }) => {
-                this.setState({
-                    files: data
-                });
-            }
-        });
+        if(_scd.customFile && 1*_scd.customFile)iwb.request({
+            url: "ajaxQueryData?_qid=10250&xtable_id=" +
+            this.props.cfg.crudTableId +
+            "&xtable_pk=" +
+            (this.props.cfg.tmpId ?
+                this.props.cfg.tmpId :
+                json2pk(this.props.cfg.pk)) +
+            "&.r=" +
+            Math.random(),
+	        successCallback: ({ data }) => {
+	            this.setState({
+	                files: data
+	            });
+	        }
+		    }); else iwb.request({
+		        url: "ajaxQueryData?_qid=61&xtable_id=" +
+		        this.props.cfg.crudTableId +
+		        "&xtable_pk=" +
+		        (this.props.cfg.tmpId ?
+		            this.props.cfg.tmpId :
+		            json2pk(this.props.cfg.pk)) +
+		        "&.r=" +
+		        Math.random(),
+			    successCallback: ({ data }) => {
+			        this.setState({
+			            files: data
+			        });
+			    }
+			});
     }
     deleteItem(fileItem) {
             return event => {
                 event.preventDefault();
                 event.stopPropagation();
                 /** deleteRequest */
-                iwb.request({
-                    url: "ajaxPostForm?a=3&_fid=1383&tfile_attachment_id=" +
-                        fileItem.file_attachment_id,
+                if(_scd.customFile && 1*_scd.customFile)iwb.request({
+                    url: "ajaxPostForm?a=3&_fid=10230&tfile_id=" +
+                        fileItem.file_id,
                     successCallback: res => {
                         this.setState({
                             files: this.state.files.filter(
-                                file => file.file_attachment_id != fileItem.file_attachment_id
+                                file => file.file_id != fileItem.file_id
                             )
                         });
                     }
-                });
+                }); else iwb.request({
+                    url: "ajaxPostForm?a=3&_fid=1383&tfile_attachment_id=" +
+                    fileItem.file_attachment_id,
+	                successCallback: res => {
+	                    this.setState({
+	                        files: this.state.files.filter(
+	                            file => file.file_attachment_id != fileItem.file_attachment_id
+	                        )
+	                    });
+	                }
+	            });
             };
         }
         /** test */
     downladLink(fileItem) {
         let url =
             "dl/" +
-            fileItem.original_file_name +
+            (fileItem.dsc || fileItem.original_file_name) +
             "?_fai=" +
-            fileItem.file_attachment_id +
+            (fileItem.file_id || fileItem.file_attachment_id) +
             "&.r=" +
             Math.random();
         return event => {
@@ -2330,10 +2354,10 @@ class XListFiles extends React.Component {
                     null,
                     _(
                         "a", { onClick: this.downladLink(fileItem), href: "#" },
-                        fileItem.original_file_name
+                        fileItem.dsc || fileItem.original_file_name
                     ),
                     _("i", {
-                        key: fileItem.file_attachment_id,
+                        key: fileItem.file_id || fileItem.file_attachment_id,
                         onClick: this.deleteItem(fileItem),
                         style: { cursor: "pointer" },
                         className: "icon-trash float-right text-danger"
@@ -6904,8 +6928,10 @@ class XPage extends React.PureComponent {
         if (iwb.debugConstructor && iwb.debug)
             console.log("XPage.constructor", props);
         super(props);
-        var breed = document.getElementById("id-breed");
-        if (breed) breed.innerHTML = this.props.grid.name;
+        if(!iwb.headerLogo){
+	        var breed = document.getElementById("id-breed");
+	        if (breed) breed.innerHTML = this.props.grid.name;
+        }
         iwb.killGlobalSearch();
         this.state = { activeTab: "x", activeTab2: "x" };
         this.tabs = iwb.tabs[this.props.grid.id] ?
@@ -6968,7 +6994,7 @@ class XPage extends React.PureComponent {
                             // only-if-cached
                             credentials: "same-origin", // include, same-origin, *omit
                             headers: {
-                                "content-type": "application/json"
+                                "Content-Type": "application/json"
                             },
                             method: "POST", // *GET, POST, PUT, DELETE, etc.
                             mode: "cors", // no-cors, cors, *same-origin
@@ -7123,7 +7149,9 @@ class XPage4Card extends React.PureComponent {
             if (iwb.debugConstructor && iwb.debug)
                 console.log("XPage4Card.constructor", props);
             super(props);
-            document.getElementById("id-breed").innerHTML = this.props.card.name;
+            if(!iwb.headerLogo){
+            	document.getElementById("id-breed").innerHTML = this.props.card.name;
+            }
             iwb.killGlobalSearch();
             this.state = { activeTab: "x" };
             this.tabs = iwb.tabs[this.props.card.cardId] ?
@@ -7185,7 +7213,7 @@ class XPage4Card extends React.PureComponent {
                             // only-if-cached
                             credentials: "same-origin", // include, same-origin, *omit
                             headers: {
-                                "content-type": "application/json"
+                                "Content-Type": "application/json"
                             },
                             method: "POST", // *GET, POST, PUT, DELETE, etc.
                             mode: "cors", // no-cors, cors, *same-origin
@@ -7609,7 +7637,7 @@ class XMainPanel extends React.PureComponent {
                             // only-if-cached
                             credentials: "same-origin", // include, same-origin, *omit
                             headers: {
-                                "content-type": "application/json"
+                                "Content-Type": "application/json"
                             },
                             method: "POST", // *GET, POST, PUT, DELETE, etc.
                             mode: "cors", // no-cors, cors, *same-origin
@@ -7730,9 +7758,11 @@ class XMainPanel extends React.PureComponent {
                     if (visitedItems) visitedItems.visitCnt++;
                     return iwb["t-" + templateID];
                 } else {
-                    var pageName = document.getElementById("id-breed");
-                    if (pageName) {
-                        pageName.innerHTML = node.name || "Home";
+                    if(!iwb.headerLogo){
+	                    var pageName = document.getElementById("id-breed");
+	                    if (pageName) {
+	                        pageName.innerHTML = node.name || "Home";
+	                    }
                     }
                     this.loading = node;
                     return _(iwb.XMainNav || XMainNav, { path, node });
@@ -8093,6 +8123,7 @@ class XForm extends React.Component {
                     successCallback: (json, xcfg) => {
                         iwb.loadingDeactive();
                         this.setState({errors:{}});
+                        if (xcfg.self.componentDidPost && xcfg.self.componentDidPost(json, xcfg)===false)return;
                         if (cfg.callback) cfg.callback(json, xcfg);
                     }
                 }
@@ -8270,6 +8301,9 @@ class FileInput extends React.Component {
         formData.append("table_id", this.props.cfg.crudTableId);
         formData.append("file", this.state.file);
         formData.append("profilePictureFlag", this.props.profilePictureFlag || 0);
+        if(this.props.params)for(var k in this.props)if(this.props[k]){
+            formData.append(k, this.props[k]);
+        }
         fetch("upload.form", {
                 method: "POST",
                 body: formData,
@@ -8322,18 +8356,20 @@ class FileInput extends React.Component {
             top: "0",
             left: "0"
         };
+        let inputProps = {
+                className: "d-none",
+                type: "file",
+                onChange: this.onchange,
+                ref: input => (this.inpuRef = input)
+            };
+        if(this.props.accept)inputProps.accept=this.props.accept;
         return _(
             React.Fragment, {},
             _(
                 "div",
                 null,
                 // this.state.file ? getLocMsg(this.state.file.name) : getLocMsg('File Upload'),
-                _("input", {
-                    className: "d-none",
-                    type: "file",
-                    onChange: this.onchange,
-                    ref: input => (this.inpuRef = input)
-                }),
+                _("input", inputProps),
                 this.props.extraButtons && this.props.extraButtons
             ),
             _(
@@ -8342,12 +8378,12 @@ class FileInput extends React.Component {
                     "div", {
                         className: "mx-auto",
                         style: {
-                            height: "200px",
-                            width: "200px",
+                            height: "120px",
+                            width: "120px",
                             position: "relative",
                             border: this.state.dragOver ?
-                                "3px dashed #20a8d8" :
-                                "3px dashed #a4b7c1"
+                                "2px dashed #20a8d8" :
+                                "2px dashed #a4b7c1"
                         }
                     },
                     _("div", {
@@ -8409,8 +8445,8 @@ function fmtDecimal(value, digit,precision) {
     var x = result.split('.');
     var x1 = x[0],
         x2 = x[1];
-    for (var i = x1.length - 3; i > s; i -= 3) x1 = x1.substr(0, i) + ('.') + x1.substr(i);
-    if (x2 && x2 > 0) return x1 + (',') + x2;
+    for (var i = x1.length - 3; i > s; i -= 3) x1 = x1.substr(0, i) + (',') + x1.substr(i);
+    if (x2 && precision) return x1 + ('.') + x2;
     return x1;
 }
 

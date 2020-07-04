@@ -37,9 +37,6 @@ public class W5Workflow implements java.io.Serializable, W5Base {
 	private String manualAppUserIds; 
 	private String manualAppTableFieldIds;
 	private String afterFinUpdateUserIds;	
-	private short manualDemandStartAppFlag;
-	private short sendMailOnManualStepFlag;
-	private short sendSmsOnManualStepFlag;
 	private String approvalRequestMsg;		
 	private String approvedMsg;		
 	private String rejectedMsg;	
@@ -174,32 +171,6 @@ public class W5Workflow implements java.io.Serializable, W5Base {
 		this.afterFinUpdateUserIds = afterFinUpdateUserIds;
 	}
 	
-	@Column(name="manual_demand_start_app_flag")
-	public short getManualDemandStartAppFlag() {
-		return manualDemandStartAppFlag;
-	}
-	public void setManualDemandStartAppFlag(short manualDemandStartAppFlag) {
-		this.manualDemandStartAppFlag = manualDemandStartAppFlag;
-	}
-	
-	@Column(name="send_mail_on_manual_step_flag")
-	public short getSendMailOnManualStepFlag() {
-		return sendMailOnManualStepFlag;
-	}
-	public void setSendMailOnManualStepFlag(short sendMailOnManualStepFlag) {
-		this.sendMailOnManualStepFlag = sendMailOnManualStepFlag;
-	}
-	
-	@Column(name="send_sms_on_manual_step_flag")
-	public short getSendSmsOnManualStepFlag() {
-		return sendSmsOnManualStepFlag;
-	}
-	public void setSendSmsOnManualStepFlag(short sendSmsOnManualStepFlag) {
-		this.sendSmsOnManualStepFlag = sendSmsOnManualStepFlag;
-	}
-	
-
-	
 	
 	@Column(name="approval_request_msg")
 	public String getApprovalRequestMsg() {
@@ -262,9 +233,6 @@ public class W5Workflow implements java.io.Serializable, W5Base {
 			GenericUtil.safeEquals(this.manualAppUserIds,a.manualAppUserIds) && 
 			GenericUtil.safeEquals(this.manualAppTableFieldIds,a.manualAppTableFieldIds) &&
 			GenericUtil.safeEquals(this.afterFinUpdateUserIds,a.afterFinUpdateUserIds) &&	
-			this.manualDemandStartAppFlag==a.manualDemandStartAppFlag &&
-			this.sendMailOnManualStepFlag==a.sendMailOnManualStepFlag &&
-			this.sendSmsOnManualStepFlag==a.sendSmsOnManualStepFlag &&
 			GenericUtil.safeEquals(this.approvalRequestMsg,a.approvalRequestMsg) &&		
 			GenericUtil.safeEquals(this.approvedMsg,a.approvedMsg) &&		
 			GenericUtil.safeEquals(this.rejectedMsg,a.rejectedMsg) &&	

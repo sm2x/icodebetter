@@ -1284,17 +1284,6 @@ public class ExtJs3_4 implements ViewAdapter {
 				s.append(",\n approval:{stepDsc:\"").append(fr.getApprovalStep() != null ? fr.getApprovalStep().getDsc() : "-")
 				.append("\", dsc:\"").append(LocaleMsgCache.get2(scd, a.getDsc())).append("\"}");
 			}
-		} else { // Onay mekanizması başlamamış ama acaba başlatma isteği manual
-					// yapılabilir mi ? Formun bağlı olduğu tablonun onay
-					// mekanizması manualStart + Elle Başlatma İsteği aktif mi
-			W5Table t = FrameworkCache.getTable(scd, f.getObjectId());
-			if (t != null && t.get_approvalMap() != null
-					&& t.get_approvalMap().get((short) 2) != null) {
-				W5Workflow a = t.get_approvalMap().get((short) 2);
-				if (a.getManualDemandStartAppFlag() != 0
-						&& a.getApprovalRequestTip() == 2)
-					s.append(",\n manualStartDemand:true");
-			}
 		}
 		if (!GenericUtil.isEmpty(f.get_toolbarItemList())) { // extra buttonlari var mi yok
 													// mu?
@@ -1329,7 +1318,8 @@ public class ExtJs3_4 implements ViewAdapter {
 		if(fr.getForm().getObjectType()<5 || fr.getForm().getObjectType()==11)s.append(",url:'")
 				.append(postFormStr[fr.getForm().getObjectType()])
 				.append("'");
-		s.append("}\n");
+		s.append("}\nvar __action__=").append(fr.getAction()).append(";\n");
+
 		/*
 		 * if(PromisSetting.liveSyncRecord && formResult!=null &&
 		 * formResult.getForm()!=null && formResult.getForm().getObjectTip()==2
@@ -1364,7 +1354,6 @@ public class ExtJs3_4 implements ViewAdapter {
 				}
 			}
 
-		s.append("\nvar __action__=").append(fr.getAction()).append(";\n");
 		s.append(s2);
 		
 		if(scd==null || scd.get("roleId")==null || ((Integer)scd.get("roleId")!=0 || GenericUtil.uInt(fr.getRequestParams(),"_preview")==0)){
@@ -2483,8 +2472,9 @@ public class ExtJs3_4 implements ViewAdapter {
 				.append(LocaleMsgCache.get2(customizationId, xlocale, fieldLabel.substring(1)))
 				.append("'");;
 			} else {
-				if(!GenericUtil.isEmpty(text))text+=" &nbsp; "+fieldLabel;
-				buf.append(",text:'").append(text).append("'");
+				buf.append(",text:'");
+				if(!GenericUtil.isEmpty(text))buf.append(text).append(" &nbsp; ");
+				buf.append(LocaleMsgCache.get2(customizationId, xlocale, fieldLabel)).append("'");
 				
 			}
 
@@ -4147,10 +4137,7 @@ public class ExtJs3_4 implements ViewAdapter {
 
 
 		if (controlType == 41 && fc.getLookupQueryId()>0 && fc.getLookupQueryId()<6) {//codemirror
-			if(FrameworkSetting.monaco)
-				buf.append(",value:'',language:'").append(new String[]{"javascript","html","xml","sql","css"}[fc.getLookupQueryId()-1]).append("'");
-			else 
-				buf.append(",value:'',listeners:{},mode:'").append(new String[]{"javascript","htmlmixed","xml","sql"}[fc.getLookupQueryId()-1]).append("'");
+			buf.append(",value:'',language:'").append(new String[]{"javascript","html","xml","sql","css"}[fc.getLookupQueryId()-1]).append("'");
 		}
 
 		if (fc.get_sourceObjectDetail() != null)
@@ -5610,6 +5597,9 @@ public class ExtJs3_4 implements ViewAdapter {
 						.append(LocaleMsgCache.get2(scd,
 								c.getLocaleMsgKey())).append("</span>");
 			}
+			if(grid.getDefaultPageRecordNumber()==0 && c.getFilterFlag()!=0) {
+				buf.append("<i class=\"icon-column-filter\"></i>");
+			}
 			if (!qds.contains("pkpkpk"))
 				buf.append("',tooltip: '")
 						.append(LocaleMsgCache.get2(scd,
@@ -6288,7 +6278,7 @@ public class ExtJs3_4 implements ViewAdapter {
 						buf.append(f.getPostProcessType() == 6 ? f.getDsc()
 								.substring(1) : f.getDsc());
 						if (f.getFieldType() == 5) {// boolean
-							buf.append("\":").append(GenericUtil.uInt(obj) != 0);
+							buf.append("\":").append(GenericUtil.uBoolean(obj));
 							continue;
 						}
 						if (f.getFieldType() == 6) {// auto

@@ -66,6 +66,8 @@ public class React16 implements ViewAdapter {
 	final public static String[] labelMap = new String[]{"info","warning","danger"};
 	final public static String[] filterMap = new String[]{"","serverFilter","dateRangeFilter","numberFilter","numberFilter","numberFilter"};
 	final public static String[] dateFormatMulti = new String[] {"DD/MM/YYYY","MM/DD/YYYY","YYYY/MM/DD"};
+	final public static String[] fileAcceptMap = new String[]{"image/*",".xls,.xlsx,.csv",
+			".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document",".pdf",".txt"};
 	
 	public StringBuilder serializeValidatonErrors(Map<String, String> errorMap,
 			String locale) {
@@ -642,17 +644,6 @@ public class React16 implements ViewAdapter {
 							.append("'}");
 					if(wfs.getAccessDeleteTip()!=0 && GenericUtil.isEmpty(wfs.getAccessDeleteUserFields()) && !GenericUtil.accessControl(scd, wfs.getAccessDeleteTip(), wfs.getAccessDeleteRoles(), wfs.getAccessDeleteUsers()))s.append(", deletable:false");
 
-				}
-			} else { // Onay mekanizması başlamamış ama acaba başlatma isteği manual
-						// yapılabilir mi ? Formun bağlı olduğu tablonun onay
-						// mekanizması manualStart + Elle Başlatma İsteği aktif mi
-//				W5Table t = FrameworkCache.getTable(customizationId, f.getObjectId());
-				if (t != null && t.get_approvalMap() != null
-						&& t.get_approvalMap().get((short) 2) != null) {
-					W5Workflow a = t.get_approvalMap().get((short) 2);
-					if (a.getManualDemandStartAppFlag() != 0
-							&& a.getApprovalRequestTip() == 2)
-						s.append(",\n manualStartDemand:true");
 				}
 			}
 		}
@@ -2126,6 +2117,10 @@ public class React16 implements ViewAdapter {
 			if(!GenericUtil.isEmpty(evm)) {
 				buf.append(", fileId:").append(evm.get("id")).append(", fileSize:").append(evm.get("fsize")).append(", fileName:\"").append(GenericUtil.stringToJS2((String)evm.get("dsc"))).append("\"");
 			}
+			if(fc.getLookupQueryId()>0 && fc.getLookupQueryId()<=fileAcceptMap.length) {
+				buf.append(", accept:\"").append(fileAcceptMap[fc.getLookupQueryId()-1]).append("\"");
+			} else if(fc.getLookupQueryId()==-1 && !GenericUtil.isEmpty(fc.getLookupIncludedValues()))
+					buf.append(", accept:\"").append(GenericUtil.stringToJS2(fc.getLookupIncludedValues())).append("\"");
 			break;
 		
 		default:			
@@ -4266,7 +4261,7 @@ columns:[
 					.append(GenericUtil.fromMapToJsonString(publishedAppSetting))
 					.append(";\n");
 
-			buf.append(serializeLookUp(pr));
+			buf2.append(serializeLookUp(pr));
 
 			int customObjectCount=1;
 			for (Object i : pr.getPageObjectList()) {
@@ -4284,11 +4279,10 @@ columns:[
 					buf2.append(serializeListView(lr));
 				} else if (i instanceof W5FormResult) {
 					W5FormResult fr = (W5FormResult) i;
-					buf2.append("\nvar ").append(fr.getForm().getDsc())
-								.append("=").append(serializeGetForm(fr));
-					buf2.append("\nvar _form")
-					.append(customObjectCount++).append("=")
-					.append(fr.getForm().getDsc()).append(";\n");
+					if (Math.abs(fr.getObjectType()) == 3) { // form
+						buf2.append("\nclass ").append(fr.getForm().getDsc())
+								.append(" extends XForm").append(serializeGetForm(fr));
+					}
 				} else if (i instanceof W5GlobalFuncResult) {
 					buf2.append("\nvar ")
 							.append(((W5GlobalFuncResult) i).getGlobalFunc()

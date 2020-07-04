@@ -258,8 +258,7 @@ public class CRUDEngine {
 						if (workflow == null) {
 							workflow = t.get_approvalMap().get((short) 2); // action=2 insert
 																			
-							if (workflow != null && workflow.getApprovalRequestTip() == 2
-									&& workflow.getManualDemandStartAppFlag() == 0)
+							if (workflow != null && workflow.getApprovalRequestTip() == 2)
 								workflow = null;
 						}
 
@@ -465,38 +464,26 @@ public class CRUDEngine {
 
 							break;
 						case 2: // manual after action
-							if (workflow.getManualDemandStartAppFlag() == 0
-									|| (workflow.getManualDemandStartAppFlag() == 1
-											&& GenericUtil.uInt(formResult.getRequestParams().get("_aa")) == -1)) { // Eğer
-																													// onay
-																													// mekanizması
-																													// elle
-																													// başlatılmayacaksa
-																													// burada
-																													// 901'e
-						
-								if(workflowStep==null) {
-									workflowStep = new W5WorkflowStep();
-									// if(approval.getDynamicStepFlag()!=0))
-									workflowStep.setApprovalRoles(workflow.getManualAppRoleIds());
-									workflowStep.setApprovalUsers(workflow.getManualAppUserIds());
-									if (workflow.getManualAppTableFieldIds() != null) { // TODO:
-																						
-									} else if (workflowStep.getApprovalUsers() == null) // TODO:
-																						// yanlis
-										workflowStep.setApprovalUsers("" + (Integer) scd.get("userId"));
+							if(workflowStep==null) {
+								workflowStep = new W5WorkflowStep();
+								// if(approval.getDynamicStepFlag()!=0))
+								workflowStep.setApprovalRoles(workflow.getManualAppRoleIds());
+								workflowStep.setApprovalUsers(workflow.getManualAppUserIds());
+								if (workflow.getManualAppTableFieldIds() != null) { // TODO:
+																					
+								} else if (workflowStep.getApprovalUsers() == null) // TODO:
+																					// yanlis
+									workflowStep.setApprovalUsers("" + (Integer) scd.get("userId"));
 
-									workflowStep.setApprovalStepId(901); // wait
-																			// for
-																			// starting
-																			// approval
-								}
+								workflowStep.setApprovalStepId(901); // wait
+																		// for
+																		// starting
+																		// approval
 							}
+
 							break;
 						}
-						if (workflow != null && (workflow.getManualDemandStartAppFlag() == 0
-								|| (workflow.getManualDemandStartAppFlag() == 1
-										&& GenericUtil.uInt(formResult.getRequestParams().get("_aa")) == -1))) { // Onay
+						if (workflow != null) { // Onay
 																													// Mek
 																													// Başlat
 							if (workflowStep != null) { // step hazir
@@ -543,8 +530,6 @@ public class CRUDEngine {
 											: scd.get("userId").toString());
 								workflowRecord.setInsertUserId((Integer) scd.get("userId"));
 								workflowRecord.setVersionUserId((Integer) scd.get("userId"));
-								// appRecord.setCustomizationId((Integer)scd.get("customizationId"));
-								workflowRecord.setHierarchicalLevel(0);
 							} else {
 								throw new IWBException("framework", "Workflow", formId, null,
 										LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_error_workflow_definition"),
@@ -647,8 +632,15 @@ public class CRUDEngine {
 			case 3: // delete
 				ptablePk = requestParams.get(t.get_tableParamList().get(0).getDsc() + paramSuffix);
 				if (FrameworkSetting.vcs && t.getVcsFlag() != 0) {
-					requestParams.put("_iwb_vcs_dsc",
-							dao.getTableRecordSummary(scd, t.getTableId(), GenericUtil.uInt(ptablePk), 32));
+					String summary = dao.getTableRecordSummary(scd, t.getTableId(), GenericUtil.uInt(ptablePk), 32);
+					if(t.getTableTip()==1) {
+						List<W5TableRecordHelper> ll = dao.findRecordParentRecords(scd, t.getTableId(), GenericUtil.uInt(ptablePk), 2, true);
+						if(ll.size()>1) {
+							summary = ll.get(1).getTableId()+"."+ll.get(1).getTablePk()+":"+summary;
+							if(summary.length()>32)summary = summary.substring(0,32);
+						}
+					}
+					requestParams.put("_iwb_vcs_dsc", summary);
 				}
 				if (FrameworkSetting.workflow && accessControlSelfFlag) {
 					if (workflowRecord != null) { // eger bir approval sureci

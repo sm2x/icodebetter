@@ -1,11 +1,21 @@
 package iwb.util;
 
+import java.io.FileReader;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import javax.script.SimpleBindings;
+
+import iwb.cache.FrameworkSetting;
+import iwb.exception.IWBException;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
+
 
 public class NashornUtil {
 
@@ -123,6 +133,35 @@ public class NashornUtil {
 			}
 		}
 		return rp;
+	}
+	
+	private static ScriptEngine babelEngine = null;
+	private static SimpleBindings babelBindings = null;
+	
+	public static synchronized String babelTranspileJSX(String jsx) {
+		if(GenericUtil.isEmpty(jsx))return "";
+		if(babelEngine==null) try{
+			ClassLoader classLoader = NashornUtil.class.getClassLoader();
+			URL resource = classLoader.getResource("static/react/js/babel6/babel.min.js");
+			FileReader babelScript = new FileReader(resource.getFile());
+			babelEngine = new ScriptEngineManager().getEngineByMimeType("text/javascript");
+			babelBindings = new SimpleBindings();
+			babelEngine.eval(babelScript, babelBindings);
+		} catch (Exception e) {
+			if(FrameworkSetting.debug)e.printStackTrace();
+			throw new IWBException("rhino", "Babel Enginne init", 0, null,
+					"Error while loading babelScript", e);
+		}
+		Object o;
+		try {
+			o = babelEngine.eval("Babel.transform(\""+GenericUtil.stringToJS2(jsx)+"\", {presets: [\"react\"] }).code", babelBindings);
+		} catch (ScriptException e) {
+			if(FrameworkSetting.debug)e.printStackTrace();
+			throw new IWBException("rhino", "BabelTranspile", 0, jsx,
+					"Error while transpiling JSX", e);
+		}
+		if(o==null)return "";
+		return o.toString();
 	}
 
 }

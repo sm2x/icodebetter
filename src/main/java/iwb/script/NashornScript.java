@@ -320,7 +320,8 @@ public class NashornScript {
 										res = res.substring(0, res.length() - 2);
 									rp.put(key, res);
 								}
-						}
+						} else 
+							rp.put(key, null);
 					} catch (Exception eq) {
 					}
 		}
