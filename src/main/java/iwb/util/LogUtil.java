@@ -7,7 +7,7 @@ import java.util.Map;
 import com.rabbitmq.client.Channel;
 
 import iwb.cache.FrameworkSetting;
-import iwb.domain.db.Log5Base;
+import iwb.model.db.Log5Base;
 
 public class LogUtil {
 	private static int errorCount = 0;

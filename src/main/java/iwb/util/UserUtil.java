@@ -17,12 +17,12 @@ import javax.servlet.http.HttpSession;
 
 import iwb.cache.FrameworkCache;
 import iwb.cache.FrameworkSetting;
-import iwb.domain.db.Log5Notification;
-import iwb.domain.db.W5Project;
-import iwb.domain.helper.W5DeferredResult;
-import iwb.domain.helper.W5QueuedPushMessageHelper;
-import iwb.domain.helper.W5SynchAfterPostHelper;
 import iwb.exception.IWBException;
+import iwb.model.db.Log5Notification;
+import iwb.model.db.W5Project;
+import iwb.model.helper.W5DeferredResult;
+import iwb.model.helper.W5QueuedPushMessageHelper;
+import iwb.model.helper.W5SynchAfterPostHelper;
 
 class	SyncGridMapHelper3{
 	private	Set<Integer> keys;

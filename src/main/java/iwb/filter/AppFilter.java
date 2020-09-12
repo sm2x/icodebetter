@@ -20,10 +20,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.NestedServletException;
 
 import iwb.cache.FrameworkSetting;
-import iwb.domain.db.Log5Transaction;
-import iwb.domain.db.Log5VisitedPage;
 import iwb.exception.IWBException;
 import iwb.exception.Log5IWBException;
+import iwb.model.db.Log5Transaction;
+import iwb.model.db.Log5VisitedPage;
 import iwb.util.GenericUtil;
 import iwb.util.LogUtil;
 

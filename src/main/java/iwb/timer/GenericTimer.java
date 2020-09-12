@@ -8,11 +8,11 @@ import org.springframework.core.task.TaskExecutor;
 
 import iwb.cache.FrameworkCache;
 import iwb.cache.FrameworkSetting;
-import iwb.domain.db.W5JobSchedule;
-import iwb.domain.db.W5Project;
-import iwb.domain.db.W5Workflow;
-import iwb.domain.db.W5WorkflowRecord;
-import iwb.domain.db.W5WorkflowStep;
+import iwb.model.db.W5JobSchedule;
+import iwb.model.db.W5Project;
+import iwb.model.db.W5Workflow;
+import iwb.model.db.W5WorkflowRecord;
+import iwb.model.db.W5WorkflowStep;
 import iwb.service.FrameworkService;
 import iwb.util.GenericUtil;
 

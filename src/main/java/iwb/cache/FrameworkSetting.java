@@ -16,6 +16,7 @@ import java.util.UUID;
 
 public class FrameworkSetting {
 	public static  String projectId = null;
+	public static int transpile=0; //0:none, 1:nashorn, 2:nodejs
 	public static Map<String, String> argMap = new HashMap();
 	public static  boolean monaco = true;
 	public	static	int	rdbmsTip= 0; //0:PostgreSQL, 1: SQL Server, 2: Oracle

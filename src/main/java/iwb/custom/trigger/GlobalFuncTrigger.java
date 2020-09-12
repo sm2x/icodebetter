@@ -1,7 +1,7 @@
 package iwb.custom.trigger;
 
 import iwb.cache.LocaleMsgCache;
-import iwb.domain.result.W5GlobalFuncResult;
+import iwb.model.result.W5GlobalFuncResult;
 
 public class GlobalFuncTrigger {
 	public static void beforeExec(W5GlobalFuncResult r, String paramSuffix){

@@ -10,12 +10,12 @@ import org.springframework.stereotype.Component;
 import iwb.cache.FrameworkCache;
 import iwb.cache.LocaleMsgCache;
 import iwb.dao.rdbms_impl.PostgreSQL;
-import iwb.domain.db.W5Table;
-import iwb.domain.db.W5Workflow;
-import iwb.domain.db.W5WorkflowRecord;
-import iwb.domain.db.W5WorkflowStep;
-import iwb.domain.result.W5FormResult;
 import iwb.exception.IWBException;
+import iwb.model.db.W5Table;
+import iwb.model.db.W5Workflow;
+import iwb.model.db.W5WorkflowRecord;
+import iwb.model.db.W5WorkflowStep;
+import iwb.model.result.W5FormResult;
 import iwb.util.GenericUtil;
 
 @Component

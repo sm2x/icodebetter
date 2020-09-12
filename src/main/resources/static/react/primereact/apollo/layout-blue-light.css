@@ -2810,3 +2810,9 @@ h2 {
   padding: 0.25em 1em;
   display: block;
 }
+
+
+/*code2*/
+.layout-config-active{
+  box-shadow: -3px 4px 6px #c7c7c7;
+}

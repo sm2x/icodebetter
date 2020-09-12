@@ -14,11 +14,11 @@ import iwb.cache.FrameworkSetting;
 import iwb.dao.metadata.MetadataLoader;
 import iwb.dao.rdbms_impl.ExternalDBSql;
 import iwb.dao.rdbms_impl.PostgreSQL;
-import iwb.domain.db.W5Query;
-import iwb.domain.db.W5Table;
-import iwb.domain.result.W5GlobalFuncResult;
-import iwb.domain.result.W5QueryResult;
 import iwb.exception.IWBException;
+import iwb.model.db.W5Query;
+import iwb.model.db.W5Table;
+import iwb.model.result.W5GlobalFuncResult;
+import iwb.model.result.W5QueryResult;
 import iwb.util.DBUtil;
 import iwb.util.GenericUtil;
 

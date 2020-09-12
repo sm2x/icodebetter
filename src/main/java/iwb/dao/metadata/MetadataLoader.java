@@ -4,18 +4,18 @@ package iwb.dao.metadata;
 import java.util.List;
 import java.util.Map;
 
-import iwb.domain.db.W5LookUpDetay;
-import iwb.domain.db.W5ObjectMailSetting;
-import iwb.domain.db.W5Project;
-import iwb.domain.db.W5TableFieldCalculated;
-import iwb.domain.result.M5ListResult;
-import iwb.domain.result.W5CardResult;
-import iwb.domain.result.W5FormResult;
-import iwb.domain.result.W5GlobalFuncResult;
-import iwb.domain.result.W5GridResult;
-import iwb.domain.result.W5ListViewResult;
-import iwb.domain.result.W5PageResult;
-import iwb.domain.result.W5QueryResult;
+import iwb.model.db.W5LookUpDetay;
+import iwb.model.db.W5ObjectMailSetting;
+import iwb.model.db.W5Project;
+import iwb.model.db.W5TableFieldCalculated;
+import iwb.model.result.M5ListResult;
+import iwb.model.result.W5CardResult;
+import iwb.model.result.W5FormResult;
+import iwb.model.result.W5GlobalFuncResult;
+import iwb.model.result.W5GridResult;
+import iwb.model.result.W5ListViewResult;
+import iwb.model.result.W5PageResult;
+import iwb.model.result.W5QueryResult;
 
 public interface MetadataLoader {
 

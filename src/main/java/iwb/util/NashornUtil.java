@@ -139,7 +139,8 @@ public class NashornUtil {
 	private static SimpleBindings babelBindings = null;
 	
 	public static synchronized String babelTranspileJSX(String jsx) {
-		if(GenericUtil.isEmpty(jsx))return "";
+		if(FrameworkSetting.transpile==0)return jsx;
+		if(GenericUtil.isEmpty(jsx))return jsx;
 		if(babelEngine==null) try{
 			ClassLoader classLoader = NashornUtil.class.getClassLoader();
 			URL resource = classLoader.getResource("static/react/js/babel6/babel.min.js");

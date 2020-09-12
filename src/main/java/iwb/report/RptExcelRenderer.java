@@ -24,7 +24,7 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.springframework.web.servlet.view.document.AbstractXlsView;
 
 import iwb.cache.FrameworkSetting;
-import iwb.domain.helper.W5ReportCellHelper;
+import iwb.model.helper.W5ReportCellHelper;
 import iwb.util.GenericUtil;
 
 /**

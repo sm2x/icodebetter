@@ -16,23 +16,23 @@ import iwb.cache.LocaleMsgCache;
 import iwb.dao.metadata.MetadataLoader;
 import iwb.dao.rdbms_impl.ExternalDBSql;
 import iwb.dao.rdbms_impl.PostgreSQL;
-import iwb.domain.db.W5ExternalDb;
-import iwb.domain.db.W5GridColumn;
-import iwb.domain.db.W5LookUp;
-import iwb.domain.db.W5LookUpDetay;
-import iwb.domain.db.W5Query;
-import iwb.domain.db.W5QueryField;
-import iwb.domain.db.W5QueryParam;
-import iwb.domain.db.W5Table;
-import iwb.domain.db.W5Workflow;
-import iwb.domain.db.W5WsMethod;
-import iwb.domain.db.W5WsMethodParam;
-import iwb.domain.helper.W5GridReportHelper;
-import iwb.domain.helper.W5ReportCellHelper;
-import iwb.domain.result.W5GridResult;
-import iwb.domain.result.W5QueryResult;
 import iwb.enums.FieldDefinitions;
 import iwb.exception.IWBException;
+import iwb.model.db.W5ExternalDb;
+import iwb.model.db.W5GridColumn;
+import iwb.model.db.W5LookUp;
+import iwb.model.db.W5LookUpDetay;
+import iwb.model.db.W5Query;
+import iwb.model.db.W5QueryField;
+import iwb.model.db.W5QueryParam;
+import iwb.model.db.W5Table;
+import iwb.model.db.W5Workflow;
+import iwb.model.db.W5WsMethod;
+import iwb.model.db.W5WsMethodParam;
+import iwb.model.helper.W5GridReportHelper;
+import iwb.model.helper.W5ReportCellHelper;
+import iwb.model.result.W5GridResult;
+import iwb.model.result.W5QueryResult;
 import iwb.util.GenericUtil;
 import iwb.util.UserUtil;
 
@@ -161,7 +161,6 @@ public class QueryEngine {
 			scriptEngine.executeQueryAsScript(queryResult, null);
 			break;
 		default:
-			queryResult.setViewLogModeTip((short) GenericUtil.uInt(requestParams, "_vlm"));
 			if (!GenericUtil.isEmpty(requestParams.get("sort"))) {//sql injection check
 				if (requestParams.get("sort").equals(FieldDefinitions.queryFieldName_Comment)) {
 					queryResult.setOrderBy(FieldDefinitions.queryFieldName_Comment); 
@@ -195,7 +194,7 @@ public class QueryEngine {
 			case 9:
 			case 10:
 			case 12:
-			case 13:
+//			case 13:
 				queryResult.prepareTreeQuery(null);
 				break;
 			case 15:

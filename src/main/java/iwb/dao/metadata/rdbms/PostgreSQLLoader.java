@@ -19,63 +19,63 @@ import iwb.cache.LocaleMsgCache;
 import iwb.dao.metadata.MetadataLoader;
 import iwb.dao.rdbms_impl.BaseDAO;
 import iwb.dao.rdbms_impl.PostgreSQL;
-import iwb.domain.db.M5List;
-import iwb.domain.db.W5Card;
-import iwb.domain.db.W5Component;
-import iwb.domain.db.W5Conversion;
-import iwb.domain.db.W5Customization;
-import iwb.domain.db.W5ExternalDb;
-import iwb.domain.db.W5Form;
-import iwb.domain.db.W5FormCell;
-import iwb.domain.db.W5FormCellProperty;
-import iwb.domain.db.W5FormModule;
-import iwb.domain.db.W5FormSmsMail;
-import iwb.domain.db.W5GlobalFunc;
-import iwb.domain.db.W5GlobalFuncParam;
-import iwb.domain.db.W5Grid;
-import iwb.domain.db.W5GridColumn;
-import iwb.domain.db.W5JobSchedule;
-import iwb.domain.db.W5List;
-import iwb.domain.db.W5ListBase;
-import iwb.domain.db.W5ListColumn;
-import iwb.domain.db.W5LookUp;
-import iwb.domain.db.W5LookUpDetay;
-import iwb.domain.db.W5Mq;
-import iwb.domain.db.W5MqCallback;
-import iwb.domain.db.W5ObjectMailSetting;
-import iwb.domain.db.W5ObjectToolbarItem;
-import iwb.domain.db.W5Page;
-import iwb.domain.db.W5PageObject;
-import iwb.domain.db.W5Project;
-import iwb.domain.db.W5Query;
-import iwb.domain.db.W5QueryField;
-import iwb.domain.db.W5QueryParam;
-import iwb.domain.db.W5Table;
-import iwb.domain.db.W5TableChild;
-import iwb.domain.db.W5TableEvent;
-import iwb.domain.db.W5TableField;
-import iwb.domain.db.W5TableFieldCalculated;
-import iwb.domain.db.W5TableParam;
-import iwb.domain.db.W5VcsCommit;
-import iwb.domain.db.W5Workflow;
-import iwb.domain.db.W5WorkflowStep;
-import iwb.domain.db.W5Ws;
-import iwb.domain.db.W5WsMethod;
-import iwb.domain.db.W5WsMethodParam;
-import iwb.domain.db.W5WsServer;
-import iwb.domain.db.W5WsServerMethod;
-import iwb.domain.db.W5WsServerMethodParam;
-import iwb.domain.helper.W5FormCellHelper;
-import iwb.domain.result.M5ListResult;
-import iwb.domain.result.W5CardResult;
-import iwb.domain.result.W5FormResult;
-import iwb.domain.result.W5GlobalFuncResult;
-import iwb.domain.result.W5GridResult;
-import iwb.domain.result.W5ListViewResult;
-import iwb.domain.result.W5PageResult;
-import iwb.domain.result.W5QueryResult;
 import iwb.enums.FieldDefinitions;
 import iwb.exception.IWBException;
+import iwb.model.db.M5List;
+import iwb.model.db.W5Card;
+import iwb.model.db.W5Component;
+import iwb.model.db.W5Conversion;
+import iwb.model.db.W5Customization;
+import iwb.model.db.W5ExternalDb;
+import iwb.model.db.W5Form;
+import iwb.model.db.W5FormCell;
+import iwb.model.db.W5FormCellProperty;
+import iwb.model.db.W5FormModule;
+import iwb.model.db.W5FormSmsMail;
+import iwb.model.db.W5GlobalFunc;
+import iwb.model.db.W5GlobalFuncParam;
+import iwb.model.db.W5Grid;
+import iwb.model.db.W5GridColumn;
+import iwb.model.db.W5JobSchedule;
+import iwb.model.db.W5List;
+import iwb.model.db.W5ListBase;
+import iwb.model.db.W5ListColumn;
+import iwb.model.db.W5LookUp;
+import iwb.model.db.W5LookUpDetay;
+import iwb.model.db.W5Mq;
+import iwb.model.db.W5MqCallback;
+import iwb.model.db.W5ObjectMailSetting;
+import iwb.model.db.W5ObjectToolbarItem;
+import iwb.model.db.W5Page;
+import iwb.model.db.W5PageObject;
+import iwb.model.db.W5Project;
+import iwb.model.db.W5Query;
+import iwb.model.db.W5QueryField;
+import iwb.model.db.W5QueryParam;
+import iwb.model.db.W5Table;
+import iwb.model.db.W5TableChild;
+import iwb.model.db.W5TableEvent;
+import iwb.model.db.W5TableField;
+import iwb.model.db.W5TableFieldCalculated;
+import iwb.model.db.W5TableParam;
+import iwb.model.db.W5VcsCommit;
+import iwb.model.db.W5Workflow;
+import iwb.model.db.W5WorkflowStep;
+import iwb.model.db.W5Ws;
+import iwb.model.db.W5WsMethod;
+import iwb.model.db.W5WsMethodParam;
+import iwb.model.db.W5WsServer;
+import iwb.model.db.W5WsServerMethod;
+import iwb.model.db.W5WsServerMethodParam;
+import iwb.model.helper.W5FormCellHelper;
+import iwb.model.result.M5ListResult;
+import iwb.model.result.W5CardResult;
+import iwb.model.result.W5FormResult;
+import iwb.model.result.W5GlobalFuncResult;
+import iwb.model.result.W5GridResult;
+import iwb.model.result.W5ListViewResult;
+import iwb.model.result.W5PageResult;
+import iwb.model.result.W5QueryResult;
 import iwb.util.EncryptionUtil;
 import iwb.util.GenericUtil;
 import iwb.util.NashornUtil;
@@ -468,7 +468,9 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 				"from W5PageObject t where t.activeFlag=1 AND t.pageId=?0 AND t.projectUuid=?1 order by t.tabOrder",
 				pr.getPageId(), projectId));
 
-		if(page.getPageType()==2 && page.getObjectId()==2)page.setCode(NashornUtil.babelTranspileJSX(page.getCode()));
+		if(page.getPageType()==2 && page.getObjectId()==2 && GenericUtil.hasPartInside2("5,8,9", FrameworkCache.getProject(projectId).getUiWebFrontendTip())) {
+			page.setCode(NashornUtil.babelTranspileJSX(page.getCode()));
+		}
 		
 		for (W5PageObject to : page.get_pageObjectList())
 			if (to.getSrcQueryFieldId() != null && to.getDstQueryParamId() != null) {
@@ -728,6 +730,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 							gr.getGridId()));
 			if(jsx)for(W5GridColumn c:grid.get_gridColumnList())if(c.getRenderer()!=null && c.getRenderer().contains("<") && c.getRenderer().contains(">")) try{//JSX
 				c.setRenderer(NashornUtil.babelTranspileJSX(c.getRenderer()));
+				if(c.getRenderer().endsWith(";"))c.setRenderer(c.getRenderer().substring(0, c.getRenderer().length()-1));
 			}catch(Exception ee) {ee.printStackTrace();}
 			
 			grid.set_toolbarItemList(find(
@@ -1094,7 +1097,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 	@Override
 	public void setApplicationSettingsValues() {
 		FrameworkSetting.debug = FrameworkCache.getAppSettingIntValue(0, "debug") != 0;
-
+		FrameworkSetting.transpile = FrameworkCache.getAppSettingIntValue(0, "transpile");
 
 		FrameworkSetting.mq = FrameworkCache.getAppSettingIntValue(0, "mq_flag") != 0;
 		// FrameworkSetting.preloadWEngine =
@@ -1374,6 +1377,7 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 					if(GenericUtil.uInt(m2.get("crud_update_flag"))!=0)ss.add(2);
 					if(GenericUtil.uInt(m2.get("crud_insert_flag"))!=0)ss.add(1);
 					if(GenericUtil.uInt(m2.get("file_attachment_flag"))!=0)ss.add(101);
+					if(GenericUtil.uInt(m2.get("add_file_attachment_flag"))!=0)ss.add(102);
 					if(GenericUtil.uInt(m2.get("make_comment_flag"))!=0)ss.add(103);					
 					//101:fileViewFlag; 103:commentMakeFlag; 105:gridReportViewFlag;108:logViewFlag;
 
@@ -1509,7 +1513,8 @@ public class PostgreSQLLoader extends BaseDAO implements MetadataLoader {
 		Map<Integer, W5Component> wComponentMap = new HashMap<Integer, W5Component>();
 		List<W5Component> l = find("from W5Component t where t.projectUuid=?0", projectId);
 		for (W5Component c : l) {
-			if(c.getFrontendLang()==2)try{
+			if(c.getFrontendLang()==2)if(!GenericUtil.isEmpty(c.getJsCode()))c.setCode(c.getJsCode());
+			else try{
 				c.setCode(NashornUtil.babelTranspileJSX(c.getCode()));
 			}catch(Exception ee) {ee.printStackTrace();}
 			wComponentMap.put(c.getComponentId(), c);

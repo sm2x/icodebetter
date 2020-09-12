@@ -52,18 +52,18 @@ import iwb.cache.FrameworkCache;
 import iwb.cache.FrameworkSetting;
 import iwb.cache.LocaleMsgCache;
 import iwb.dao.rdbms_impl.PostgreSQL;
-import iwb.domain.db.W5Base;
-import iwb.domain.db.W5FormCell;
-import iwb.domain.db.W5LookUpDetay;
-import iwb.domain.db.W5Param;
-import iwb.domain.db.W5Table;
-import iwb.domain.db.W5TableField;
-import iwb.domain.db.W5TableParam;
-import iwb.domain.db.W5WsMethodParam;
-import iwb.domain.helper.W5FormCellHelper;
-import iwb.domain.helper.W5ReportCellHelper;
 import iwb.engine.GlobalScriptEngine;
 import iwb.exception.IWBException;
+import iwb.model.db.W5Base;
+import iwb.model.db.W5FormCell;
+import iwb.model.db.W5LookUpDetay;
+import iwb.model.db.W5Param;
+import iwb.model.db.W5Table;
+import iwb.model.db.W5TableField;
+import iwb.model.db.W5TableParam;
+import iwb.model.db.W5WsMethodParam;
+import iwb.model.helper.W5FormCellHelper;
+import iwb.model.helper.W5ReportCellHelper;
 
 // import iwb.dao.RdbmsDao;
 
@@ -75,7 +75,8 @@ public class GenericUtil {
 	private static final String strIndex = "0123456789+-" + dtCh;
 
 
-	public static String orderStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	final public static String orderStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	final public static String alphaNum = "0123456789"+orderStr.toLowerCase()+orderStr;
 	static int orderLen = orderStr.length();
 
 	private static long nextThreadId = 1000;
@@ -2791,5 +2792,14 @@ public class GenericUtil {
 		if(vType.equals("url"))return urlPattern.matcher(str).matches();
 		if(vType.equals("iban"))return ibanPattern.matcher(str).matches();
 		return true;
+	}
+
+	public static String generateRandomAlphanumeric(int count) {
+		StringBuilder builder = new StringBuilder();
+		while (count-- != 0) {
+			int character = (int)(Math.random()*alphaNum.length());
+			builder.append(alphaNum.charAt(character));
+		}
+		return builder.toString();
 	}
 }

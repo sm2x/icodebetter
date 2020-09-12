@@ -10,7 +10,7 @@ import com.rabbitmq.client.ConnectionFactory;
 
 import iwb.cache.FrameworkCache;
 import iwb.cache.FrameworkSetting;
-import iwb.domain.db.W5Mq;
+import iwb.model.db.W5Mq;
 import iwb.mq.MQTTCallback;
 import iwb.service.FrameworkService;
 

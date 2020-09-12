@@ -7,6 +7,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.net.URL;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -29,27 +31,6 @@ import iwb.cache.LocaleMsgCache;
 import iwb.dao.metadata.MetadataLoader;
 import iwb.dao.metadata.rdbms.PostgreSQLWriter;
 import iwb.dao.rdbms_impl.PostgreSQL;
-import iwb.domain.db.Log5Feed;
-import iwb.domain.db.Log5GlobalNextval;
-import iwb.domain.db.Log5JobAction;
-import iwb.domain.db.Log5Transaction;
-import iwb.domain.db.W5FileAttachment;
-import iwb.domain.db.W5JobSchedule;
-import iwb.domain.db.W5Project;
-import iwb.domain.db.W5WorkflowRecord;
-import iwb.domain.db.W5WorkflowStep;
-import iwb.domain.db.W5WsServer;
-import iwb.domain.helper.W5FormCellHelper;
-import iwb.domain.helper.W5GridReportHelper;
-import iwb.domain.helper.W5QueuedActionHelper;
-import iwb.domain.helper.W5ReportCellHelper;
-import iwb.domain.result.M5ListResult;
-import iwb.domain.result.W5FormResult;
-import iwb.domain.result.W5GlobalFuncResult;
-import iwb.domain.result.W5GridResult;
-import iwb.domain.result.W5PageResult;
-import iwb.domain.result.W5QueryResult;
-import iwb.domain.result.W5TableRecordInfoResult;
 import iwb.engine.AccessControlEngine;
 import iwb.engine.CRUDEngine;
 import iwb.engine.ConversionEngine;
@@ -61,6 +42,27 @@ import iwb.engine.RESTEngine;
 import iwb.engine.UIEngine;
 import iwb.engine.WorkflowEngine;
 import iwb.exception.IWBException;
+import iwb.model.db.Log5Feed;
+import iwb.model.db.Log5GlobalNextval;
+import iwb.model.db.Log5JobAction;
+import iwb.model.db.Log5Transaction;
+import iwb.model.db.W5FileAttachment;
+import iwb.model.db.W5JobSchedule;
+import iwb.model.db.W5Project;
+import iwb.model.db.W5WorkflowRecord;
+import iwb.model.db.W5WorkflowStep;
+import iwb.model.db.W5WsServer;
+import iwb.model.helper.W5FormCellHelper;
+import iwb.model.helper.W5GridReportHelper;
+import iwb.model.helper.W5QueuedActionHelper;
+import iwb.model.helper.W5ReportCellHelper;
+import iwb.model.result.M5ListResult;
+import iwb.model.result.W5FormResult;
+import iwb.model.result.W5GlobalFuncResult;
+import iwb.model.result.W5GridResult;
+import iwb.model.result.W5PageResult;
+import iwb.model.result.W5QueryResult;
+import iwb.model.result.W5TableRecordInfoResult;
 import iwb.util.DBUtil;
 import iwb.util.GenericUtil;
 import iwb.util.LogUtil;
@@ -148,13 +150,12 @@ public class FrameworkService {
 			Map<String, String> requestParams) {
 		return uiEngine.getFormResult(scd, formId, action, requestParams);
 	}
+	
 
-	@SuppressWarnings({ "unused", "unchecked" })
-	private List<W5QueuedActionHelper> postForm4Table(W5FormResult formResult, String paramSuffix,
-			Set<String> checkedParentRecords) {
-		return crudEngine.postForm4Table(formResult, paramSuffix, checkedParentRecords);
+	public W5FormResult getFormResult2(Map<String, Object> scd, int formId) {
+		return uiEngine.getFormResult2(scd, formId);
 	}
-
+	
 
 
 	public W5FormResult postForm4Table(Map<String, Object> scd, int formId, int action,
@@ -822,7 +823,8 @@ public class FrameworkService {
 	public Map organizeREST(Map<String, Object> scd, String serviceName) {
 		return restEngine.organizeREST(scd, serviceName);
 	}
-
+	
+	@Transactional(propagation=Propagation.NEVER)
 	public String getServerDttm() {
 		return dao.executeSQLQuery("select to_char(current_timestamp,'dd/mm/yyyy hh24:mi:ss')").get(0).toString();
 	}
@@ -854,4 +856,61 @@ public class FrameworkService {
 		metadataWriter.saveCredentials(cusId, userId, picUrl, fullName, socialNet, email, nickName, projects, userTips);
 		saveImage(picUrl, userId, cusId, null);
 	}
+
+	@Transactional(propagation=Propagation.NEVER)
+	public String loadLink(String linkId) {
+		List l = dao.executeSQLQuery("select x.url, x.project_uuid from iwb.w5_link x where link_id=?", linkId);
+		return GenericUtil.isEmpty(l) ? "-":l.get(0).toString();
+	}
+	
+
+	@Transactional(propagation=Propagation.NEVER)
+	public String generateLinkFromUrl(String url) {
+		int ixp = url.indexOf('/');
+		if(ixp==-1)return null;
+		if(ixp==0) {
+			url = url.substring(1);
+			ixp = url.indexOf('/');
+
+		}
+		W5Project po = FrameworkCache.getProject(url.substring(0,ixp));
+		if(po==null)return null;
+		String murl = url.substring(ixp+1);
+		if(GenericUtil.isEmpty(murl) || murl.charAt(0)=='?')return null;
+		int ix = murl.indexOf(".r=");
+		if(ix>-1) {
+			int qi=ix+2;
+			for(;qi<murl.length();qi++)if(murl.charAt(qi)=='&'||murl.charAt(qi)=='#') {
+				break;
+			}
+			murl = murl.substring(0, ix) + (qi<murl.length() ? murl.substring(qi):"");
+		}
+		while(murl.endsWith("?") || murl.endsWith("&"))murl=murl.substring(0, murl.length()-1);
+		while(murl.endsWith("#/"))murl=murl.substring(0, murl.length()-2);
+				
+		if(GenericUtil.isEmpty(murl))return null;
+		
+		List l = dao.executeSQLQuery("select x.link_id from iwb.w5_link x where url=? and project_uuid=?", url, po.getProjectUuid());
+		if(!GenericUtil.isEmpty(l))return l.get(0).toString();
+		l = dao.executeSQLQuery("select 1 from iwb.w5_link x where project_uuid=? limit 1", po.getProjectUuid());
+		if(GenericUtil.isEmpty(l)) {
+			String normalized = Normalizer.normalize(po.getDsc(), Form.NFD);
+			String result = normalized.replaceAll("[^A-Za-z0-9]", "");
+			if(!GenericUtil.isEmpty(result)) {
+				if(result.length()>20)result = result.substring(0,20);
+				l = dao.executeSQLQuery("select 1 from iwb.w5_link x where link_id like ? limit 1", result+"%");
+				if(GenericUtil.isEmpty(l)) {
+					dao.executeUpdateSQLQuery("insert into iwb.w5_link (link_id, url, project_uuid) values (?,?,?)", result, "main.htm", po.getProjectUuid());
+					FrameworkCache.addUrlToLinkCache(result, po.getProjectUuid()+"/main.htm");
+					if(murl.equals("main.htm"))return result;
+				}
+			}
+		}
+		String linkId = GenericUtil.generateRandomAlphanumeric(10);
+		dao.executeUpdateSQLQuery("insert into iwb.w5_link (link_id, url, project_uuid) values (?,?,?)", linkId, murl, po.getProjectUuid());
+		FrameworkCache.addUrlToLinkCache(linkId, po.getProjectUuid()+"/"+murl);
+		return linkId;
+	}
+
+
 }

@@ -13,55 +13,55 @@ import iwb.adapter.ui.surveyjs.SurveyJS;
 import iwb.cache.FrameworkCache;
 import iwb.cache.FrameworkSetting;
 import iwb.cache.LocaleMsgCache;
-import iwb.domain.db.Log5Feed;
-import iwb.domain.db.W5BIGraphDashboard;
-import iwb.domain.db.W5Card;
-import iwb.domain.db.W5Conversion;
-import iwb.domain.db.W5ConvertedObject;
-import iwb.domain.db.W5CustomGridColumnCondition;
-import iwb.domain.db.W5CustomGridColumnRenderer;
-import iwb.domain.db.W5Detay;
-import iwb.domain.db.W5Form;
-import iwb.domain.db.W5FormCell;
-import iwb.domain.db.W5FormCellProperty;
-import iwb.domain.db.W5FormHint;
-import iwb.domain.db.W5FormModule;
-import iwb.domain.db.W5FormSmsMail;
-import iwb.domain.db.W5FormSmsMailAlarm;
-import iwb.domain.db.W5GlobalFuncParam;
-import iwb.domain.db.W5Grid;
-import iwb.domain.db.W5GridColumn;
-import iwb.domain.db.W5List;
-import iwb.domain.db.W5ListColumn;
-import iwb.domain.db.W5LookUp;
-import iwb.domain.db.W5LookUpDetay;
-import iwb.domain.db.W5ObjectMenuItem;
-import iwb.domain.db.W5ObjectToolbarItem;
-import iwb.domain.db.W5Page;
-import iwb.domain.db.W5PageObject;
-import iwb.domain.db.W5Query;
-import iwb.domain.db.W5QueryField;
-import iwb.domain.db.W5Table;
-import iwb.domain.db.W5TableChild;
-import iwb.domain.db.W5TableField;
-import iwb.domain.db.W5Workflow;
-import iwb.domain.db.W5WorkflowStep;
-import iwb.domain.db.W5WsMethod;
-import iwb.domain.db.W5WsMethodParam;
-import iwb.domain.helper.W5CommentHelper;
-import iwb.domain.helper.W5FormCellHelper;
-import iwb.domain.helper.W5TableChildHelper;
-import iwb.domain.helper.W5TableRecordHelper;
-import iwb.domain.result.W5CardResult;
-import iwb.domain.result.W5FormResult;
-import iwb.domain.result.W5GlobalFuncResult;
-import iwb.domain.result.W5GridResult;
-import iwb.domain.result.W5ListViewResult;
-import iwb.domain.result.W5PageResult;
-import iwb.domain.result.W5QueryResult;
-import iwb.domain.result.W5TableRecordInfoResult;
 import iwb.enums.FieldDefinitions;
 import iwb.exception.IWBException;
+import iwb.model.db.Log5Feed;
+import iwb.model.db.W5BIGraphDashboard;
+import iwb.model.db.W5Card;
+import iwb.model.db.W5Conversion;
+import iwb.model.db.W5ConvertedObject;
+import iwb.model.db.W5CustomGridColumnCondition;
+import iwb.model.db.W5CustomGridColumnRenderer;
+import iwb.model.db.W5Detay;
+import iwb.model.db.W5Form;
+import iwb.model.db.W5FormCell;
+import iwb.model.db.W5FormCellProperty;
+import iwb.model.db.W5FormHint;
+import iwb.model.db.W5FormModule;
+import iwb.model.db.W5FormSmsMail;
+import iwb.model.db.W5FormSmsMailAlarm;
+import iwb.model.db.W5GlobalFuncParam;
+import iwb.model.db.W5Grid;
+import iwb.model.db.W5GridColumn;
+import iwb.model.db.W5List;
+import iwb.model.db.W5ListColumn;
+import iwb.model.db.W5LookUp;
+import iwb.model.db.W5LookUpDetay;
+import iwb.model.db.W5ObjectMenuItem;
+import iwb.model.db.W5ObjectToolbarItem;
+import iwb.model.db.W5Page;
+import iwb.model.db.W5PageObject;
+import iwb.model.db.W5Query;
+import iwb.model.db.W5QueryField;
+import iwb.model.db.W5Table;
+import iwb.model.db.W5TableChild;
+import iwb.model.db.W5TableField;
+import iwb.model.db.W5Workflow;
+import iwb.model.db.W5WorkflowStep;
+import iwb.model.db.W5WsMethod;
+import iwb.model.db.W5WsMethodParam;
+import iwb.model.helper.W5CommentHelper;
+import iwb.model.helper.W5FormCellHelper;
+import iwb.model.helper.W5TableChildHelper;
+import iwb.model.helper.W5TableRecordHelper;
+import iwb.model.result.W5CardResult;
+import iwb.model.result.W5FormResult;
+import iwb.model.result.W5GlobalFuncResult;
+import iwb.model.result.W5GridResult;
+import iwb.model.result.W5ListViewResult;
+import iwb.model.result.W5PageResult;
+import iwb.model.result.W5QueryResult;
+import iwb.model.result.W5TableRecordInfoResult;
 import iwb.util.EncryptionUtil;
 import iwb.util.GenericUtil;
 import iwb.util.HtmlFilter;
@@ -4689,22 +4689,22 @@ public class ExtJs3_4 implements ViewAdapter {
 		boolean expander = false;
 
 		buf.append("var ").append(g.getDsc()).append("_sm=new Ext.grid.");
-		if (!gridResult.isViewLogMode()) {
-			switch (g.getSelectionModeType()) {// 0,1:single,2:multi,3:checkbox
-												// multi, 4:single + row
-												// expander, 5: single + detail
-												// dlg
-			case	0:buf.setLength(buf.length()-"new Ext.grid.".length());
-			buf.append("null;\n");
+
+		switch (g.getSelectionModeType()) {// 0,1:single,2:multi,3:checkbox
+											// multi, 4:single + row
+											// expander, 5: single + detail
+											// dlg
+		case	0:buf.setLength(buf.length()-"new Ext.grid.".length());
+		buf.append("null;\n");
+		break;
+		case 3:
+			buf.append("CheckboxSelectionModel()\n");
 			break;
-			case 3:
-				buf.append("CheckboxSelectionModel()\n");
-				break;
-			default:
-				buf.append("RowSelectionModel({singleSelect:")
-						.append(g.getSelectionModeType() != 2).append("})\n");
-				break;
-			}
+		default:
+			buf.append("RowSelectionModel({singleSelect:")
+					.append(g.getSelectionModeType() != 2).append("})\n");
+			break;
+		}
 /*			if (g.getSelectionModeTip() == 4 && g.get_detailView() != null) {// rowexpander
 				buf.append("var ")
 						.append(g.getDsc())
@@ -4717,8 +4717,7 @@ public class ExtJs3_4 implements ViewAdapter {
 										.getCode())).append("')})\n");
 				expander = true;
 			}*/
-		} else
-			buf.append("RowSelectionModel({singleSelect:true})\n");
+
 
 		buf.append("var ").append(g.getDsc()).append(" = {\n gridId:").append(g.getGridId()).append(",queryId:").append(g.getQueryId());
 		if (gridResult.getExtraOutMap() != null
@@ -4735,24 +4734,20 @@ public class ExtJs3_4 implements ViewAdapter {
 
 		if (g.getDefaultWidth() != 0)
 			buf.append(",\n defaultWidth:").append(g.getDefaultWidth());
-		if (gridResult.isViewLogMode())
-			buf.append(", defaultHeight:").append(
-					FrameworkCache.getAppSettingIntValue(scd,
-							"log_default_grid_height"));
-		else {
-			if (g.getSelectionModeType() == 2 || g.getSelectionModeType() == 3) // multi Select
-				buf.append(",\n multiSelect:true");
+
+		if (g.getSelectionModeType() == 2 || g.getSelectionModeType() == 3) // multi Select
+			buf.append(",\n multiSelect:true");
 /*			else if (g.getSelectionModeTip() == 5 && g.get_detailView() != null) // promis.js'de
 																					// halledilmek
 																					// uzere
 				buf.append(",\n detailDlg:true");*/
-			if (g.getDefaultHeight() > 0)
-				buf.append(", defaultHeight:").append(g.getDefaultHeight());
+		if (g.getDefaultHeight() > 0)
+			buf.append(", defaultHeight:").append(g.getDefaultHeight());
 
-			buf.append(",\n gridReport:").append(FrameworkCache.roleAccessControl(scd,  105));
+		buf.append(",\n gridReport:").append(FrameworkCache.roleAccessControl(scd,  105));
 
-			buf.append(", saveUserInfo:false");
-		}
+		buf.append(", saveUserInfo:false");
+	
 		buf.append(", loadMask:!0, displayInfo:").append(g.getDefaultPageRecordNumber()>0);
 		
 		if(q.get_aggQueryFields()!=null) {
@@ -4815,7 +4810,7 @@ public class ExtJs3_4 implements ViewAdapter {
 				.append(GenericUtil.getNextId("ng")).append("', listeners:{}");
 
 		String ajaxUrl = "ajaxQueryData";
-		if (!gridResult.isViewLogMode() && g.getTreeMasterFieldId() != 0) {// tree query + Grouping Field varsa, o zaman
+		if (g.getTreeMasterFieldId() != 0) {// tree query + Grouping Field varsa, o zaman
 																			// bunu AdjacencyTreeGrid(MaximGB) olarak Goster
 			buf.append(
 					",\n ds:new Ext.ux.maximgb.tg.AdjacencyListStore({autoLoad:false,url:'"+ajaxUrl+"?.t='+_page_tab_id+'&.p='+_scd.projectId+'&.w='+_webPageId+'&_qid=")//_json=1&_tqd=1&
@@ -4839,7 +4834,7 @@ public class ExtJs3_4 implements ViewAdapter {
 			if (g.get_groupingField() != null)
 				buf.append(",\n autoExpandColumn:'")
 						.append(g.get_groupingField().getDsc()).append("'");
-		} else if (!gridResult.isViewLogMode() && g.get_groupingField() != null) {// grouping
+		} else if (g.get_groupingField() != null) {// grouping
 																					// fieldli
 			buf.append(",\n view:new Ext.grid.GroupingView({groupTextTpl: '{text} ({[values.rs.length]} {[values.rs.length > 1 ? \"Items\" : \"Item\"]})'})");
 			buf.append(",\n ds:new Ext.data.GroupingStore({groupField:'")
@@ -4853,10 +4848,9 @@ public class ExtJs3_4 implements ViewAdapter {
 					.append(",\n reader: new Ext.data.JsonReader({")
 					.append(serializeQueryReader(g.get_query()
 							.get_queryFields(),
-							gridResult.isViewLogMode() ? "log5_log_id" : g
+							g
 									.get_pkQueryField().getDsc(),  g
-									.get_postProcessQueryFields(), gridResult
-									.isViewLogMode() ? 1 : (g.get_query()
+									.get_postProcessQueryFields(), (g.get_query()
 									.getShowParentRecordFlag() != 0 ? 2 : 0),
 							FrameworkCache.getTable(projectId, g.get_query().getSourceObjectId()), scd)).append("})})");
 		} else {
@@ -4864,139 +4858,132 @@ public class ExtJs3_4 implements ViewAdapter {
 					",\n ds:new Ext.data.JsonStore({url:'"+ajaxUrl+"?.t='+_page_tab_id+'&.p='+_scd.projectId+'&.w='+_webPageId+'&_qid=")
 					.append(g.getQueryId()).append("&_gid=")
 					.append(g.getGridId());
-			if (gridResult.isViewLogMode()
-					|| g.getDefaultPageRecordNumber() != 0)
+			if (g.getDefaultPageRecordNumber() != 0)
 				buf.append("&firstLimit=")
-						.append(gridResult.isViewLogMode() ? FrameworkCache
-								.getAppSettingIntValue(scd,
-										"log_default_record_per_page") : g
+						.append(g
 								.getDefaultPageRecordNumber())
 						.append("',remoteSort:true,");
 			else
 				buf.append("',");
 			buf.append(
 					serializeQueryReader(g.get_query().get_queryFields(),
-							gridResult.isViewLogMode() ? "log5_log_id" : g
+							g
 									.get_pkQueryField().getDsc(), g
-									.get_postProcessQueryFields(), gridResult
-									.isViewLogMode() ? 1 : (g.get_query()
+									.get_postProcessQueryFields(), (g.get_query()
 									.getShowParentRecordFlag() != 0 ? 2 : 0),
 							FrameworkCache.getTable(projectId, g.get_query()
 									.getSourceObjectId()), scd)).append(
 					",listeners:{loadexception:promisLoadException}})");
 		}
 
-		if (gridResult.isViewLogMode() || g.getDefaultPageRecordNumber() != 0)
-			buf.append(",\n pageSize:").append(
-					gridResult.isViewLogMode() ? FrameworkCache
-							.getAppSettingIntValue(scd,
-									"log_default_record_per_page") : g
+		if (g.getDefaultPageRecordNumber() != 0)
+			buf.append(",\n pageSize:").append(g
 							.getDefaultPageRecordNumber());
 
 		if (gridResult.getSearchFormResult() != null) {
 			buf.append(",\n searchForm:").append(
 					serializeGetForm(gridResult.getSearchFormResult()));
 		}
-		if (!gridResult.isViewLogMode()) {
-			if (g.get_defaultCrudForm() != null) { // insert ve delete
-													// buttonlari var mi yok mu?
-				W5Table t = FrameworkCache.getTable(projectId, g.get_defaultCrudForm().getObjectId());// g.get_defaultCrudForm().get_sourceTable();
-				boolean insertFlag = GenericUtil.accessControl(scd,
-						t.getAccessInsertTip(), t.getAccessInsertRoles(),
-						t.getAccessInsertUsers());
-				if(FrameworkSetting.vcs && t.getVcsFlag()!=0)buf.append(",\n vcs:!0");
+
+		if (g.get_defaultCrudForm() != null) { // insert ve delete
+												// buttonlari var mi yok mu?
+			W5Table t = FrameworkCache.getTable(projectId, g.get_defaultCrudForm().getObjectId());// g.get_defaultCrudForm().get_sourceTable();
+			boolean insertFlag = GenericUtil.accessControl(scd,
+					t.getAccessInsertTip(), t.getAccessInsertRoles(),
+					t.getAccessInsertUsers());
+			if(FrameworkSetting.vcs && t.getVcsFlag()!=0)buf.append(",\n vcs:!0");
+			
+			if(FrameworkCache.getAppSettingIntValue(customizationId, "new_record_label_flag")!=0)
+				buf.append(",newRecordLabel:'").append(LocaleMsgCache.get2(scd,"new_record_prefix"))
+				.append(LocaleMsgCache.get2(scd,g.get_defaultCrudForm().getLocaleMsgKey()).toUpperCase()).append("'");
+
+			
+			buf.append(",\n crudFormId:")
+					.append(g.getDefaultCrudFormId())
+					.append(serializeCrudFlags(scd, t, g.getInsertEditModeFlag() != 0));
+
+			if ((t.getDoUpdateLogFlag() != 0 || t.getDoDeleteLogFlag() != 0)
+					&& FrameworkCache.roleAccessControl(scd, 108))
+				buf.append(",\n logFlags:{edit:")
+						.append(t.getDoUpdateLogFlag() != 0)
+						.append(",remove:")
+						.append(t.getDoDeleteLogFlag() != 0).append("}");
+
+			if (g.getInsertEditModeFlag() != 0 && insertFlag)
+				buf.append(serializeGridRecordCreate(gridResult));
+			// if(g.get_defaultCrudForm().get_sourceTable().getFileAttachmentFlag()!=0)
+			int tableId = t.getTableId();
+			if (tableId != 0 && scd != null) {
+				if (FrameworkCache.getAppSettingIntValue(customizationId,
+						"file_attachment_flag") != 0
+						&& t.getFileAttachmentFlag() != 0
+						&& FrameworkCache.roleAccessControl(scd,
+								 101)
+						&& FrameworkCache.roleAccessControl(scd,
+								102))
+					buf.append(",\n fileAttachFlag:true");
+				if (FrameworkCache.getAppSettingIntValue(customizationId,
+						"make_comment_flag") != 0
+						&& t.getMakeCommentFlag() != 0
+						&& FrameworkCache.roleAccessControl(scd,
+								103))
+					buf.append(",\n makeCommentFlag:true");
 				
-				if(FrameworkCache.getAppSettingIntValue(customizationId, "new_record_label_flag")!=0)
-					buf.append(",newRecordLabel:'").append(LocaleMsgCache.get2(scd,"new_record_prefix"))
-					.append(LocaleMsgCache.get2(scd,g.get_defaultCrudForm().getLocaleMsgKey()).toUpperCase()).append("'");
-
-				
-				buf.append(",\n crudFormId:")
-						.append(g.getDefaultCrudFormId())
-						.append(serializeCrudFlags(scd, t, g.getInsertEditModeFlag() != 0));
-
-				if ((t.getDoUpdateLogFlag() != 0 || t.getDoDeleteLogFlag() != 0)
-						&& FrameworkCache.roleAccessControl(scd, 108))
-					buf.append(",\n logFlags:{edit:")
-							.append(t.getDoUpdateLogFlag() != 0)
-							.append(",remove:")
-							.append(t.getDoDeleteLogFlag() != 0).append("}");
-
-				if (g.getInsertEditModeFlag() != 0 && insertFlag)
-					buf.append(serializeGridRecordCreate(gridResult));
-				// if(g.get_defaultCrudForm().get_sourceTable().getFileAttachmentFlag()!=0)
-				int tableId = t.getTableId();
-				if (tableId != 0 && scd != null) {
-					if (FrameworkCache.getAppSettingIntValue(customizationId,
-							"file_attachment_flag") != 0
-							&& t.getFileAttachmentFlag() != 0
-							&& FrameworkCache.roleAccessControl(scd,
-									 101)
-							&& FrameworkCache.roleAccessControl(scd,
-									102))
-						buf.append(",\n fileAttachFlag:true");
-					if (FrameworkCache.getAppSettingIntValue(customizationId,
-							"make_comment_flag") != 0
-							&& t.getMakeCommentFlag() != 0
-							&& FrameworkCache.roleAccessControl(scd,
-									103))
-						buf.append(",\n makeCommentFlag:true");
-					
-				}
-			}
-
-			if (!GenericUtil.isEmpty(g.get_toolbarItemList())) { // extra
-																// buttonlari
-																// var mi yok
-																// mu?
-				StringBuilder buttons = serializeToolbarItems(scd,
-						g.get_toolbarItemList(), false);
-				if (buttons != null && buttons.length() > 1) {
-					buf.append(",\n extraButtons:[")
-							.append(LocaleMsgCache.filter2(customizationId,
-									xlocale, buttons.toString())).append("]");
-				}
-			}
-
-			if (!GenericUtil.isEmpty(g.get_menuItemList())) { // extra buttonlari
-																// var mi yok
-																// mu?
-				StringBuilder buttons = serializeMenuItems(scd,
-						g.get_menuItemList());
-				if (buttons != null && buttons.length() > 1) {
-					buf.append(",\n menuButtons:[").append(buttons).append("]");
-				}
-			}
-			if (g.get_autoExpandField() != null) {
-				boolean b = true;
-				if (g.get_defaultCrudForm() != null
-						&& g.get_autoExpandField().getMainTableFieldId() != 0) { // insert
-																					// ve
-																					// delete
-																					// buttonlari
-																					// var
-																					// mi
-																					// yok
-																					// mu?
-					W5Table t = FrameworkCache.getTable(scd, g
-							.get_defaultCrudForm().getObjectId());// g.get_defaultCrudForm().get_sourceTable();
-					if (t != null) {
-						W5TableField dt = t.get_tableFieldMap().get(
-								g.get_autoExpandField().getMainTableFieldId());
-						if (dt != null
-								&& !GenericUtil.accessControl(scd,
-										dt.getAccessViewTip(),
-										dt.getAccessViewRoles(),
-										dt.getAccessViewUsers()))
-							b = false;
-					}
-				}
-				if (b)
-					buf.append(",\n autoExpandColumn:'")
-							.append(g.get_autoExpandField().getDsc())
-							.append("', autoExpandMin:100");
 			}
 		}
+
+		if (!GenericUtil.isEmpty(g.get_toolbarItemList())) { // extra
+															// buttonlari
+															// var mi yok
+															// mu?
+			StringBuilder buttons = serializeToolbarItems(scd,
+					g.get_toolbarItemList(), false);
+			if (buttons != null && buttons.length() > 1) {
+				buf.append(",\n extraButtons:[")
+						.append(LocaleMsgCache.filter2(customizationId,
+								xlocale, buttons.toString())).append("]");
+			}
+		}
+
+		if (!GenericUtil.isEmpty(g.get_menuItemList())) { // extra buttonlari
+															// var mi yok
+															// mu?
+			StringBuilder buttons = serializeMenuItems(scd,
+					g.get_menuItemList());
+			if (buttons != null && buttons.length() > 1) {
+				buf.append(",\n menuButtons:[").append(buttons).append("]");
+			}
+		}
+		if (g.get_autoExpandField() != null) {
+			boolean b = true;
+			if (g.get_defaultCrudForm() != null
+					&& g.get_autoExpandField().getMainTableFieldId() != 0) { // insert
+																				// ve
+																				// delete
+																				// buttonlari
+																				// var
+																				// mi
+																				// yok
+																				// mu?
+				W5Table t = FrameworkCache.getTable(scd, g
+						.get_defaultCrudForm().getObjectId());// g.get_defaultCrudForm().get_sourceTable();
+				if (t != null) {
+					W5TableField dt = t.get_tableFieldMap().get(
+							g.get_autoExpandField().getMainTableFieldId());
+					if (dt != null
+							&& !GenericUtil.accessControl(scd,
+									dt.getAccessViewTip(),
+									dt.getAccessViewRoles(),
+									dt.getAccessViewUsers()))
+						b = false;
+				}
+			}
+			if (b)
+				buf.append(",\n autoExpandColumn:'")
+						.append(g.get_autoExpandField().getDsc())
+						.append("', autoExpandMin:100");
+		}
+		
 
 		buf.append("\n}");
 
@@ -5387,7 +5374,7 @@ public class ExtJs3_4 implements ViewAdapter {
 				}
 				newColumns.add(c);
 			}			
-		if (!gridResult.isViewLogMode() && grid.get_postProcessQueryFields() != null && (gridResult.getRequestParams()==null || GenericUtil.uInt(gridResult.getRequestParams(), "_no_post_process_fields")==0)) {
+		if (grid.get_postProcessQueryFields() != null && (gridResult.getRequestParams()==null || GenericUtil.uInt(gridResult.getRequestParams(), "_no_post_process_fields")==0)) {
 			boolean gridPostProcessColumnFirst = FrameworkCache.getAppSettingIntValue(scd,"grid_post_process_column_first")!=0;
 			boolean gridPostProcessCommentFirst = FrameworkCache.getAppSettingIntValue(scd,"grid_post_process_comment_first")!=0;
 			int x = 0;
@@ -5453,30 +5440,7 @@ public class ExtJs3_4 implements ViewAdapter {
 				}
 			}
 		}
-		if (gridResult.isViewLogMode()) {// log ile ilgili
-			gridResult.setViewReadOnlyMode(true);
-			W5QueryField qf_dttm = new W5QueryField();
-			qf_dttm.setDsc("log5_dttm");
-			W5GridColumn c_dttm = new W5GridColumn();
-			c_dttm.set_queryField(qf_dttm);
-			c_dttm.setWidth((short) 120);
-			c_dttm.setAlignType((short) 1);
-			c_dttm.setLocaleMsgKey("log_dttm");
-			c_dttm.setVisibleFlag((short) 1);
-			c_dttm.setRenderer("fmtDateTimeAgo");
-			newColumns.add(0, c_dttm);
 
-			W5QueryField qf_user = new W5QueryField();
-			qf_user.setDsc("log5_user_id");
-			W5GridColumn c_user = new W5GridColumn();
-			c_user.set_queryField(qf_user);
-			c_user.setWidth((short) 80);
-			c_user.setAlignType((short) 1);
-			c_user.setLocaleMsgKey("log_user");
-			c_user.setVisibleFlag((short) 1);
-			c_user.setRenderer("gridQwRenderer('log5_user_id')");
-			newColumns.add(1, c_user);
-		}
 		if (newColumns.size() > 0 && newColumns.get(0).getQueryFieldId()==0)newColumns.get(0).setWidth((short) (newColumns.get(0).getWidth() + 10));
 
 		StringBuilder buf = new StringBuilder();
@@ -7696,4 +7660,5 @@ public class ExtJs3_4 implements ViewAdapter {
 		return buf;
 	}
 
+	public	StringBuilder serializeShowForm2(W5FormResult formResult) {return null;}
 }

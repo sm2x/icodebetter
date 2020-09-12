@@ -29,21 +29,21 @@ import iwb.cache.LocaleMsgCache;
 import iwb.dao.metadata.MetadataLoader;
 import iwb.dao.rdbms_impl.BaseDAO;
 import iwb.dao.rdbms_impl.PostgreSQL;
-import iwb.domain.db.W5Component;
-import iwb.domain.db.W5Customization;
-import iwb.domain.db.W5ExternalDb;
-import iwb.domain.db.W5Project;
-import iwb.domain.db.W5Query;
-import iwb.domain.db.W5QueryFieldCreation;
-import iwb.domain.db.W5Table;
-import iwb.domain.db.W5TableField;
-import iwb.domain.db.W5TableParam;
-import iwb.domain.db.W5VcsCommit;
-import iwb.domain.db.W5VcsObject;
-import iwb.domain.db.W5WsMethodParam;
-import iwb.domain.result.W5FormResult;
 import iwb.engine.CRUDEngine;
 import iwb.exception.IWBException;
+import iwb.model.db.W5Component;
+import iwb.model.db.W5Customization;
+import iwb.model.db.W5ExternalDb;
+import iwb.model.db.W5Project;
+import iwb.model.db.W5Query;
+import iwb.model.db.W5QueryFieldCreation;
+import iwb.model.db.W5Table;
+import iwb.model.db.W5TableField;
+import iwb.model.db.W5TableParam;
+import iwb.model.db.W5VcsCommit;
+import iwb.model.db.W5VcsObject;
+import iwb.model.db.W5WsMethodParam;
+import iwb.model.result.W5FormResult;
 import iwb.util.DBUtil;
 import iwb.util.GenericUtil;
 import iwb.util.NashornUtil;
@@ -1614,8 +1614,13 @@ public class PostgreSQLWriter extends BaseDAO {
 		case	3351: //component
 			if(fr.getAction()!=3) {
 				W5Component comp = (W5Component)metadataLoader.getMetadataObject("W5Component", "componentId", GenericUtil.uInt(fr.getRequestParams().get("tcomponent_id")), projectId, null);
+						
 				if(!GenericUtil.isEmpty(comp.getCode())) try{
-					if(comp.getFrontendLang()!=1)comp.setCode(NashornUtil.babelTranspileJSX(comp.getCode()));
+					if(comp.getFrontendLang()!=1 && GenericUtil.hasPartInside2("5,8,9", FrameworkCache.getProject(projectId).getUiWebFrontendTip())) {
+						comp.setCode(NashornUtil.babelTranspileJSX(comp.getCode()));
+						executeUpdateSQLQuery("update iwb.w5_component t set js_code=?::text where project_uuid=?::text AND component_id=?::integer", 
+								comp.getCode(), comp.getProjectUuid(), comp.getComponentId());
+					}
 					FrameworkCache.setComponent(projectId, comp);
 				} catch(Exception ee) {
 					if (!fr.getRequestParams().containsKey("_confirmId_" + comp.getComponentId()))

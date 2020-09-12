@@ -12,7 +12,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import iwb.cache.FrameworkCache;
-import iwb.domain.db.W5Project;
+import iwb.model.db.W5Project;
 import iwb.service.FrameworkService;
 import iwb.util.GenericUtil;
 

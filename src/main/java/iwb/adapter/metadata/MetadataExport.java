@@ -8,7 +8,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import iwb.cache.FrameworkSetting;
-import iwb.domain.db.W5Project;
+import iwb.model.db.W5Project;
 import iwb.util.GenericUtil;
 
 public class MetadataExport {

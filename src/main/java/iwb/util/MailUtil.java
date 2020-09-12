@@ -29,9 +29,9 @@ import com.sun.mail.smtp.SMTPMessage;
 import iwb.cache.FrameworkCache;
 import iwb.cache.FrameworkSetting;
 import iwb.cache.LocaleMsgCache;
-import iwb.domain.db.W5Email;
-import iwb.domain.db.W5FileAttachment;
-import iwb.domain.db.W5ObjectMailSetting;
+import iwb.model.db.W5Email;
+import iwb.model.db.W5FileAttachment;
+import iwb.model.db.W5ObjectMailSetting;
 
 @Component
 public class MailUtil {

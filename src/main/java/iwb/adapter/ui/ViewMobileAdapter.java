@@ -5,10 +5,10 @@ import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import iwb.domain.db.W5BIGraphDashboard;
-import iwb.domain.result.M5ListResult;
-import iwb.domain.result.W5FormResult;
-import iwb.domain.result.W5PageResult;
+import iwb.model.db.W5BIGraphDashboard;
+import iwb.model.result.M5ListResult;
+import iwb.model.result.W5FormResult;
+import iwb.model.result.W5PageResult;
 
 public interface ViewMobileAdapter {
 //	public	StringBuilder serializeQueryData(W5QueryResult queryResult);

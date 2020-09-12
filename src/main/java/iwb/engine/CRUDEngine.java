@@ -21,23 +21,23 @@ import iwb.cache.LocaleMsgCache;
 import iwb.dao.metadata.MetadataLoader;
 import iwb.dao.metadata.rdbms.PostgreSQLWriter;
 import iwb.dao.rdbms_impl.PostgreSQL;
-import iwb.domain.db.Log5Feed;
-import iwb.domain.db.Log5WorkflowRecord;
-import iwb.domain.db.W5Conversion;
-import iwb.domain.db.W5ConvertedObject;
-import iwb.domain.db.W5FormModule;
-import iwb.domain.db.W5Table;
-import iwb.domain.db.W5TableChild;
-import iwb.domain.db.W5TableEvent;
-import iwb.domain.db.W5Workflow;
-import iwb.domain.db.W5WorkflowRecord;
-import iwb.domain.db.W5WorkflowStep;
-import iwb.domain.helper.W5QueuedActionHelper;
-import iwb.domain.helper.W5SynchAfterPostHelper;
-import iwb.domain.helper.W5TableRecordHelper;
-import iwb.domain.result.W5FormResult;
-import iwb.domain.result.W5GlobalFuncResult;
 import iwb.exception.IWBException;
+import iwb.model.db.Log5Feed;
+import iwb.model.db.Log5WorkflowRecord;
+import iwb.model.db.W5Conversion;
+import iwb.model.db.W5ConvertedObject;
+import iwb.model.db.W5FormModule;
+import iwb.model.db.W5Table;
+import iwb.model.db.W5TableChild;
+import iwb.model.db.W5TableEvent;
+import iwb.model.db.W5Workflow;
+import iwb.model.db.W5WorkflowRecord;
+import iwb.model.db.W5WorkflowStep;
+import iwb.model.helper.W5QueuedActionHelper;
+import iwb.model.helper.W5SynchAfterPostHelper;
+import iwb.model.helper.W5TableRecordHelper;
+import iwb.model.result.W5FormResult;
+import iwb.model.result.W5GlobalFuncResult;
 import iwb.util.DBUtil;
 import iwb.util.GenericUtil;
 import iwb.util.NashornUtil;
@@ -104,38 +104,17 @@ public class CRUDEngine {
 			W5Workflow workflow = null;
 			W5WorkflowRecord workflowRecord = null;
 			W5WorkflowStep workflowStep = null;
-			boolean accessControlSelfFlag = true; // kendisi VEYA kendisi+master
-			if (accessControlSelfFlag) {
-				int outCnt = formResult.getOutputMessages().size();
-				acEngine.accessControl4FormTable(formResult, paramSuffix);
-				if (formResult.isViewMode()) {
-					throw new IWBException("security", "Form", formId, null,
-							formResult.getOutputMessages().size() > outCnt ? formResult.getOutputMessages().get(outCnt)
-									: LocaleMsgCache.get2(0, (String) scd.get("locale"),
-											"fw_security_table_control_update"),
-							null);
-				}
-				/*
-				if (FrameworkSetting.workflow) {
-					appRecord = formResult.getApprovalRecord();
-					if (appRecord != null) {
-						approval = FrameworkCache.getWorkflow(scd, appRecord.getApprovalId()); // dao.loadObject(W5Workflow.class,
-						approvalStep = formResult.getApprovalStep();
-						// formResult.getApprovalRecord().getApprovalId());
-						boolean canCancel = GenericUtil.hasPartInside2(approval.getAfterFinUpdateUserIds(),
-								scd.get("userId")) && appRecord.getApprovalActionTip() == 5
-								&& appRecord.getApprovalStepId() == 998 ? true : false;
-//						approvalStep = approval.get_approvalStepMap().get(appRecord.getApprovalStepId()).getNewInstance();
-						if (approvalStep != null && approvalStep.getApprovalStepId() != 901
-								&& approvalStep.getUpdatableFields() == null && !canCancel) {
-							throw new IWBException("security", "Form", formId, null,
-									LocaleMsgCache.get2(0, (String) scd.get("locale"),
-											"fw_onay_sureci_icerisinde_bu_kaydin_alanlarini_guncelleyemezsiniz"),
-									null);
-						} 
-					}
-				} */
+
+			int outCnt = formResult.getOutputMessages().size();
+			acEngine.accessControl4FormTable(formResult, paramSuffix);
+			if (formResult.isViewMode()) {
+				throw new IWBException("security", "Form", formId, null,
+						formResult.getOutputMessages().size() > outCnt ? formResult.getOutputMessages().get(outCnt)
+								: LocaleMsgCache.get2(0, (String) scd.get("locale"),
+										"fw_security_table_control_update"),
+						null);
 			}
+
 			boolean mobile = GenericUtil.uInt(formResult.getScd().get("mobile")) != 0;
 			int sourceStepId = -1;
 			String ptablePk = null; // accessControl islemi icin
@@ -166,7 +145,7 @@ public class CRUDEngine {
 					formResult.setPkFields(new HashMap());
 					formResult.getPkFields().put(t.get_tableParamList().get(0).getDsc(), ptablePk);
 				}
-				if (FrameworkSetting.workflow && accessControlSelfFlag) {
+				if (FrameworkSetting.workflow) {
 
 					if (workflowRecord == null && t.get_approvalMap() != null) { // su
 																			// anda
@@ -370,7 +349,7 @@ public class CRUDEngine {
 				// if(formResult.getErrorMap().isEmpty())FrameworkCache.removeTableCacheValue(t.getCustomizationId(),
 				// t.getTableId(),GenericUtil.uInt(ptablePk));//caching icin
 
-				if (FrameworkSetting.workflow && accessControlSelfFlag && formResult.getErrorMap().isEmpty()
+				if (FrameworkSetting.workflow && formResult.getErrorMap().isEmpty()
 						&& workflowRecord != null) { // aproval baslanmis
 					int tablePk = GenericUtil.uInt(formResult.getOutputFields()
 							.get(/* formResult.getForm().get_sourceTable() */ FrameworkCache
@@ -414,7 +393,7 @@ public class CRUDEngine {
 				break;
 			case 5: // copy
 			case 2: // insert
-				if (FrameworkSetting.workflow && accessControlSelfFlag && t.get_approvalMap() != null) { // onay
+				if (FrameworkSetting.workflow && t.get_approvalMap() != null) { // onay
 																											// mekanizmasi
 																											// var
 																											// mi
@@ -564,7 +543,7 @@ public class CRUDEngine {
 					}
 				}
 
-				if (FrameworkSetting.workflow && accessControlSelfFlag && formResult.getErrorMap().isEmpty()
+				if (FrameworkSetting.workflow && formResult.getErrorMap().isEmpty()
 						&& workflowRecord != null) { // aproval baslanmis
 					int tablePk = GenericUtil.uInt(formResult.getOutputFields()
 							.get(/* formResult.getForm().get_sourceTable() */ FrameworkCache
@@ -642,7 +621,7 @@ public class CRUDEngine {
 					}
 					requestParams.put("_iwb_vcs_dsc", summary);
 				}
-				if (FrameworkSetting.workflow && accessControlSelfFlag) {
+				if (FrameworkSetting.workflow) {
 					if (workflowRecord != null) { // eger bir approval sureci
 												// icindeyse
 						Log5WorkflowRecord logRecord = new Log5WorkflowRecord();
@@ -877,14 +856,6 @@ public class CRUDEngine {
 			}
 
 			if (formResult.getErrorMap().isEmpty()) { // sorun yok
-
-				/*
-				 * if((action==1 || action==2) && t.getTableId()==15){ //TODO:
-				 * simdilik daha yavas calistigi tespit edildi, o yuzden
-				 * vazgecildi
-				 * dao.createTableAuditDefinition(scd,PromisUtil.uInt(ptablePk))
-				 * ; }
-				 */
 
 				boolean bc = false; // boolean copy
 				if (realAction == 5 && formResult.getForm().getObjectType() == 2

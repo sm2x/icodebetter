@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import iwb.cache.FrameworkCache;
 import iwb.cache.FrameworkSetting;
-import iwb.domain.db.W5Project;
-import iwb.domain.helper.W5DeferredResult;
 import iwb.exception.IWBException;
+import iwb.model.db.W5Project;
+import iwb.model.helper.W5DeferredResult;
 import iwb.util.GenericUtil;
 import iwb.util.UserUtil;
 

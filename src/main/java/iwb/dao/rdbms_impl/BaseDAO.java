@@ -23,8 +23,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 import iwb.cache.FrameworkSetting;
-import iwb.domain.db.Log5Base;
 import iwb.exception.IWBException;
+import iwb.model.db.Log5Base;
 import iwb.util.GenericUtil;
 import iwb.util.LogUtil;
 

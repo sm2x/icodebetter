@@ -16,36 +16,36 @@ import iwb.cache.FrameworkSetting;
 import iwb.cache.LocaleMsgCache;
 import iwb.dao.metadata.MetadataLoader;
 import iwb.dao.rdbms_impl.PostgreSQL;
-import iwb.domain.db.W5BIGraphDashboard;
-import iwb.domain.db.W5Conversion;
-import iwb.domain.db.W5ConvertedObject;
-import iwb.domain.db.W5Detay;
-import iwb.domain.db.W5Email;
-import iwb.domain.db.W5Form;
-import iwb.domain.db.W5FormCell;
-import iwb.domain.db.W5FormModule;
-import iwb.domain.db.W5FormSmsMail;
-import iwb.domain.db.W5FormSmsMailAlarm;
-import iwb.domain.db.W5Grid;
-import iwb.domain.db.W5GridColumn;
-import iwb.domain.db.W5LookUp;
-import iwb.domain.db.W5LookUpDetay;
-import iwb.domain.db.W5PageObject;
-import iwb.domain.db.W5Table;
-import iwb.domain.db.W5TableChild;
-import iwb.domain.db.W5TableField;
-import iwb.domain.db.W5TableParam;
-import iwb.domain.db.W5WorkflowStep;
-import iwb.domain.db.W5WsMethod;
-import iwb.domain.helper.W5FormCellHelper;
-import iwb.domain.result.M5ListResult;
-import iwb.domain.result.W5CardResult;
-import iwb.domain.result.W5FormResult;
-import iwb.domain.result.W5GridResult;
-import iwb.domain.result.W5ListViewResult;
-import iwb.domain.result.W5PageResult;
-import iwb.domain.result.W5QueryResult;
 import iwb.exception.IWBException;
+import iwb.model.db.W5BIGraphDashboard;
+import iwb.model.db.W5Conversion;
+import iwb.model.db.W5ConvertedObject;
+import iwb.model.db.W5Detay;
+import iwb.model.db.W5Email;
+import iwb.model.db.W5Form;
+import iwb.model.db.W5FormCell;
+import iwb.model.db.W5FormModule;
+import iwb.model.db.W5FormSmsMail;
+import iwb.model.db.W5FormSmsMailAlarm;
+import iwb.model.db.W5Grid;
+import iwb.model.db.W5GridColumn;
+import iwb.model.db.W5LookUp;
+import iwb.model.db.W5LookUpDetay;
+import iwb.model.db.W5PageObject;
+import iwb.model.db.W5Table;
+import iwb.model.db.W5TableChild;
+import iwb.model.db.W5TableField;
+import iwb.model.db.W5TableParam;
+import iwb.model.db.W5WorkflowStep;
+import iwb.model.db.W5WsMethod;
+import iwb.model.helper.W5FormCellHelper;
+import iwb.model.result.M5ListResult;
+import iwb.model.result.W5CardResult;
+import iwb.model.result.W5FormResult;
+import iwb.model.result.W5GridResult;
+import iwb.model.result.W5ListViewResult;
+import iwb.model.result.W5PageResult;
+import iwb.model.result.W5QueryResult;
 import iwb.util.DBUtil;
 import iwb.util.GenericUtil;
 import iwb.util.UserUtil;
@@ -132,26 +132,56 @@ public class UIEngine {
 		dao.loadFormCellLookups(scd, formResult.getFormCellResults(), requestParams, null);
 		return formResult;
 	}
+	
+
+	public W5FormResult getFormResult2(Map<String, Object> scd, int formId) {
+		W5FormResult formResult = null;
+		try {
+			Map requestParams = new HashMap();
+			formResult = metadataLoader.getFormResult(scd, formId, 2, requestParams);
+			formResult.setUniqueId(GenericUtil.getNextId("fi"));
+			W5Form f = formResult.getForm();
+			if (f.get_moduleList() != null) {
+				for (W5FormModule m : f.get_moduleList())switch(m.getModuleType()){
+//					case	3://form
+					case	4://multi form
+						W5FormResult dfr = metadataLoader.getFormResult(scd, m.getObjectId(), 2, requestParams);
+						if(dfr!=null) {
+							if(formResult.getModuleFormMap()==null)formResult.setModuleFormMap(new HashMap());
+							formResult.getModuleFormMap().put(m.getObjectId(), dfr);
+						}
+					break;
+
+				}
+			}
+			for(W5FormCell fc:f.get_formCells())if(fc.getActiveFlag()!=0 && fc.getControlType()==97) {
+				W5FormResult dfr = metadataLoader.getFormResult(scd, fc.getLookupQueryId(), 2, requestParams);
+				if(dfr!=null) {
+					if(formResult.getModuleFormMap()==null)formResult.setModuleFormMap(new HashMap());
+					formResult.getModuleFormMap().put(-fc.getLookupQueryId(), dfr);
+				}
+
+			}
+			
+			return formResult;
+		} catch (Exception e) {
+			throw new IWBException("framework", "Form", formId, null, "[40," + formId + "]"
+					+ (formResult != null && formResult.getForm() != null ? " " + formResult.getForm().getDsc() : ""),
+					e);
+		}
+	}
+	
 
 	public W5FormResult getFormResult(Map<String, Object> scd, int formId, int action,
 			Map<String, String> requestParams) {
-		if (
-		/* formId==0 && */ GenericUtil.uInt(requestParams.get("_tb_id")) != 0
-				&& GenericUtil.uInt(requestParams.get("_tb_pk")) != 0) { // isterse
-																			// _tb_id,tb_pk
-																			// degerleriyle
-																			// de
-																			// bir
-																			// form
-																			// acilabilir
+		
+		if(formId==0) {
 			W5Table t = FrameworkCache.getTable(scd, GenericUtil.uInt(requestParams.get("_tb_id")));
 			if (t == null) {
 				throw new IWBException("framework", "Table", GenericUtil.uInt(requestParams.get("_tb_id")), null,
 						LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_such_table"), null);
 			}
-			formId = GenericUtil.uInt(requestParams, "_fid");
-			if (formId == 0)
-				formId = t.getDefaultUpdateFormId();
+			formId = t.getDefaultUpdateFormId();
 			if (formId == 0) {
 				formId = metadataLoader.findFirstCRUDForm4Table(t.getTableId(), t.getProjectUuid());
 				if (formId == 0) {
@@ -159,10 +189,10 @@ public class UIEngine {
 							LocaleMsgCache.get2(0, (String) scd.get("locale"), "fw_no_form_for_table"), null);
 				}
 			}
-			requestParams.put(t.get_tableParamList().get(0).getDsc(), requestParams.get("_tb_pk"));
-			action = 1;
-			requestParams.put("a", "1");
+		//formId = GenericUtil.uInt(requestParams, "_fid");
 		}
+
+
 		W5FormResult formResult = null;
 		try {
 			formResult = metadataLoader.getFormResult(scd, formId, action, requestParams);
@@ -170,26 +200,21 @@ public class UIEngine {
 			formResult.setUniqueId(GenericUtil.getNextId("fi"));
 			if(GenericUtil.uInt(requestParams, "_viewMode")!=0)
 				formResult.setViewMode(true);
-			/*
-			 * if(requestParams.containsKey("_log5_log_id")){
-			 * if(!FrameworkCache.wTemplates.containsKey(scd.get(
-			 * "customizationId")))FrameworkCache.wTemplates.put((Integer)scd.
-			 * get("customizationId"),new HashMap());
-			 * FrameworkCache.wTemplates.get((Integer)scd.get("customizationId")
-			 * ).put(668, (W5Template)dao.find(
-			 * "from W5Template t where t.templateId=668 AND t.customizationId=?"
-			 * , scd.get("customizationId")).get(0)); }
-			 */
-			// boolean dev = scd.get("roleId")!=null &&
-			// (Integer)scd.get("roleId")==0 &&
-			// GenericUtil.uInt(requestParams,"_dev")!=0;
+			W5Form f = formResult.getForm();
+			
 			String projectId = FrameworkCache.getProjectId(scd, "40." + formId);
 			W5Table t = null;
-			switch (formResult.getForm().getObjectType()) {
+			switch (f.getObjectType()) {
 			case 2: // table
-				t = FrameworkCache.getTable(projectId, formResult.getForm().getObjectId()); // formResult.getForm().get_sourceTable();
-				boolean accessControlSelfFlag = true; // kendisi VEYA
-														// kendisi+master
+				t = FrameworkCache.getTable(projectId, f.getObjectId()); // form.get_sourceTable();
+				if(action<=1 && GenericUtil.uInt(requestParams.get(t.get_tableParamList().get(0).getDsc()))==0 && 
+						(GenericUtil.uInt(requestParams.get("_tb_pk")) != 0 || GenericUtil.uInt(requestParams.get("_id")) != 0)) { // _tb_id, and _tb_pk can also be used
+					int oo = GenericUtil.uInt(requestParams.get("_tb_pk"));if(oo==0)oo= GenericUtil.uInt(requestParams.get("_id"));
+					requestParams.put(t.get_tableParamList().get(0).getDsc(), ""+oo);
+					action = 1;
+					requestParams.put("a", "1");
+				}
+				
 				switch (t.getAccessViewTip()) {
 				case 1:
 					if (t.getAccessViewUserFields() == null && !GenericUtil.accessControl(scd, t.getAccessViewTip(),
@@ -199,10 +224,9 @@ public class UIEngine {
 					}
 				}
 
-				if (accessControlSelfFlag)
-					acEngine.accessControl4FormTable(formResult, null);
-				if (formResult.getForm().get_moduleList() != null) {
-					for (W5FormModule m : formResult.getForm().get_moduleList()) if(m.getModuleViewType() == 0 || m.getModuleViewType() == action)
+				acEngine.accessControl4FormTable(formResult, null);
+				if (f.get_moduleList() != null) {
+					for (W5FormModule m : f.get_moduleList()) if(m.getModuleViewType() == 0 || m.getModuleViewType() == action)
 						switch(m.getModuleType()){
 						case	3://form
 						case	4://multi form
@@ -211,7 +235,7 @@ public class UIEngine {
 								newAction = action;
 							if (formResult.getModuleFormMap() == null)
 								formResult.setModuleFormMap(new HashMap());
-							W5FormResult dfr = getFormResult(scd, m.getObjectId(), newAction, requestParams);
+							W5FormResult dfr = getFormResult(scd, m.getObjectId(), newAction, new HashMap());
 							formResult.getModuleFormMap().put(m.getObjectId(), dfr);
 							if(action==1 && m.getModuleType() == 3 && !GenericUtil.isEmpty(t.get_tableChildList())) {//TODO: load detail records for form
 								for(W5TableChild tc:t.get_tableChildList()) if(tc.getRelatedTableId() == dfr.getForm().getObjectId()){
@@ -246,6 +270,7 @@ public class UIEngine {
 									if(!GenericUtil.isEmpty(list)) {
 										for(Map m2:list) {//converting PK to specialField 
 											m2.put("_id_"+pkFieldName, m2.get(pkFieldName));
+											m2.put("_id_", m2.get(pkFieldName));
 											m2.remove(pkFieldName);
 										}
 										if(dfr.getOutputFields()==null)dfr.setOutputFields(new HashMap());
@@ -259,11 +284,71 @@ public class UIEngine {
 						break;
 
 					}
+					for (W5FormCell fc : f.get_formCells()) if(fc.getControlType()==97){//detail-form-multi
+
+							if (formResult.getModuleFormMap() == null)
+								formResult.setModuleFormMap(new HashMap());
+							W5FormResult dfr = getFormResult(scd, fc.getLookupQueryId(), 2, new HashMap());
+							formResult.getModuleFormMap().put(-fc.getLookupQueryId(), dfr);
+							if(action==1 && !GenericUtil.isEmpty(t.get_tableChildList())) {//TODO: load detail records for form
+								for(W5TableChild tc:t.get_tableChildList()) if(tc.getRelatedTableId() == dfr.getForm().getObjectId()){
+									W5Table dt = FrameworkCache.getTable(scd, tc.getRelatedTableId());
+									StringBuilder sql = new StringBuilder();
+									String pkFieldName = dt.get_tableFieldList().get(0).getDsc();
+									Map paramMap = new HashMap();
+									sql.append("select x.").append(pkFieldName);
+									for(W5FormCell fc2:dfr.getForm().get_formCells()) if(fc2.getActiveFlag()!=0 && fc2.getControlType()>0 && fc2.getControlType()<90 && fc2.get_sourceObjectDetail()!=null){
+										W5TableField tf2 = (W5TableField)fc2.get_sourceObjectDetail();
+										if(tf2.getTabOrder()!=1)sql.append(", x.").append(tf2.getDsc());
+										if(fc2.getControlType()==71) {//file
+											if(FrameworkCache.getTable(scd, FrameworkSetting.customFileTableId)==null)
+												sql.append(", (select a.original_file_name from iwb.w5_file_attachment a where a.project_uuid='").append(scd.get("projectId")).append("' AND a.file_attachment_id=x.").append(tf2.getDsc()).append(") ").append(tf2.getDsc()).append("_qw_");
+											else 
+												sql.append(", (select a.dsc from x_file a where a.file_id=x.").append(tf2.getDsc()).append(") ").append(tf2.getDsc()).append("_qw_");
+											
+										}
+									}
+									sql.append(" from ").append(dt.getDsc()).append(" x where x.");
+									sql.append(dt.get_tableFieldMap().get(tc.getRelatedTableFieldId()).getDsc()).append("=?");
+									if(tc.getRelatedStaticTableFieldId()!=0 && tc.getRelatedStaticTableFieldVal()!=0) {
+										paramMap.put(dt.get_tableFieldMap().get(tc.getRelatedStaticTableFieldId()).getDsc(), tc.getRelatedStaticTableFieldVal());
+										sql.append(" AND ").append(dt.get_tableFieldMap().get(tc.getRelatedStaticTableFieldId()).getDsc()).append("=").append(tc.getRelatedStaticTableFieldVal());
+									}			
+									List params = new ArrayList();
+									int param1 = GenericUtil.uInt(requestParams.get(t.get_tableParamList().get(0).getDsc())); 
+									params.add(param1);
+									paramMap.put(dt.get_tableFieldMap().get(tc.getRelatedTableFieldId()).getDsc(), param1);
+									if(dt.get_tableParamList().size()>0)for(W5TableParam tp2:dt.get_tableParamList())if(tp2.getSourceType()==2) {
+										sql.append(" AND x.").append(tp2.getExpressionDsc()).append("=?");
+										params.add(scd.get(tp2.getDsc()));
+									}
+									sql.append(" order by 1");
+
+									List<Map> list = dao.executeSQLQuery2Map(sql.toString(), params);
+									if(!GenericUtil.isEmpty(list)) {
+										for(Map m2:list) {//converting PK to specialField 
+											m2.put("_id_"+pkFieldName, m2.get(pkFieldName));
+											m2.put("_id_", m2.get(pkFieldName));
+											m2.remove(pkFieldName);
+										}
+										if(dfr.getOutputFields()==null)dfr.setOutputFields(new HashMap());
+										dfr.getOutputFields().put("list", list);
+
+									}
+									dfr.getOutputFields().put("paramMap", paramMap);
+
+								}
+									
+							}
+
+						break;
+
+					}
 				}
 				break;
 			case 5: // formByQuery:
 				formResult
-						.setQueryResult4FormCell(queryEngine.executeQuery(scd, formResult.getForm().getObjectId(), requestParams));
+						.setQueryResult4FormCell(queryEngine.executeQuery(scd, f.getObjectId(), requestParams));
 				formResult.setFormCellResults(new ArrayList());
 				for (Object[] d : formResult.getQueryResult4FormCell().getData()) {
 					W5FormCellHelper result = GenericUtil.getFormCellResultByQueryRecord(d);
@@ -273,7 +358,6 @@ public class UIEngine {
 				break;
 			}
 
-			W5Form f = formResult.getForm();
 			if (f.getObjectType() != 2 && (f.getObjectType()!=11 || action == 0))
 				action = 2; // eger table degilse sadece initializeForm olabilir
 
@@ -593,9 +677,7 @@ public class UIEngine {
 							? formResult.getUniqueId() : null);
 
 			for (W5FormCellHelper cr : formResult.getFormCellResults())
-				if (cr.getFormCell().getControlType() == 99) { // grid ise bunun
-																// icinde var mi
-																// editableFormCell
+				if (cr.getFormCell().getControlType() == 99) { // grid 
 					W5Grid g = (W5Grid) cr.getFormCell().get_sourceObjectDetail();
 					W5GridResult gr = new W5GridResult(g.getGridId());
 					gr.setRequestParams(formResult.getRequestParams());
@@ -891,9 +973,6 @@ public class UIEngine {
 				case 1: // grid
 					W5GridResult gridResult = metadataLoader.getGridResult(scd, o.getObjectId(), requestParams,
 							pageId == 298 /* || objectCount!=0 */);
-					if (pageId == 298) { // log template
-						gridResult.setViewLogMode(true);
-					}
 					if (o.getObjectType() < 0) {
 						if (GenericUtil.uInt(requestParams, "_gid" + gridResult.getGridId() + "_a") != 0)
 							gridResult.setAction(
@@ -1172,7 +1251,8 @@ public class UIEngine {
 		return rc;
 	}
 	
-	public M5ListResult getMListResult(Map<String, Object> scd, int listId, Map<String, String> parameterMap) {
-		return metadataLoader.getMListResult(scd, listId, parameterMap, false);
+	public M5ListResult getMListResult(Map<String, Object> scd, int listId, Map<String, String> requestParams) {
+		return metadataLoader.getMListResult(scd, listId, requestParams, false);
 	}
+
 }

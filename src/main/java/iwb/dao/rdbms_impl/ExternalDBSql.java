@@ -12,12 +12,12 @@ import org.springframework.stereotype.Component;
 
 import iwb.cache.FrameworkCache;
 import iwb.cache.FrameworkSetting;
-import iwb.domain.db.W5ExternalDb;
-import iwb.domain.db.W5Query;
-import iwb.domain.db.W5QueryField;
-import iwb.domain.db.W5TableField;
-import iwb.domain.result.W5QueryResult;
 import iwb.exception.IWBException;
+import iwb.model.db.W5ExternalDb;
+import iwb.model.db.W5Query;
+import iwb.model.db.W5QueryField;
+import iwb.model.db.W5TableField;
+import iwb.model.result.W5QueryResult;
 import iwb.util.GenericUtil;
 import iwb.util.InfluxUtil;
 

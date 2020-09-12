@@ -8,15 +8,15 @@ import java.util.Map;
 
 import iwb.cache.FrameworkSetting;
 import iwb.cache.LocaleMsgCache;
-import iwb.domain.db.W5Detay;
-import iwb.domain.db.W5Form;
-import iwb.domain.db.W5FormCell;
-import iwb.domain.db.W5FormCellProperty;
-import iwb.domain.db.W5FormHint;
-import iwb.domain.db.W5FormModule;
-import iwb.domain.db.W5QueryField;
-import iwb.domain.helper.W5FormCellHelper;
-import iwb.domain.result.W5FormResult;
+import iwb.model.db.W5Detay;
+import iwb.model.db.W5Form;
+import iwb.model.db.W5FormCell;
+import iwb.model.db.W5FormCellProperty;
+import iwb.model.db.W5FormHint;
+import iwb.model.db.W5FormModule;
+import iwb.model.db.W5QueryField;
+import iwb.model.helper.W5FormCellHelper;
+import iwb.model.result.W5FormResult;
 import iwb.util.GenericUtil;
 
 public class SurveyJS {

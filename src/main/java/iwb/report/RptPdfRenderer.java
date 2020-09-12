@@ -33,7 +33,7 @@ import com.lowagie.text.pdf.PdfTemplate;
 import com.lowagie.text.pdf.PdfWriter;
 
 import iwb.cache.FrameworkSetting;
-import iwb.domain.helper.W5ReportCellHelper;
+import iwb.model.helper.W5ReportCellHelper;
 import iwb.util.GenericUtil;
 
 /**

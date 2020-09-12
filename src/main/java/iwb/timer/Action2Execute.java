@@ -2,9 +2,9 @@ package iwb.timer;
 
 import java.util.Map;
 
-import iwb.domain.db.Log5Notification;
-import iwb.domain.db.W5Email;
-import iwb.domain.helper.W5QueuedActionHelper;
+import iwb.model.db.Log5Notification;
+import iwb.model.db.W5Email;
+import iwb.model.helper.W5QueuedActionHelper;
 import iwb.util.GenericUtil;
 import iwb.util.MailUtil;
 import iwb.util.UserUtil;

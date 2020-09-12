@@ -2810,3 +2810,19 @@ h2 {
   padding: 0.25em 1em;
   display: block;
 }
+
+/*code2*/
+.layout-config{
+  background-color: #22272b;
+}
+
+.layout-config-active{
+  box-shadow: -9px 6px 11px #060606;
+}
+body .p-datatable.p-datatable-hoverable-rows .p-datatable-tbody > tr:not(.p-highlight):not(.p-highlight-contextmenu):hover {
+
+    background-color: #375c79;
+    color: inherit;
+}
+
+

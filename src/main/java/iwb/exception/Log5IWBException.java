@@ -2,7 +2,7 @@ package iwb.exception;
 
 import java.util.Map;
 
-import iwb.domain.db.Log5Base;
+import iwb.model.db.Log5Base;
 import iwb.util.GenericUtil;
 
 

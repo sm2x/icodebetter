@@ -14,58 +14,62 @@ import iwb.adapter.ui.surveyjs.SurveyJS;
 import iwb.cache.FrameworkCache;
 import iwb.cache.FrameworkSetting;
 import iwb.cache.LocaleMsgCache;
-import iwb.domain.db.Log5Feed;
-import iwb.domain.db.W5BIGraphDashboard;
-import iwb.domain.db.W5Card;
-import iwb.domain.db.W5Component;
-import iwb.domain.db.W5Conversion;
-import iwb.domain.db.W5ConvertedObject;
-import iwb.domain.db.W5Detay;
-import iwb.domain.db.W5Form;
-import iwb.domain.db.W5FormCell;
-import iwb.domain.db.W5FormCellProperty;
-import iwb.domain.db.W5FormModule;
-import iwb.domain.db.W5FormSmsMail;
-import iwb.domain.db.W5FormSmsMailAlarm;
-import iwb.domain.db.W5Grid;
-import iwb.domain.db.W5GridColumn;
-import iwb.domain.db.W5List;
-import iwb.domain.db.W5ListColumn;
-import iwb.domain.db.W5LookUp;
-import iwb.domain.db.W5LookUpDetay;
-import iwb.domain.db.W5ObjectMenuItem;
-import iwb.domain.db.W5ObjectToolbarItem;
-import iwb.domain.db.W5Page;
-import iwb.domain.db.W5PageObject;
-import iwb.domain.db.W5Query;
-import iwb.domain.db.W5QueryField;
-import iwb.domain.db.W5QueryParam;
-import iwb.domain.db.W5Table;
-import iwb.domain.db.W5TableField;
-import iwb.domain.db.W5Workflow;
-import iwb.domain.db.W5WorkflowStep;
-import iwb.domain.helper.W5CommentHelper;
-import iwb.domain.helper.W5FormCellHelper;
-import iwb.domain.helper.W5TableChildHelper;
-import iwb.domain.helper.W5TableRecordHelper;
-import iwb.domain.result.W5CardResult;
-import iwb.domain.result.W5FormResult;
-import iwb.domain.result.W5GlobalFuncResult;
-import iwb.domain.result.W5GridResult;
-import iwb.domain.result.W5ListViewResult;
-import iwb.domain.result.W5PageResult;
-import iwb.domain.result.W5QueryResult;
-import iwb.domain.result.W5TableRecordInfoResult;
 import iwb.enums.FieldDefinitions;
 import iwb.exception.IWBException;
+import iwb.model.db.Log5Feed;
+import iwb.model.db.W5BIGraphDashboard;
+import iwb.model.db.W5Card;
+import iwb.model.db.W5Component;
+import iwb.model.db.W5Conversion;
+import iwb.model.db.W5ConvertedObject;
+import iwb.model.db.W5Detay;
+import iwb.model.db.W5Form;
+import iwb.model.db.W5FormCell;
+import iwb.model.db.W5FormCellProperty;
+import iwb.model.db.W5FormModule;
+import iwb.model.db.W5FormSmsMail;
+import iwb.model.db.W5FormSmsMailAlarm;
+import iwb.model.db.W5Grid;
+import iwb.model.db.W5GridColumn;
+import iwb.model.db.W5List;
+import iwb.model.db.W5ListColumn;
+import iwb.model.db.W5LookUp;
+import iwb.model.db.W5LookUpDetay;
+import iwb.model.db.W5ObjectMenuItem;
+import iwb.model.db.W5ObjectToolbarItem;
+import iwb.model.db.W5Page;
+import iwb.model.db.W5PageObject;
+import iwb.model.db.W5Query;
+import iwb.model.db.W5QueryField;
+import iwb.model.db.W5QueryParam;
+import iwb.model.db.W5Table;
+import iwb.model.db.W5TableField;
+import iwb.model.db.W5Workflow;
+import iwb.model.db.W5WorkflowStep;
+import iwb.model.helper.W5CommentHelper;
+import iwb.model.helper.W5FormCellHelper;
+import iwb.model.helper.W5TableChildHelper;
+import iwb.model.helper.W5TableRecordHelper;
+import iwb.model.result.W5CardResult;
+import iwb.model.result.W5FormResult;
+import iwb.model.result.W5GlobalFuncResult;
+import iwb.model.result.W5GridResult;
+import iwb.model.result.W5ListViewResult;
+import iwb.model.result.W5PageResult;
+import iwb.model.result.W5QueryResult;
+import iwb.model.result.W5TableRecordInfoResult;
 import iwb.util.EncryptionUtil;
 import iwb.util.GenericUtil;
 import iwb.util.UserUtil;
 
 public class PrimeReact16 implements ViewAdapter {
-	final public static String[] labelMap = new String[]{"info","warning","danger"};
+	final public static String[] labelMap = new String[]{"info","warning","error"};
 	final public static String[] filterMap = new String[]{"","serverFilter","dateRangeFilter","numberFilter","numberFilter","numberFilter"};
-	final public static String[] dateFormatMulti = new String[] {"dd/mm/yy","mm/dd/yy","yyyy/mm/dd"};
+	final public static String[] colorMap = new String[]{"text","primary","text","success","danger","warning","link","dashed"};
+	final public static String[] formLayoutMap = new String[]{"vertical","inline","horizontal"};
+	final public static String[] formRenderTypeMap = new String[]{"","fieldset","tab-panel","accordion","wizard"};
+	//primary ghost dashed danger link text
+	final public static String[] dateFormatMulti = new String[] {"DD/MM/YYYY","MM/DD/YYYY","YYYY/MM/DD"};
 	final public static String[] fileAcceptMap = new String[]{"image/*",".xls,.xlsx,.csv",
 			".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document",".pdf",".txt"};
 	
@@ -194,8 +198,6 @@ public class PrimeReact16 implements ViewAdapter {
 
 	public StringBuilder serializeShowForm(W5FormResult fr) {
 		StringBuilder s = new StringBuilder();
-		s.append("var _page_tab_id='").append(fr.getUniqueId())
-				.append("';\n");
 
 			
 		if (GenericUtil.uInt(fr.getRequestParams().get("a")) != 5 && fr.getForm().getRenderType() != 0) { // tabpanel ve icinde gridler varsa
@@ -257,17 +259,13 @@ public class PrimeReact16 implements ViewAdapter {
 
 		W5Form f = fr.getForm();
 		
-		if(f.getRenderType()==4) {//wizard and insert
-			return SurveyJS.serializeForm4SurveyJS(fr, 5)
-					.append("return _(CardBody,{},_('i',{style:{float:'right',fontSize: '1.5rem', color: '#999', marginTop: 11, cursor:'pointer'},onClick:()=>iwb.closeTab(), className:'icon-close'}), _(Survey.Survey,{model:survey}))");//react			
-		}
 		
 		Map<String, Object> scd = fr.getScd();
 		String xlocale = (String) scd.get("locale");
 		int customizationId = (Integer) scd.get("customizationId");
 		int userId = (Integer) scd.get("userId");
 		
-		s.append("var cfgForm={formId: ")
+		s.append("var cfgForm={\n formId: ")
 			.append(fr.getFormId()).append(", a:").append(fr.getAction())
 			.append(", name:'").append(LocaleMsgCache.get2(customizationId, xlocale, fr.getForm().getLocaleMsgKey()))
 			.append("',\n id:'").append(fr.getUniqueId()).append("', defaultWidth:").append(f.getDefaultWidth()).append(", defaultHeight:").append(f.getDefaultHeight());
@@ -278,16 +276,15 @@ public class PrimeReact16 implements ViewAdapter {
 		// form(table) fields
 		if (f.getObjectType() == 2
 				&& FrameworkCache.getTable(scd, f.getObjectId()) != null) {
-			s.append(",\n renderTip:").append(fr.getForm().getRenderType());
 			W5Table t = FrameworkCache.getTable(scd, f.getObjectId());
 			// insert AND continue control
-			s.append(", crudTableId:").append(f.getObjectId());
+			s.append(",\n crudTableId:").append(f.getObjectId());
 			if (fr.getAction() == 2) { // insert
 				long tmpId = -GenericUtil.getNextTmpId();
 				s.append(", contFlag:").append(f.getContEntryFlag() != 0).append(",\n tmpId:").append(tmpId);
 				fr.getRequestParams().put("_tmpId", "" + tmpId);
 			} else if (fr.getAction() == 1) { // edit
-				s.append(",\n pk:").append(GenericUtil.fromMapToJsonString(fr.getPkFields()));
+				s.append(", pk:").append(GenericUtil.fromMapToJsonString(fr.getPkFields()));
 				if(!fr.isViewMode() && (t.getAccessDeleteTip()==0 || !GenericUtil.isEmpty(t.getAccessDeleteUserFields()) || GenericUtil.accessControl(scd, t.getAccessDeleteTip(), t.getAccessDeleteRoles(), t.getAccessDeleteUsers())))s.append(", deletable:!0");
 				
 			}
@@ -648,7 +645,7 @@ public class PrimeReact16 implements ViewAdapter {
 			}
 		}
 		boolean b = false;
-		if (!fr.getOutputMessages().isEmpty()) {
+		if (!GenericUtil.isEmpty(fr.getOutputMessages())) {
 			s.append(",\n\"msgs\":[");
 			for (String sx : fr.getOutputMessages()) {
 				if (b)s.append("\n,");
@@ -668,11 +665,13 @@ public class PrimeReact16 implements ViewAdapter {
 				s.append(",\n extraButtons:[").append(buttons).append("]");
 			}
 		}
-		for (String sx : fr.getOutputFields().keySet()) {
+		if(fr.getOutputFields()!=null)for (String sx : fr.getOutputFields().keySet()) {
 			s.append(",\n ").append(sx).append(":")
 					.append(fr.getOutputFields().get(sx));// TODO:aslinda' liolması lazim
 		}
-		s.append("};\nclass bodyForm extends XForm").append(serializeGetForm(fr));
+		s.append("};\n\n");
+		
+		s.append("class bodyForm extends XForm").append(serializeGetForm(fr));
 
 		if (fr.getForm().get_renderTemplate() != null && fr.getForm().getRenderTemplateId()!=26) {
 				s.append("\n").append(
@@ -685,12 +684,149 @@ public class PrimeReact16 implements ViewAdapter {
 							: fr.getForm().get_renderTemplate()
 									.getCode());
 		} else if(true || fr.getForm().getObjectType()==2)
-			s.append("\nreturn _(XTabForm, {body:bodyForm, cfg:cfgForm, parentCt:parentCt, callAttributes:callAttributes});");
+			//s.append("\nreturn _(XTabForm, {body:bodyForm, cfg:cfgForm, parentCt:parentCt, callAttributes:callAttributes});");
+			s.append("\nreturn _(bodyForm, props);");
 		
 
 		return s;
 	}
 
+	private StringBuilder serializeValues(W5FormResult formResult) {
+		StringBuilder s = new StringBuilder();
+		Map scd = formResult.getScd();
+		boolean b = false, bb;
+		s.append("{");
+		for (W5FormCellHelper fc : formResult.getFormCellResults())
+			if (fc.getFormCell().getActiveFlag() != 0
+					&& fc.getFormCell().getControlType() != 102) {
+				if (fc.getFormCell().getControlType() != 102) {
+					if (b)
+						s.append("\n,");
+					else
+						b = true;
+					s.append("\"").append(fc.getFormCell().getDsc())
+							.append("\":{\"value\":\"");
+					if (!GenericUtil.isEmpty(fc.getHiddenValue())) {
+						s.append(GenericUtil.stringToJS2(fc.getHiddenValue()))
+								.append("\"").append(", \"readOnly\":true");
+					} else if (!GenericUtil.isEmpty(fc.getValue())) {
+						s.append(GenericUtil.stringToJS2(fc.getValue())).append(
+								"\"");
+					} else
+						s.append("\"");
+					
+					switch (fc.getFormCell().getControlType()) {
+					case 10:// advanced select
+						if (!GenericUtil.isEmpty(fc.getValue())
+								&& fc.getLookupQueryResult() != null
+								&& !GenericUtil.isEmpty(fc
+										.getLookupQueryResult().getData())
+								&& !GenericUtil.isEmpty(fc
+										.getLookupQueryResult().getData()
+										.get(0)[0]))
+							s.append(", \"text\":\"")
+									.append(GenericUtil.stringToJS2(fc
+											.getLookupQueryResult().getData()
+											.get(0)[0].toString()))
+									.append("\"");
+						break;
+					case 6:// static
+					case	8://multi static
+					case	58:
+						s.append(", \"options\":[");
+						bb = false;
+						for (W5Detay p : (List<W5Detay>) fc.getLookupListValues()) {
+							if (bb)
+								s.append(",");
+							else
+								bb = true;
+							s.append("{\"dsc\":\"")
+									.append(GenericUtil.stringToJS2(fc
+											.getLocaleMsgFlag() != 0 ? LocaleMsgCache
+											.get2(scd, p.getDsc()) : p.getDsc()))
+									.append("\",\"id\":\"").append(p.getVal())
+									.append("\"");
+							s.append("}");
+						}
+						s.append("]");
+						break;
+					case 7: // query
+					case	15://multi query
+					case	59://superbox multi query
+						if (!GenericUtil.isEmpty(fc.getLookupQueryResult()
+								.getData())) {
+							s.append(", \"options\":[");
+							bb = false;
+							for (Object[] p : fc.getLookupQueryResult()
+									.getData()) {
+								if (bb)
+									s.append(",");
+								else
+									bb = true;
+								boolean bbb = false;
+								s.append("{");
+								for (W5QueryField qf : fc
+										.getLookupQueryResult().getQuery()
+										.get_queryFields()) {
+									Object z = p[qf.getTabOrder() - 1];
+									if (bbb)
+										s.append(",");
+									else
+										bbb = true;
+									if (z == null)
+										z = "";
+									s.append("\"").append(qf.getDsc()).append("\":\"")
+											.append(qf.getPostProcessType() == 2 ? LocaleMsgCache
+													.get2(scd,
+															z.toString())
+													: GenericUtil.stringToJS2(z
+															.toString()))
+											.append("\"");
+								}
+								s.append("}");
+							}
+							s.append("]");
+						}
+						break;
+					case	23://tree
+					case	26://mult-tree
+						if(fc.getLookupQueryResult()!=null && fc.getLookupQueryResult().getData() != null) {
+							s.append(", \"tree\":true, \"options\":[");
+							boolean b1 = false;
+							for (Object[] p : fc.getLookupQueryResult().getData()) {
+								if (b1)
+									s.append(",");
+								else
+									b1 = true;
+								bb = false;
+								s.append("{");
+								for (W5QueryField qf : fc.getLookupQueryResult().getQuery().get_queryFields()) {
+									Object z = p[qf.getTabOrder() - 1];
+									if (bb)
+										s.append(",");
+									else
+										bb = true;
+									if (z == null)z = "";
+									s.append("\"").append(qf.getDsc()).append("\":\"")
+											.append(qf.getPostProcessType() == 2 ? LocaleMsgCache
+													.get2(scd,
+															z.toString()) : GenericUtil
+													.stringToJS2(z.toString()))
+											.append("\"");
+								}
+								s.append("}");
+							}
+						}
+						s.append("]");
+
+					}
+					// if(fc.getFormCell().getControlTip()==24)s.append("_").append(fc.getFormCell().getDsc()).append(".treePanel.getRootNode().expand();\n");
+					s.append("}");
+				}
+			}
+		s.append("}");
+		return s;
+	}
 	public StringBuilder serializeGetFormSimple(W5FormResult formResult) {
 		StringBuilder s = new StringBuilder();
 		String xlocale = (String) formResult.getScd().get("locale");
@@ -881,115 +1017,43 @@ public class PrimeReact16 implements ViewAdapter {
 		}
 		if (formResult.isViewMode())
 			s.append(",\n \"readOnly\":true");
-		s.append(",\n\"cells\":[");
+		
+		s.append(",\n\"values\":");
+		
 		boolean b = false, bb;
-		for (W5FormCellHelper fc : formResult.getFormCellResults())
-			if (fc.getFormCell().getActiveFlag() != 0
-					&& fc.getFormCell().getControlType() != 102) {
-				if (fc.getFormCell().getControlType() != 102) {// label'dan
-																// farkli ise.
-																// label direk
-																// render
-																// edilirken
-																// koyuluyor
-					if (b)
-						s.append("\n,");
-					else
-						b = true;
-					s.append("{\"id\":\"")
-							.append(fc.getFormCell().getDsc())
-							.append("\",\"label\":\"")
-							.append(LocaleMsgCache
-									.get2(customizationId, xlocale, fc
-											.getFormCell().getLocaleMsgKey()))
-							.append("\",\"not_null\":")
-							.append(fc.getFormCell().getNotNullFlag() != 0)
-							.append(",\"value\":\"");
-					if (!GenericUtil.isEmpty(fc.getHiddenValue())) {
-						s.append(GenericUtil.stringToJS2(fc.getHiddenValue()))
-								.append("\"").append(", \"readOnly\":true");
-					} else if (!GenericUtil.isEmpty(fc.getValue())) {
-						s.append(GenericUtil.stringToJS2(fc.getValue())).append(
-								"\"");
-					} else
-						s.append("\"");
-					switch (fc.getFormCell().getControlType()) {
-					case 10:// advanced select
-						if (!GenericUtil.isEmpty(fc.getValue())
-								&& fc.getLookupQueryResult() != null
-								&& !GenericUtil.isEmpty(fc
-										.getLookupQueryResult().getData())
-								&& !GenericUtil.isEmpty(fc
-										.getLookupQueryResult().getData()
-										.get(0)[0]))
-							s.append(", \"text\":\"")
-									.append(GenericUtil.stringToJS2(fc
-											.getLookupQueryResult().getData()
-											.get(0)[0].toString()))
-									.append("\"");
-						break;
-					case 6:// static
-						s.append(", \"data\":[");
-						bb = false;
-						for (W5Detay p : (List<W5Detay>) fc.getLookupListValues()) {
-							if (bb)
-								s.append(",");
-							else
-								bb = true;
-							s.append("[\"")
-									.append(GenericUtil.stringToJS2(fc
-											.getLocaleMsgFlag() != 0 ? LocaleMsgCache
-											.get2(customizationId, xlocale,
-													p.getDsc()) : p.getDsc()))
-									.append("\",\"").append(p.getVal())
-									.append("\"");
-							s.append("]");
-						}
-						s.append("]");
-						break;
-					case 7: // query
-						if (!GenericUtil.isEmpty(fc.getLookupQueryResult()
-								.getData())) {
-							s.append(", \"data\":[");
-							bb = false;
-							for (Object[] p : fc.getLookupQueryResult()
-									.getData()) {
-								if (bb)
-									s.append(",");
-								else
-									bb = true;
-								boolean bbb = false;
-								s.append("[");
-								for (W5QueryField qf : fc
-										.getLookupQueryResult().getQuery()
-										.get_queryFields()) {
-									Object z = p[qf.getTabOrder() - 1];
-									if (bbb)
-										s.append(",");
-									else
-										bbb = true;
-									if (z == null)
-										z = "";
-									s.append("\"")
-											.append(qf.getPostProcessType() == 2 ? LocaleMsgCache
-													.get2(customizationId,
-															xlocale,
-															z.toString())
-													: GenericUtil.stringToJS2(z
-															.toString()))
-											.append("\"");
-								}
-								s.append("]");
-							}
-							s.append("]");
-						}
+		s.append(serializeValues(formResult));
 
-					}
-					// if(fc.getFormCell().getControlTip()==24)s.append("_").append(fc.getFormCell().getDsc()).append(".treePanel.getRootNode().expand();\n");
-					s.append("}");
+		
+		b = true;//only for edit
+		if(formResult.getModuleFormMap()!=null)for(W5FormResult dfr:formResult.getModuleFormMap().values()){
+			if(b) {b=false; s.append(",\n\"details\":{");} else s.append(",");
+			s.append("\n\"").append(dfr.getFormId()).append("\":{");
+			if(formResult.getAction()==1 && dfr.getOutputFields()!=null && dfr.getOutputFields().containsKey("list")){
+				s.append("\"data\":[");
+				boolean b2=false;
+				List<Map> list = (List)dfr.getOutputFields().get("list");
+				for(Map mm:list) {
+					if(b2)s.append(","); else b2=true;
+					s.append(GenericUtil.fromMapToJsonString2(mm));
 				}
+				s.append("],\n");
 			}
-		s.append("]}");
+			s.append("\"values\":").append(serializeValues(dfr));
+			W5Table dt = FrameworkCache.getTable(formResult.getScd(), dfr.getForm().getObjectId());
+			s.append(",\n\"pkField\":\"").append(dt.get_tableParamList().get(0).getDsc()).append("\"");
+			
+			//t.get_tableChildList()
+			s.append(",\n\"relatedFields\":").append(GenericUtil.fromMapToJsonString2((Map)dfr.getOutputFields().get("paramMap")));
+			
+			
+			s.append("}");
+			
+
+			
+		}
+		if(!b)s.append("}");
+		
+		s.append("}");
 		return s;
 	}
 
@@ -1004,13 +1068,14 @@ public class PrimeReact16 implements ViewAdapter {
 		if (formResult.getUniqueId() == null)formResult.setUniqueId(GenericUtil.getNextId("fi2"));
 		W5Form f = formResult.getForm();
 		// s.append("var ").append(formResult.getForm().getDsc()).append("=");
-		String[] postFormStr = new String[] { "", "search_form",
-				"ajaxPostForm",
-				f.getObjectType() == 3 ? "rpt/" + f.getDsc() : "ajaxExecDbFunc",
-				"ajaxExecDbFunc",null,null,"search_form", "search_form", null,null,"ajaxCallWs?serviceName="+(f.getObjectType() == 11 ? FrameworkCache.getServiceNameByMethodId(scd,  f.getObjectId()):"")+"&"};
-		s.append("{\nconstructor(props, context){\nsuper(props, context);\nprops.parentCt.form=this;this.url='").append(postFormStr[f.getObjectType()])
-			.append("';this.params=").append(GenericUtil.fromMapToJsonString(formResult.getRequestParams()))
-			.append(";\nif(props.setCmp)props.setCmp(this);this.egrids={};this.state=(!props.values && iwb.forms['").append(formResult.getUniqueId()).append("']) ||{errors:{},values:props.values||{");
+		String[] postFormStr = new String[] { "", "search-form",
+				"submit-form",
+				f.getObjectType() == 3 ? "rpt/" + f.getDsc() : "func",
+				"func",null,null,"search-form", "search-form", null,null,"ajaxCallWs?serviceName="+(f.getObjectType() == 11 ? FrameworkCache.getServiceNameByMethodId(scd,  f.getObjectId()):"")+"&"};
+		s.append("{\nconstructor(props, context){\n super(props, context);\n if (props.register) props.register('forms/").append(f.getFormId()).append("', this, {width:").append(f.getDefaultWidth()).append(",contFlag:").append(formResult.getAction()==2 && f.getContEntryFlag()!=0).append(", maxStep:").append(f.getRenderType()==4 ? f.get_moduleList().size() : 0).append("});");
+		if(f.getObjectType()>1)s.append("\n this.url='").append(postFormStr[f.getObjectType()]).append("/").append(formResult.getFormId()).append("'");
+		s.append(";\n this.params=").append(GenericUtil.fromMapToJsonString(formResult.getRequestParams()))
+			.append(";\n this.state=(!props.values && iwb.states.forms['").append(formResult.getUniqueId()).append("']) ||{errors:{},values:props.values||{");
 		
 		boolean b = false;
 		for (W5FormCellHelper fc : formResult.getFormCellResults())if (fc.getFormCell().getActiveFlag() != 0 && fc.getFormCell().getControlType()>0 && fc.getFormCell().getControlType()<100) {
@@ -1040,16 +1105,72 @@ public class PrimeReact16 implements ViewAdapter {
 		//if(!GenericUtil.isEmpty(formResult.getForm().get_conversionList()))s.append(",_cnvStr:!0");
 		//if(!GenericUtil.isEmpty(formResult.getForm().get_formSmsMailList()))s.append(",_smsStr:!0");
 		
-		s.append("},\noptions:{");
+		s.append("},\n options:{");
 		b = false;
-		for (W5FormCellHelper fc : formResult.getFormCellResults())if (!GenericUtil.isEmpty(fc.getValue()) && fc.getFormCell().getActiveFlag() != 0 && fc.getFormCell().getControlType()==10
-				&& fc.getLookupQueryResult() != null && !GenericUtil.isEmpty(fc.getLookupQueryResult().getData())) {
-			if (b)s.append(","); else b = true;
-			Object[] oo = fc.getLookupQueryResult().getData().get(0);
-			s.append(fc.getFormCell().getDsc()).append(":[{id:'").append(oo[1]).append("',dsc:'").append(GenericUtil.stringToJS(oo[0].toString())).append("'}]");
+		for (W5FormCellHelper fc : formResult.getFormCellResults())if (fc.getFormCell().getActiveFlag() != 0) {
+			short controlType = fc.getFormCell().getControlType();
+			if(!GenericUtil.isEmpty(fc.getValue()) && controlType==10 && fc.getLookupQueryResult() != null && !GenericUtil.isEmpty(fc.getLookupQueryResult().getData())) {
+				if (b)s.append(","); else b = true;
+				Object[] oo = fc.getLookupQueryResult().getData().get(0);
+				s.append(fc.getFormCell().getDsc()).append(":[{id:'").append(oo[1]).append("',dsc:'").append(GenericUtil.stringToJS(oo[0].toString())).append("'}]");
+			} else if(!GenericUtil.isEmpty(fc.getValue()) && controlType==71 && !GenericUtil.isEmpty(fc.getExtraValuesMap())) {
+				if (b)s.append(","); else b = true;
+				Map evm = fc.getExtraValuesMap();	
+				s.append(fc.getFormCell().getDsc()).append(":{fileId:").append(evm.get("id")).append(", fileSize:").append(evm.get("fsize")).append(", fileName:\"").append(GenericUtil.stringToJS2((String)evm.get("dsc"))).append("\"}");
+			} else if(GenericUtil.hasPartInside2("6,8,58,7,15,59", controlType)) {
+				if (b)s.append(","); else b = true;
+				Map evm = fc.getExtraValuesMap();	
+				s.append(fc.getFormCell().getDsc()).append(":[");//static combo
+				if ((controlType==6 || controlType==8 ||controlType==58) && fc.getLookupListValues() != null) {
+					boolean b1=false;
+					
+					for (W5Detay p : (List<W5Detay>) fc
+							.getLookupListValues()) {
+						if (b1)
+							s.append(",");
+						else
+							b1 = true;
+						s.append("{id:'").append(p.getVal()).append("',dsc:'")
+								.append(fc.getLocaleMsgFlag() != 0 ? LocaleMsgCache
+										.get2(customizationId, xlocale, p.getDsc())
+										: p.getDsc()).append("'");
+						s.append("}");
+					}
+				} else if ((controlType==7 || controlType==15 ||controlType==59)){
+					if(fc.getLookupQueryResult()!=null && fc.getLookupQueryResult().getData() != null) {
+						boolean b1 = false;
+						for (Object[] p : fc.getLookupQueryResult().getData()) {
+							if (b1)
+								s.append(",");
+							else
+								b1 = true;
+							boolean bb = false;
+							s.append("{");
+							for (W5QueryField qf : fc.getLookupQueryResult().getQuery().get_queryFields()) {
+								Object z = p[qf.getTabOrder() - 1];
+								if (bb)
+									s.append(",");
+								else
+									bb = true;
+								if (z == null)z = "";
+								s.append(qf.getDsc()).append(":'")
+										.append(qf.getPostProcessType() == 2 ? LocaleMsgCache
+												.get2(customizationId, xlocale,
+														z.toString()) : GenericUtil
+												.stringToJS(z.toString()))
+										.append("'");
+							}
+							s.append("}");
+						}
+					}
+					if(controlType==15 && fc.getLookupQueryResult().getQueryId()==606 && formResult!=null && formResult.getForm()!=null && formResult.getForm().getObjectType()==1) {//workflow extra records
+						s.append(",{dsc:'approved', id:998},{dsc:'rejected', id:999}");
+					}
+				}
+				s.append("]");
+			}
 		}
-
-		s.append("},activeTab:false}");
+		s.append("},activeStep:0}");
 		//\nif(this.componentWillPost)this.componentWillPost=this.componentWillPost.bind(this);
 		Map<String, List<W5FormCell>> pcr = new HashMap();
 		for (W5FormCellHelper fc : formResult.getFormCellResults())if (fc.getFormCell().getActiveFlag() != 0 && (fc.getFormCell().getControlType()==9 ||fc.getFormCell().getControlType()==16) && fc.getFormCell().getParentFormCellId()!=0 && !GenericUtil.isEmpty(fc.getFormCell().getLookupIncludedParams())) {//combo remote
@@ -1070,7 +1191,7 @@ public class PrimeReact16 implements ViewAdapter {
 			
 			
 		}
-		s.append("\nthis._id='").append(formResult.getUniqueId()).append("';this.triggerz4ComboRemotes={");
+		s.append("\n this._id='").append(formResult.getUniqueId()).append("';\n this.triggerz4ComboRemotes={");
 		b = false;
 		for(String k:pcr.keySet()){
 			if(b)s.append(",");else b=true;
@@ -1083,35 +1204,25 @@ public class PrimeReact16 implements ViewAdapter {
 			s.append("]");
 		} 
 		s.append("}");
-		
-	/*	s.append("\nthis.onChange=this.onChange.bind(this);this.onComboChange=this.onComboChange.bind(this);this.onLovComboChange=this.onLovComboChange.bind(this);this.onNumberChange=this.onNumberChange.bind(this);this.submit=this.submit.bind(this);this.toggleTab=this.toggleTab.bind(this);this.getValues=this.getValues.bind(this);}");
-		s.append("\ntoggleTab(tab){if(this.state.activeTab!==tab)this.setState({activeTab:tab});}");
-		s.append("\ngetValues(){return Object.assign({}, this.state.values);}");//this.cfg={...}
-		s.append("\nsubmit(cfg){var p = Object.assign({}, this.state.values);if(this.componentWillPost){var r = this.componentWillPost(p, cfg||{});if(r===false)return false;p = Object.assign(p, r);}iwb.request({url:this.url+'?'+iwb.JSON2URI(this.params)+'_renderer=react16&.r='+Math.random(), params:p, self:this, errorCallback:(json)=>{var errors={};if(json.errorType)switch(json.errorType){case	'validation':toastr.error('Validation Errors');if(json.errors && json.errors.length)json.errors.map(function(o){errors[o.id]=o.msg;});if(json.error)iwb.showModal({title:'ERROR',footer:false, color:'danger', size:'sm', body:json.error});break;default:alert(json.errorType);} else alert(json);this.setState({errors:errors});return false;}, successCallback:(json, xcfg)=>{if(cfg.callback)cfg.callback(json,xcfg);}});}");//this.cfg={...}
-		s.append("\nonChange(e){var values=this.state.values;if(e.target){var o=e.target;values[o.name]=o.type=='checkbox'?o.checked:o.value;this.setState({values:values});}}");//this.cfg={...}
-		s.append("\nonComboChange(dsc){var self=this;return function(o){var values=self.state.values;var v=o && o.id;values[dsc]=v;var q=self.triggerz4ComboRemotes;if(q[dsc])q[dsc].map(function(zzz){var nv=zzz.f(v,null,values);if(nv)iwb.request({url:'ajaxQueryData?'+iwb.JSON2URI(nv)+'.r='+Math.random(), successCallback:function(r){var options=self.state.options;options[zzz.n]=r.data;self.setState({options:options});}});else{var options=self.state.options;options[zzz.n]=[];self.setState({options:options});}});self.setState({values:values});}}");//this.cfg={...}
-		s.append("\nonLovComboChange(dsc){var self=this;return function(o){var values=self.state.values;var v=[];if(o)o.map(function(q){v.push(q.id)});values[dsc]=v.join(',');self.setState({values:values});}}");//this.cfg={...}
-		s.append("\nonDateChange(dsc, dttm){var self=this;return function(o){var values=self.state.values;var v=o && o._d;values[dsc]=dttm ? fmtDateTime(v):fmtShortDate(v);self.setState({values:values});}}");//this.cfg={...}
-		s.append("\nonNumberChange(dsc){var self=this;return function(o){var values=self.state.values;var v=o && o.value;values[dsc]=v;self.setState({values:values});}}");//this.cfg={...}
-		s.append("\ncomponentDidMount(){var self=this, q=this.triggerz4ComboRemotes,values=this.state.values;for(var dsc in q)if(values[dsc])q[dsc].map(function(zzz){var nv=zzz.f(values[dsc],null,values);if(nv)iwb.request({url:'ajaxQueryData?'+iwb.JSON2URI(nv)+'.r='+Math.random(), successCallback:function(r){var options=self.state.options;options[zzz.n]=r.data;self.setState({options:options});}});else{}});}");
-		s.append("\ncomponentWillUnmount(){iwb.forms['").append(formResult.getUniqueId()).append("']=Object.assign({},this.state);");
-*/
+
 //		if (liveSyncRecord)formResult.getRequestParams().put(".t", formResult.getUniqueId());
-		s.append("}");
-		s.append("\n render(){\nvar mf=this, values=this.state.values, options=this.state.options, errors=this.state.errors, viewMode=this.props.viewMode;\n");
+		s.append("\n}");
+		s.append("\nrender(){\n var renderType='").append(formRenderTypeMap[f.getRenderType()])
+			.append("', layout='").append(formLayoutMap[f.getLabelAlignType()]).append("', span=").append(Math.min(24,4*f.getDefaultWidth()/100)).append(", labelSpan=").append(f.getLabelAlignType()>0 ? 3*f.getLabelWidth()/100 : 0)
+			.append(", action=").append(formResult.getAction()).append(", {values, options, errors}=this.state;");
 
 		
 		for (W5FormCellHelper fc : formResult.getFormCellResults())
 			if (fc.getFormCell().getActiveFlag() != 0) {
 				if (fc.getFormCell().getControlType() != 102) {// label'dan farkli ise. label direk render edilirken koyuluyor
-					s.append("var _").append(fc.getFormCell().getDsc()).append("=").append(serializeFormCell(customizationId, xlocale,fc, formResult)).append(";\n");
+					s.append("\n var _").append(fc.getFormCell().getDsc()).append("=").append(serializeFormCell(customizationId, xlocale,fc, formResult)).append(";");
 				} else {
 					fc.setValue(LocaleMsgCache.get2(customizationId, xlocale,
 							fc.getFormCell().getLocaleMsgKey()));
 				}
 			}
 
-		s.append("\nvar __action__=").append(formResult.getAction()).append("\n");
+		s.append("\n\n");
 
 		// 24 nolu form form edit form olduğu için onu çevirmesin.
 		String postCode = (formResult.getForm().get_renderTemplate() != null
@@ -1136,37 +1247,125 @@ public class PrimeReact16 implements ViewAdapter {
 			s.append("}\n");
 		}
 
+		s.append("var config={xtype:'form', renderType, layout, span, items:[");
+		
 		if(formResult.getForm().getObjectType()==1 | formResult.getForm().getObjectType() == 8 ){ //search ise
 			s.append(renderSearchFormModuleList(customizationId, xlocale,
 					formResult.getUniqueId(),
 					formResult.getFormCellResults(),
-					"mf=_(Form, {id:'"+formResult.getUniqueId()+"'},")).append(");\n");
+					""));//.append("]};\n");
 		} else switch (formResult.getForm().getRenderType()) {
 		case 1:// fieldset
+			s.append(renderFormAsFieldset(formResult));
+			break;
 		case	4://wizard
-			s.append(renderFormFieldset(formResult));
+			s.append(renderFormAsWizard(formResult));
 			break;
+		case 3:// accordion
 		case 2:// tabpanel
-			s.append(renderFormTabpanel(formResult));
+			s.append(renderFormAsTabpanel(formResult));
 			break;
-		case 3:// tabpanel+border
-			s.append(renderFormTabpanel(formResult));
-//				s.append(renderFormTabpanelBorder(formResult));
-			break;
-		case 0:// temiz
-			s.append(renderFormModuleListTop(customizationId, xlocale,
+		case 0:// straight
+			s.append(renderFormSection(customizationId, xlocale,
 					formResult.getUniqueId(),
 					formResult.getFormCellResults(),
-					"mf=", formResult.getRequestParams().get("_modal")!=null ? -1:formResult.getForm().getDefaultWidth())).append(";\n");
+					"\n var config=", GenericUtil.uInt(formResult.getRequestParams(),"_openIn"), formResult.getForm().getDefaultWidth())).append(";\n");
 		}
 
 
-		s.append("\nreturn mf}}");
+		s.append("\n]}; return this.renderForm(config);\n}}");
 
 		return s;
 	}
 
-	private StringBuilder renderFormTabpanel(W5FormResult formResult) {
+	private StringBuilder renderFormAsTabpanel(W5FormResult formResult) {
+		String xlocale = (String) formResult.getScd().get("locale");
+		int customizationId = (Integer) formResult.getScd().get(
+				"customizationId");
+		Map<Integer, List<W5FormCellHelper>> map = new HashMap<Integer, List<W5FormCellHelper>>();
+		map.put(0, new ArrayList<W5FormCellHelper>());
+		W5Form f = formResult.getForm();
+		if (f.get_moduleList() != null)
+			for (W5FormModule m : f.get_moduleList()) {
+				map.put(m.getFormModuleId(), new ArrayList<W5FormCellHelper>());
+			}
+		for (W5FormCellHelper m : formResult.getFormCellResults())
+			if (m.getFormCell().getActiveFlag() != 0) {
+				List<W5FormCellHelper> l = map.get(m.getFormCell().getFormModuleId());
+				if (l == null)
+					l = map.get(0);
+				l.add(m);
+			}
+		StringBuilder buf = new StringBuilder();
+		//buf.append("var config={xtype:'form', renderType, layout, span, items:[");
+
+
+		int defaultWidth = f.getDefaultWidth();
+		int openIn = GenericUtil.uInt(formResult.getRequestParams(), "_openIn");
+		
+		int firstTab = 0;
+		boolean b = false;
+		if (map.get(0).size() > 0) {
+			buf.append(renderFormSection(customizationId, xlocale,
+					formResult.getUniqueId(), map.get(0), "", openIn, f.getDefaultWidth()));
+			b = true;
+		}
+
+		if (f.get_moduleList() != null){
+			for (W5FormModule m : f.get_moduleList())
+				if (m.getFormModuleId() != 0) {
+					if ((m.getModuleViewType() == 0 || formResult.getAction() == m.getModuleViewType()) 
+							) {
+						switch (m.getModuleType()) {
+						case	4:break;//form 
+						case	5://grid
+							W5GridResult gridResult = formResult.getModuleGridMap().get(m.getObjectId());
+							W5Table mainTable = gridResult.getGrid() != null
+									&& gridResult.getGrid().get_defaultCrudForm() != null ? FrameworkCache
+									.getTable(formResult.getScd(), gridResult.getGrid()
+											.get_defaultCrudForm().getObjectId())
+									: null;
+							if (mainTable != null
+									&& ( !GenericUtil
+											.accessControl(formResult.getScd(), mainTable.getAccessViewTip(), mainTable.getAccessViewRoles(), mainTable.getAccessViewUsers())))
+								gridResult = null;// hicbirsey
+							else {
+								if(b)buf.append(","); else b = true;
+								if(firstTab==0){
+									firstTab = m.getFormModuleId();
+									buf.append("\n{xtype:config.renderType, items:[");
+								}
+								buf.append(" {xtype:'edit-grid',key: '").append(m.getFormModuleId()).append("',label:'").append(LocaleMsgCache.get2(formResult.getScd(), m.getLocaleMsgKey())).append("', grid:").append(gridResult.getGrid().getDsc()).append("}");
+								
+							}
+							break;
+						
+
+						default:
+							if (!map.get(m.getFormModuleId()).isEmpty()) {
+								if(b)buf.append(","); else b = true;
+								if(firstTab==0){
+									firstTab = m.getFormModuleId();
+									buf.append("\n{xtype:config.renderType, items:[");
+								}
+								buf.append(renderFormSection(customizationId, xlocale, formResult.getUniqueId(),
+										map.get(m.getFormModuleId()), "\n {xtype:'form-section', key: '"+m.getFormModuleId()+"', label:'"+LocaleMsgCache.get2(formResult.getScd(), m.getLocaleMsgKey()) +"', items:[", 
+										openIn, defaultWidth)).append("]}");
+							}
+						}
+					}
+				}
+		}
+		if(firstTab>0){
+			buf.append("]}");
+		}
+		//buf.append("]}");
+
+		return buf;
+	}
+
+
+	private StringBuilder renderFormAsWizard(W5FormResult formResult) {
 		String xlocale = (String) formResult.getScd().get("locale");
 		int customizationId = (Integer) formResult.getScd().get(
 				"customizationId");
@@ -1183,18 +1382,24 @@ public class PrimeReact16 implements ViewAdapter {
 					l = map.get(0);
 				l.add(m);
 			}
-		StringBuilder buf = new StringBuilder();
-		buf.append("mf=_('span',null");
+		StringBuilder buf = new StringBuilder(), bufContent = new StringBuilder();
+		//buf.append("var config={xtype:'form', renderType, layout, span, items:[");
 
-		int defaultWidth = -1;
-		if(formResult.getRequestParams().get("_modal")==null)defaultWidth = formResult.getForm().getDefaultWidth();
-		List<String> extendedForms = new ArrayList();
+
+		int defaultWidth = formResult.getForm().getDefaultWidth();
+		int openIn = GenericUtil.uInt(formResult.getRequestParams(), "_openIn");
+
+		boolean b = false;
+		int currentTab = 0;
 		if (map.get(0).size() > 0) {
-			buf.append(renderFormModuleListTop(customizationId, xlocale,
-					formResult.getUniqueId(), map.get(0), ",", defaultWidth));
+			buf.append("\n{xtype:'form-section',label:'Main', items:[");
+			buf.append(renderFormSection(customizationId, xlocale,
+					formResult.getUniqueId(), map.get(0), "", openIn, formResult.getForm().getDefaultWidth())).append("]}");
+			b = true;
+			currentTab++;
 		}
-		StringBuilder contentBuf = new StringBuilder();
-		int firstTab = 0;
+
+
 		if (formResult.getForm().get_moduleList() != null){
 			for (W5FormModule m : formResult.getForm().get_moduleList())
 				if (m.getFormModuleId() != 0) {
@@ -1214,13 +1419,13 @@ public class PrimeReact16 implements ViewAdapter {
 											.accessControl(formResult.getScd(), mainTable.getAccessViewTip(), mainTable.getAccessViewRoles(), mainTable.getAccessViewUsers())))
 								gridResult = null;// hicbirsey
 							else {
-								if(firstTab==0){
-									firstTab = m.getFormModuleId();
-									buf.append(",_('div',{className:'p-grid'},_(Col,{ className: 'mb-3 mt-4' }, _(Nav,{tabs: true}");
-									contentBuf.append(", _(TabContent,{ className:'form-tabcontent', activeTab: this.state.activeTab||'").append(firstTab).append("' }");
+								if(currentTab==0){
+									buf.append(",_(Steps,{current:this.state.activeStep}");
 								}
-								buf.append(",_(NavItem, null,_(NavLinkS,{className: classNames({active: ").append(firstTab==m.getFormModuleId()?"!this.state.activeTab || ":"").append("this.state.activeTab === '").append(m.getFormModuleId()).append("'}), onClick:()=> this.toggleTab('").append(m.getFormModuleId()).append("')},'").append(LocaleMsgCache.get2(formResult.getScd(), m.getLocaleMsgKey())).append("'))");
-								contentBuf.append(",_(TabPane, {tabId: '").append(m.getFormModuleId()).append("' },_(XEditGrid,").append(gridResult.getGrid().getDsc()).append("))");
+
+								buf.append(",_(Step, {title:'").append(LocaleMsgCache.get2(formResult.getScd(), m.getLocaleMsgKey())).append("'})");
+								bufContent.append(",\nthis.state.activeStep==").append(currentTab).append(" && _(XEditGrid,").append(gridResult.getGrid().getDsc()).append(")");
+								currentTab++;
 								
 							}
 							break;
@@ -1228,27 +1433,29 @@ public class PrimeReact16 implements ViewAdapter {
 
 						default:
 							if (!map.get(m.getFormModuleId()).isEmpty()) {
-								if(firstTab==0){
-									firstTab = m.getFormModuleId();
-									buf.append(",_('div',{className:'p-grid'},_(Col,{ className: 'mb-3 mt-4' }, _(Nav,{tabs: true}");
-									contentBuf.append(", _(TabContent,{ className:'form-tabcontent', activeTab: this.state.activeTab||'").append(firstTab).append("' }");
+								if(b)buf.append(","); else b = true;
+								if(false && currentTab==0){
+									buf.append("{xtype:config.renderType, items:[");
 								}
-								buf.append(",_(NavItem, null,_(NavLinkS,{className: classNames({active: ").append(firstTab==m.getFormModuleId()?"!this.state.activeTab || ":"").append("this.state.activeTab === '").append(m.getFormModuleId()).append("'}), onClick:()=> this.toggleTab('").append(m.getFormModuleId()).append("')},'").append(LocaleMsgCache.get2(formResult.getScd(), m.getLocaleMsgKey())).append("'))");
-								contentBuf.append(renderFormModuleListTop(customizationId, xlocale, formResult.getUniqueId(),
-										map.get(m.getFormModuleId()), ",_(TabPane, {tabId: '"+m.getFormModuleId()+"' }, ", defaultWidth)).append(")");
+								buf.append("\n{xtype:'form-section',label:'").append(LocaleMsgCache.get2(formResult.getScd(), m.getLocaleMsgKey())).append("', items:[")
+									.append(renderFormSection(customizationId, xlocale, formResult.getUniqueId(),
+											map.get(m.getFormModuleId()), "", 
+											openIn, defaultWidth)).append("]}");
+//								bufContent.append(renderFormSection(customizationId, xlocale, formResult.getUniqueId(), map.get(m.getFormModuleId()), ",\nthis.state.activeStep=="+currentTab+" && ", openIn, defaultWidth));
+								currentTab++;
 							}
 						}
 					}
 				}
 		}
-		if(firstTab>0){
-			buf.append(")").append(contentBuf).append(")))");
+		if(false && currentTab>0){
+			buf.append("]}");
+			//buf.append(bufContent);
 		}
-		buf.append(");");
+		//buf.append("]}");
 
 		return buf;
 	}
-
 
 	private StringBuilder recursiveTemplateObject(List l, int parentObjectId, int level) {
 		if(level>5 && l==null || l.size()<2)return null;
@@ -1317,7 +1524,7 @@ public class PrimeReact16 implements ViewAdapter {
 		StringBuilder buf = new StringBuilder();
 		if(pr.getPageObjectList().get(0) instanceof W5CardResult){
 			W5CardResult gr = (W5CardResult)pr.getPageObjectList().get(0);
-			buf.append("return iwb.ui.buildPanel({t:_page_tab_id, card:").append(gr.getCard().getDsc());
+			buf.append("return _(XPage,{t:_page_tab_id, card:").append(gr.getCard().getDsc());
 			if(gr.getCard().get_crudTable()!=null){
 				W5Table t = gr.getCard().get_crudTable();
 				buf.append(",pk:{").append(t.get_tableParamList().get(0).getDsc()).append(":'").append(t.get_tableParamList().get(0).getExpressionDsc()).append("'}");
@@ -1327,7 +1534,7 @@ public class PrimeReact16 implements ViewAdapter {
 		}
 		if(!(pr.getPageObjectList().get(0) instanceof W5GridResult))return buf;
 		W5GridResult gr = (W5GridResult)pr.getPageObjectList().get(0);
-		buf.append("return iwb.ui.buildPanel({t:_page_tab_id, grid:").append(gr.getGrid().getDsc());
+		buf.append("return _(XPage,{t:_page_tab_id, grid:Object.assign(").append(gr.getGrid().getDsc()).append(",{aprops:props})");
 		if(gr.getGrid().get_crudTable()!=null){
 			W5Table t = gr.getGrid().get_crudTable();
 			buf.append(",pk:{").append(t.get_tableParamList().get(0).getDsc()).append(":'").append(t.get_tableParamList().get(0).getExpressionDsc()).append("'}");
@@ -1356,7 +1563,7 @@ public class PrimeReact16 implements ViewAdapter {
 		buf.append("});");
 		return buf;
 	}
-	private StringBuilder renderFormTabpanelBorder(W5FormResult formResult) {
+	private StringBuilder renderFormAsFieldset(W5FormResult formResult) {
 		String xlocale = (String) formResult.getScd().get("locale");
 		int customizationId = (Integer) formResult.getScd().get(
 				"customizationId");
@@ -1366,10 +1573,6 @@ public class PrimeReact16 implements ViewAdapter {
 			for (W5FormModule m : formResult.getForm().get_moduleList()) {
 				map.put(m.getFormModuleId(), new ArrayList<W5FormCellHelper>());
 			}
-		else {
-			formResult.getForm().set_moduleList(new ArrayList());
-
-		}
 		for (W5FormCellHelper m : formResult.getFormCellResults())
 			if (m.getFormCell().getActiveFlag() != 0) {
 				List<W5FormCellHelper> l = map.get(m.getFormCell()
@@ -1378,198 +1581,17 @@ public class PrimeReact16 implements ViewAdapter {
 					l = map.get(0);
 				l.add(m);
 			}
-		List<String> extendedForms = new ArrayList();
-		String formBodyStyle = FrameworkCache.getAppSettingStringValue(
-				formResult.getScd(), "form_body_style");
 		StringBuilder buf = new StringBuilder();
-		buf.append("mf=iwb.apply(mf,{xtype:'form', layout:'border',border:false, items:[");
-		if (map.get(0).size() > 0) {
-			buf.append(
-					renderFormModuleList(
-							customizationId,
-							xlocale,
-							formResult.getUniqueId(),
-							map.get(0),
-							"{xtype:'panel',region:'north',border:false,bodyStyle:'overflowY:auto',split:true,height:"
-									+ formResult.getForm().getDefaultHeight()
-									+ ",items:[{xtype:'fieldset'"
-									+ (GenericUtil.isEmpty(formBodyStyle) ? ""
-											: ",bodyStyle:'" + formBodyStyle
-													+ "'"), formResult.getForm().getDefaultWidth(), formResult.getForm().getLabelWidth())).append("]}");
+		//buf.append("\n var config={xtype:'form', renderType, layout, span, items:[");
 
-			// (formBodyColor!=null ?
-			// ",bodyStyle:'background-color:#"+formBodyColor+";background-image:url(../images/custom/bubble.png);background-repeat:no-repeat'"
-			// : "")));
-		}
-
+		int defaultWidth = formResult.getForm().getDefaultWidth();
+		int openIn = GenericUtil.uInt(formResult.getRequestParams(), "_openIn");
 		boolean b = false;
-		buf.append(",{xtype:'tabpanel',region:'center',activeTab: 0, deferredRender:false,defaults:{bodyStyle:'padding:0px'}, items:[");// defaults:{autoHeight:true,
-																																		// bodyStyle:'padding:10px'},
-		for (W5FormModule m : formResult.getForm().get_moduleList())
-			if (m.getFormModuleId() != 0) {
-				if ((m.getModuleViewType() == 0 || formResult.getAction() == m
-						.getModuleViewType())) {
-					switch (m.getModuleType()) {
-					case 4:// form
-						if (GenericUtil.uInt(formResult.getRequestParams().get(
-								"a")) == 5)
-							break;
-						W5FormResult subFormResult = formResult
-								.getModuleFormMap() == null ? null : formResult
-								.getModuleFormMap().get(m.getObjectId());
-						W5Table mainTablex = subFormResult != null
-								&& subFormResult.getForm() != null ? FrameworkCache
-								.getTable(formResult.getScd(), subFormResult
-										.getForm().getObjectId()) : null;
-						if (mainTablex == null)
-							continue;
-						if (mainTablex != null
-								&& ( !GenericUtil
-										.accessControl(
-												formResult.getScd(),
-												mainTablex.getAccessViewTip(),
-												mainTablex.getAccessViewRoles(),
-												mainTablex.getAccessViewUsers())))
-							subFormResult = null;// hicbirsey
-						else {
-							if (b)
-								buf.append(",");
-							else
-								b = true;
-							buf.append("iwb.apply(")
-									.append(subFormResult.getForm().getDsc())
-									.append(",{xtype:null,layout:'form',title:'")
-									.append(LocaleMsgCache.get2(
-											customizationId, xlocale,
-											m.getLocaleMsgKey()))
-									.append("',height:")
-									.append(subFormResult.getForm()
-											.getDefaultHeight())
-									.append(",autoScroll:true})");
-							extendedForms.add(subFormResult.getForm().getDsc());
-						}
-						break;
-					case 5:// grid(edit)
-						if (formResult.getModuleGridMap() == null)
-							break;
-						if (GenericUtil.uInt(formResult.getRequestParams().get(
-								"a")) == 5)
-							break;
-						W5GridResult gridResult = formResult.getModuleGridMap()
-								.get(m.getObjectId());
-						W5Table mainTable = gridResult.getGrid() != null
-								&& gridResult.getGrid().get_defaultCrudForm() != null ? FrameworkCache
-								.getTable(formResult.getScd(), gridResult.getGrid()
-										.get_defaultCrudForm().getObjectId())
-								: null;
-						if (mainTable != null
-								&& (!GenericUtil
-										.accessControl(formResult.getScd(),
-												mainTable.getAccessViewTip(),
-												mainTable.getAccessViewRoles(),
-												mainTable.getAccessViewUsers())))
-							gridResult = null;// hicbirsey
-						else {
-							if (b)
-								buf.append(",");
-							else
-								b = true;
-							buf.append(gridResult.getGrid().getDsc())
-									.append("._gp=new ")
-									.append(formResult.isViewMode() ? (gridResult
-											.getGrid().getTreeMasterFieldId() == 0 ? "Ext.grid.GridPanel"
-											: "Ext.ux.maximgb.tg.GridPanel")
-											: (gridResult.getGrid()
-													.getTreeMasterFieldId() == 0 ? "Ext.grid.EditorGridPanel"
-													: "Ext.ux.maximgb.tg.EditorGridPanel"))
-									.append("(iwb.apply(")
-									.append(gridResult.getGrid().getDsc())
-									.append(",{title:'")
-									.append(LocaleMsgCache.get2(
-											customizationId, xlocale,
-											m.getLocaleMsgKey()))
-									.append("',height:")
-									.append(gridResult.getGrid()
-											.getDefaultHeight())
-									.append(",autoScroll:true,clicksToEdit: 1*_app.edit_grid_clicks_to_edit}))");
-						}
-						break;
-					default:
-						if (!map.get(m.getFormModuleId()).isEmpty()) {
-							if (b)
-								buf.append(",");
-							else
-								b = true;
-							String extra = "{layout:'form',title:'"
-									+ LocaleMsgCache.get2(customizationId,
-											xlocale, m.getLocaleMsgKey()) + "'";
-							// if(formBodyColor!=null)extra+=",bodyStyle:'background-color: #"+formBodyColor+"'";
-							if (formBodyStyle != null)
-								extra += ",bodyStyle:'" + formBodyStyle + "'";
-
-							W5FormCellHelper extraInfo = getModulExtraInfo(
-									(String) formResult.getScd().get("locale"),
-									m.getLocaleMsgKey());
-							if (extraInfo != null)
-								map.get(m.getFormModuleId()).add(0, extraInfo);
-							buf.append(renderFormModuleList(customizationId,
-									xlocale, formResult.getUniqueId(),
-									map.get(m.getFormModuleId()), extra, formResult.getForm().getDefaultWidth(), formResult.getForm().getLabelWidth()));
-						}
-
-					}
-				}
-			}
-		buf.append("]");
-		// if (tabHeight>0) buf.append(",height:").append(tabHeight); TODO:
-		// defaults:{autoHeight:true, kısmını kaldırdığımızda gridin boyutunu
-		// alıyor ve scroll çıkıyor ancak veri çok ise sıkıntı olabilir.
-		buf.append("}]}");
-		buf.append(");");
-
-		if (!extendedForms.isEmpty()) {
-			buf.append("\nmf._extendedForms=[");
-			b = false;
-			for (String s : extendedForms) {
-				if (b)
-					buf.append(",");
-				else
-					b = true;
-				buf.append(s);
-			}
-			buf.append("];");
-		}
-		return buf;
-		/* new Ext.grid.GridPanel(iwb.apply(detailGrid,grdExtra)) */
-	}
-
-	private StringBuilder renderFormFieldset(W5FormResult formResult) {
-		String xlocale = (String) formResult.getScd().get("locale");
-		int customizationId = (Integer) formResult.getScd().get(
-				"customizationId");
-		Map<Integer, List<W5FormCellHelper>> map = new HashMap<Integer, List<W5FormCellHelper>>();
-		map.put(0, new ArrayList<W5FormCellHelper>());
-		if (formResult.getForm().get_moduleList() != null)
-			for (W5FormModule m : formResult.getForm().get_moduleList()) {
-				map.put(m.getFormModuleId(), new ArrayList<W5FormCellHelper>());
-			}
-		for (W5FormCellHelper m : formResult.getFormCellResults())
-			if (m.getFormCell().getActiveFlag() != 0) {
-				List<W5FormCellHelper> l = map.get(m.getFormCell()
-						.getFormModuleId());
-				if (l == null)
-					l = map.get(0);
-				l.add(m);
-			}
-		StringBuilder buf = new StringBuilder();
-		buf.append("mf=_('span',null");
-
-		int defaultWidth = -1;
-		if(formResult.getRequestParams().get("_modal")==null)defaultWidth = formResult.getForm().getDefaultWidth();
-		List<String> extendedForms = new ArrayList();
 		if (map.get(0).size() > 0) {
-			buf.append(renderFormModuleListTop(customizationId, xlocale,
-					formResult.getUniqueId(), map.get(0), ",", defaultWidth));
+			b = true;
+			buf.append(renderFormSection(customizationId, xlocale,
+					formResult.getUniqueId(), map.get(0), "", openIn, formResult.getForm().getDefaultWidth()
+					));
 		}
 		if (formResult.getForm().get_moduleList() != null)
 			for (W5FormModule m : formResult.getForm().get_moduleList())
@@ -1590,51 +1612,52 @@ public class PrimeReact16 implements ViewAdapter {
 										.accessControl(formResult.getScd(), mainTable.getAccessViewTip(), mainTable.getAccessViewRoles(), mainTable.getAccessViewUsers())))
 							gridResult = null;// hicbirsey
 						else {
-							buf.append(",_('div',{className:'hr-text', style:{marginTop:'20px'}},_('h6',null,'").append(LocaleMsgCache.get2(customizationId, xlocale, m.getLocaleMsgKey())).append("')),_(XEditGrid,").append(gridResult.getGrid().getDsc()).append(")");
+							buf.append(",\n_(Fieldset,{label:'").append(LocaleMsgCache.get2(customizationId, xlocale, m.getLocaleMsgKey())).append("'}),_(XEditGrid,").append(gridResult.getGrid().getDsc()).append(")");
 							
 						}
 						break;
 
 						default:
 							if (!map.get(m.getFormModuleId()).isEmpty()) {
-								buf.append(renderFormModuleListTop(
+								buf.append(renderFormSection(
 										customizationId, xlocale,
 										formResult.getUniqueId(),
-										map.get(m.getFormModuleId()), ",_('div',{className:'hr-text', style:{marginTop:'20px'}},_('h6',null,'"+LocaleMsgCache.get2(customizationId, xlocale, m.getLocaleMsgKey())+"')),", defaultWidth));
+										map.get(m.getFormModuleId()), (b?",":"")+"\n{xtype:'fieldset', label:'"+LocaleMsgCache.get2(customizationId, xlocale, m.getLocaleMsgKey())+"', items:[", openIn, defaultWidth)).append("]}");
+								b = true;
 							}
 						}
 					}
 				}
-		buf.append(");");
+		//buf.append("]};");
 
 		return buf;
 	}
 	
 	
+	private StringBuilder renderFormCell(W5FormCellHelper fc){
+		StringBuilder buf = new StringBuilder();
+		String dsc = fc.getFormCell().getDsc();
+		buf.append("_").append(dsc);			
+		return buf;
+	}
+	
 	private StringBuilder renderFormCellWithLabelTop(W5FormCellHelper fc){
 		StringBuilder buf = new StringBuilder();
 		String dsc = fc.getFormCell().getDsc();
-		if(fc.getFormCell().getControlType() == 5){//checkbox
-			buf.append(",\n_").append(dsc).append(" && _(FormGroup, {style:{marginBottom:'0.3rem', display: _").append(dsc).append(".hidden?'none':''}}, _(Label, {style:{marginRight:'1rem'}, className:'inputLabel', htmlFor:\"")
-			.append(dsc).append("\"},_").append(dsc).append(".label), _(Label,{ className: 'switch switch-3d switch-'+(viewMode?'secondary':'primary') }, _(_").append(dsc)
-			.append(".$||Input,viewMode?Object.assign({disabled:true},_").append(dsc).append("):_").append(dsc).append("),_('span', { className: 'switch-label' }),_('span', { className: 'switch-handle' })))");
+
+		if (fc.getFormCell().getControlType() == 102) {// displayField4info
+			buf.append(",\n  _(XFormItem, {xtype:'alert', label:'").append(GenericUtil.stringToJS(fc.getValue())).append("', type:'").append(labelMap[fc.getFormCell().getLookupQueryId()]);
+			if(!GenericUtil.isEmpty(fc.getFormCell().getLookupIncludedParams()))buf.append("',description:'").append(GenericUtil.stringToJS2(fc.getFormCell().getLookupIncludedParams()));
+			buf.append("'})");
 		} else {
-			if (fc.getFormCell().getControlType() == 102) {// displayField4info
-				buf.append("\n,_('div', {style:{padding:'0.45rem .85rem', borderRadius:30}, className:'alert alert-").append(labelMap[fc.getFormCell().getLookupQueryId()]).append("'}, _('i',{className:'icon-info'}),' ','").append(GenericUtil.stringToJS(fc.getValue())).append("')");
-			} else if (fc.getFormCell().getControlType() == 100) {// button
-				buf.append("\n, _").append(dsc).append(" && !_").append(dsc).append(".hidden && _(FormGroup, null, _(Button,_").append(dsc).append("))");
-			} else {
-				buf.append("\n, _").append(dsc).append(" && _(FormGroup, _").append(dsc).append(".hidden?{style:{display:'none'}}:(errors.").append(dsc).append(" && {className:'validation-error'}), _(Label, {className:'inputLabel', htmlFor:\"").append(dsc).append("\"},_").append(dsc).append(".label");
-				buf.append(", \" \", _").append(dsc).append(".hint && _(\"span\",{className:\"xlabel-hint\", title:_").append(dsc).append(".hint},_(\"i\",{className:\"icon-question\"}))");
-				if(FrameworkSetting.reactLabelRequired && /*fc.getFormCell().getNotNullFlag()!=0 && */fc.getFormCell().getNrdType()==0)buf.append(", \" \", !_").append(dsc).append(".readOnly && !viewMode && _").append(dsc).append(".required && _(\"span\",{className:\"xlabel-required\"},getLocMsg(\"required\"))");
-				buf.append("), viewMode ? iwb.getFieldRawValue(_").append(dsc).append(",this.state.options.").append(dsc).append(") :_(_").append(dsc).append(".$||Input,_").append(dsc).append("),errors.").append(dsc).append(" && _('small',null,errors.").append(dsc).append("))");
-			}
+				buf.append(",\n _(XFormItem, _").append(dsc).append(")");			
 		}
 		return buf;
 	}
-	private StringBuilder renderFormModuleListTop(int customizationId,
+	
+	private StringBuilder renderFormSection(int customizationId,
 			String xlocale, String formUniqueId,
-			List<W5FormCellHelper> formCells, String xtype, int defaultWidth/*-1:modal*/) {
+			List<W5FormCellHelper> formCells, String xtype, int openIn, int defaultWidth) {
 		StringBuilder buf = new StringBuilder();
 		// if(xtype!=null)buf.append("{frame:true,xtype:'").append(xtype).append("'");
 		if(xtype!=null)buf.append(xtype);
@@ -1646,62 +1669,63 @@ public class PrimeReact16 implements ViewAdapter {
 		if(lc>2)lc=2;
 
 
-		boolean modal = defaultWidth==-1;
-		int lg = modal?12:Math.min(12, (defaultWidth/100));// Large >=992px
+		int lg = openIn!=0?12:Math.min(12, (defaultWidth/100));// Large >=992px
 		
 		if (lc == 0) {// hersey duz
 
 
-			buf.append("_('div',{className:'p-grid p-fluid'}, _('div',{className:'p-col-12 p-md-").append(lg).append("'}");
+			//buf.append("items:[");
+			boolean b = false;
 			for (int i = 0; i < formCells.size(); i++) {
 				W5FormCellHelper fc = formCells.get(i);
 				if (fc.getFormCell().getActiveFlag() == 0 || fc.getFormCell().getControlType()==0)
 					continue;
 //				String dsc = fc.getFormCell().getDsc();
+				if(b)buf.append(", "); else b=true;
 				
 				if (i < formCells.size() - 1 && formCells.get(i + 1).getFormCell().getControlType() != 0 && formCells.get(i + 1).getFormCell().getActiveFlag() != 0
 						&& formCells.get(i + 1).getFormCell().getTabOrder() == fc.getFormCell().getTabOrder()) { // yanyana koymak icin. 
-					buf.append(", _('div',{className:'p-grid'}");
+					buf.append("[");
 					
 
-					buf.append(",_('div',{className:'p-col-12 p-md-").append(Math.min(12, (fc.getFormCell().getControlWidth()/100))).append("'}").append(renderFormCellWithLabelTop(fc)).append(")");
+					buf.append(renderFormCell(fc));
 					while (i < formCells.size() - 1 && formCells.get(i + 1).getFormCell().getControlType() != 0 && formCells.get(i + 1).getFormCell().getTabOrder() == fc.getFormCell().getTabOrder()) {
 						i++;
 						fc = formCells.get(i);
-						buf.append(",_('div',{className:'p-col-12 p-md-").append(Math.min(12, (fc.getFormCell().getControlWidth()/100))).append("'}").append(renderFormCellWithLabelTop(fc)).append(")");
+						buf.append(", ").append(renderFormCell(fc));
 					}
-					buf.append(")");
+					buf.append("]");
 				} else {
-					buf.append(renderFormCellWithLabelTop(fc));
+					buf.append(renderFormCell(fc));
 				}
 			}
-			buf.append("))");
+			//buf.append("\n ]");
 		} else {
-			buf.append("_('div',{className:'p-grid p-fluid'}, _('div',{className:'p-col-12 p-md-").append(lg).append("'}");
+			buf.append("_(Row,{className:'x-forms ant-form'}, _(Col,{span:").append(2*lg).append("}");
 			StringBuilder columnBuf = new StringBuilder();
 			int order=0;
 			for (int i = 0; i < formCells.size(); i++) {
 				W5FormCellHelper fc = formCells.get(i);
 				if (fc.getFormCell().getActiveFlag() == 0 || fc.getFormCell().getControlType()==0)
 					continue;
-				if (fc.getFormCell().getTabOrder() / 1000 != order) {
+				if (order<=2 && fc.getFormCell().getTabOrder() / 1000 != order) {
 					order = fc.getFormCell().getTabOrder() / 1000;
 
 					
 					if (columnBuf.length() > 0) {
-						buf.append(columnBuf.append("), _('div',{className:'p-col-12 p-md-").append(Math.min(12, (fc.getFormCell().getControlWidth()/100))).append("'}"));
+						buf.append(columnBuf.append("), _(Col,{span:").append(2*Math.min(12, (fc.getFormCell().getControlWidth()/100))).append("}"));
 						columnBuf.setLength(0);
 					}
 				}
 				if (i < formCells.size() - 1 && formCells.get(i + 1).getFormCell().getControlType() != 0 && formCells.get(i + 1).getFormCell().getActiveFlag() != 0
 						&& formCells.get(i + 1).getFormCell().getTabOrder() == fc.getFormCell().getTabOrder()) { // yanyana koymak icin. 
-					columnBuf.append(", _('div',{className:'p-grid'}");
+					columnBuf.append(",\n_(Row,{xs: 8, sm: 16, md:24, lg: 32 }}");
 					
-					columnBuf.append(",_('div',{className:'p-col-12 p-md-").append(Math.min(12, (fc.getFormCell().getControlWidth()/100))).append("'}").append(renderFormCellWithLabelTop(fc)).append(")"); //").append(fc.getFormCell().getControlWidth()>200 ? 12:xs).append("
+					columnBuf.append(", _(Col,{span:").append(2*Math.min(12, (fc.getFormCell().getControlWidth()/100))).append("}").append(renderFormCellWithLabelTop(fc)).append(")"); //").append(fc.getFormCell().getControlWidth()>200 ? 12:xs).append("
 					while (i < formCells.size() - 1 && formCells.get(i + 1).getFormCell().getControlType() != 0 && formCells.get(i + 1).getFormCell().getTabOrder() == fc.getFormCell().getTabOrder()) {
 						i++;
 						fc = formCells.get(i);
-						columnBuf.append(",_('div',{className:'p-col-12 p-md-").append(Math.min(12, (fc.getFormCell().getControlWidth()/100))).append("'}").append(renderFormCellWithLabelTop(fc)).append(")");
+						columnBuf.append(", _(Col,{span:").append(2*Math.min(12, (fc.getFormCell().getControlWidth()/100))).append("}").append(renderFormCellWithLabelTop(fc)).append(")");
 					}
 					columnBuf.append(")");
 				} else {
@@ -1715,118 +1739,81 @@ public class PrimeReact16 implements ViewAdapter {
 		return buf;
 	}
 	
-	private StringBuilder renderFormModuleList(int customizationId,
+	
+	private StringBuilder renderFormModuleListOld(int customizationId,
 			String xlocale, String formUniqueId,
-			List<W5FormCellHelper> formCells, String xtype, int defaultWidth, int labelWidth) {
+			List<W5FormCellHelper> formCells, String xtype, int openIn, int defaultWidth, int layout) {
 		StringBuilder buf = new StringBuilder();
 		// if(xtype!=null)buf.append("{frame:true,xtype:'").append(xtype).append("'");
 		if(xtype!=null)buf.append(xtype);
 		int lc = 0;
-		int[] maxWidths = new int[10], minWidths = new int[10];
 		for (W5FormCellHelper fc : formCells)
 			if (fc.getFormCell().getActiveFlag() != 0){
 				lc = Math.max(lc, fc.getFormCell().getTabOrder() / 1000);
-				if(lc<3){
-					maxWidths[lc] = Math.max(maxWidths[lc], fc.getFormCell().getControlWidth());
-					minWidths[lc] = Math.min(minWidths[lc], fc.getFormCell().getControlWidth());
-				}
 			}
 		if(lc>2)lc=2;
 
-		int totalControlWidth = 0;
-		for(int qi=0;qi<=lc;qi++){
-			if(minWidths[lc]<0) maxWidths[qi] =Math.max(-(350*minWidths[lc])/100,maxWidths[qi]);
-			maxWidths[qi]+=25;
-			totalControlWidth+=maxWidths[qi]+labelWidth; //padding yuzunden 25 pixel de yeniyo
-		}
-		if(totalControlWidth>defaultWidth) defaultWidth = totalControlWidth;
-		defaultWidth = 6 * defaultWidth / 5; //extjs -> bootstrap rate
-		labelWidth = 6 * labelWidth / 5;
+
+		int lg = openIn!=0?12:Math.min(12, (defaultWidth/100));// Large >=992px
+		
 		if (lc == 0) {// hersey duz
-			int xl = Math.min(12, (12*defaultWidth+600)/1140);// extraLarge >=1200px
-			int lg = Math.min(12, (12*defaultWidth+480)/960);// Large >=992px
-			int md = Math.min(12, (12*defaultWidth+360)/720);// Medium >=768px
-			int sm = Math.min(12, (12*defaultWidth+270)/540);// Small >=576px
-			
-			buf.append("_(Row, {style:{maxWidth:'").append(defaultWidth).append("px'}}, _(Col,{xs:'12',xl:'").append(xl).append("',lg:'").append(lg).append("',md:'").append(md).append("',sm:'").append(sm).append("'}");// ,\nautoHeight:false
 
-			int lxl = Math.max(1, Math.min(12, (12*labelWidth+300)/Math.min(defaultWidth,1140)));// extraLarge >=1200px
-			int llg = Math.max(1, Math.min(12, (12*labelWidth+240)/Math.min(defaultWidth,960)));// Large >=992px
-			int lmd = Math.min(12, (12*labelWidth+180)/Math.min(defaultWidth,720));// Medium >=768px
-			int lsm = Math.min(12, (12*labelWidth+130)/Math.min(defaultWidth,540));// Small >=576px
-			StringBuilder labelBuf = new StringBuilder(), inputBuf = new StringBuilder();
-			labelBuf.append("xs:'12',xl:'").append(lxl).append("',lg:'").append(llg).append("',md:'").append(lmd).append("',sm:'").append(lsm).append("'");
-			inputBuf.append("xs:'12',xl:'").append(12-lxl).append("',lg:'").append(12-llg).append("',md:'").append(12-lmd).append("',sm:'").append(12-lsm).append("'");
 
+			buf.append("_(Row,{className:'x-forms ant-form ant-form-").append(formLayoutMap[layout]).append("'}, _(Col,{span:").append(2*lg).append("}");
 			for (int i = 0; i < formCells.size(); i++) {
 				W5FormCellHelper fc = formCells.get(i);
 				if (fc.getFormCell().getActiveFlag() == 0 || fc.getFormCell().getControlType()==0)
 					continue;
-				if(fc.getFormCell().getControlType() == 5){
-					buf.append(", _(FormGroup, {row:true}, _(Label, {").append(labelBuf).append(",htmlFor:\"")
-					.append(fc.getFormCell().getDsc()).append("\"},_").append(fc.getFormCell().getDsc()).append(".label), _(Label,{className: 'switch switch-3d switch-primary' }, _").append(fc.getFormCell().getDsc())
-					.append(",_('span', { className: 'switch-label' }),_('span', { className: 'switch-handle' })))");
-				} else {
-					buf.append(", _(FormGroup, {row:true}, _(Label, {").append(labelBuf).append(",");//
-					if (fc.getFormCell().getControlType() == 102) {// displayField4info
-						buf.append("md:null}, \"").append(fc.getValue()).append("\"))");
-					} else {
-						buf.append("htmlFor:\"").append(fc.getFormCell().getDsc()).append("\"},_").append(fc.getFormCell().getDsc()).append(".label), _(Col,{").append(inputBuf).append("},_")
-						.append(fc.getFormCell().getDsc()).append("))");
+//				String dsc = fc.getFormCell().getDsc();
+				
+				if (i < formCells.size() - 1 && formCells.get(i + 1).getFormCell().getControlType() != 0 && formCells.get(i + 1).getFormCell().getActiveFlag() != 0
+						&& formCells.get(i + 1).getFormCell().getTabOrder() == fc.getFormCell().getTabOrder()) { // yanyana koymak icin. 
+					buf.append(",\n_(Row,{xs: 8, sm: 16, md:24, lg: 32 }");
+					
+
+					buf.append(",_(Col,{span:").append(2*Math.min(12, (fc.getFormCell().getControlWidth()/100))).append("}").append(renderFormCellWithLabelTop(fc)).append(")");
+					while (i < formCells.size() - 1 && formCells.get(i + 1).getFormCell().getControlType() != 0 && formCells.get(i + 1).getFormCell().getTabOrder() == fc.getFormCell().getTabOrder()) {
+						i++;
+						fc = formCells.get(i);
+						buf.append(",_(Col,{span:").append(2*Math.min(12, (fc.getFormCell().getControlWidth()/100))).append("}").append(renderFormCellWithLabelTop(fc)).append(")");
 					}
+					buf.append(")");
+				} else {
+					buf.append(renderFormCellWithLabelTop(fc));
 				}
 			}
-			buf.append("))");
+			buf.append("\n ))");
 		} else {
-			for(int qi=0;qi<=lc;qi++){
-				maxWidths[qi]=6*maxWidths[qi]/5;
-			}
-			int xl = Math.min(12, (12*(maxWidths[0]+labelWidth))/1140);// extraLarge >=1200px
-			int lg = Math.min(12, (12*(maxWidths[0]+labelWidth))/960);// Large >=992px
-			int md = Math.min(12, (12*(maxWidths[0]+labelWidth))/720);// Medium >=768px
-			int sm = Math.min(12, (12*(maxWidths[0]+labelWidth))/540);// Small >=576px
-			
-			buf.append("_(Row, {style:{maxWidth:'").append(defaultWidth).append("px'}}, _(Col,{xs:'12',xl:'").append(xl).append("',lg:'").append(lg).append("',md:'").append(md).append("',sm:'").append(sm).append("'}");// ,\nautoHeight:false
-
-			int lxl = Math.max(1, Math.min(12, (12*labelWidth+300)/Math.min(maxWidths[0]+labelWidth,1140)));// extraLarge >=1200px
-			int llg = Math.max(1, Math.min(12, (12*labelWidth+240)/Math.min(maxWidths[0]+labelWidth,960)));// Large >=992px
-			int lmd = Math.min(12, (12*labelWidth+180)/Math.min(maxWidths[0]+labelWidth,720));// Medium >=768px
-			int lsm = Math.min(12, (12*labelWidth+130)/Math.min(maxWidths[0]+labelWidth,540));// Small >=576px
-			StringBuilder labelBuf = new StringBuilder(), inputBuf = new StringBuilder();
-			labelBuf.append("xs:'12',xl:'").append(lxl).append("',lg:'").append(llg).append("',md:'").append(lmd).append("',sm:'").append(lsm).append("'");
-			inputBuf.append("xs:'12',xl:'").append(12-lxl).append("',lg:'").append(12-llg).append("',md:'").append(12-lmd).append("',sm:'").append(12-lsm).append("'");
-
+			buf.append("_(Row,{className:'x-forms ant-form'}, _(Col,{span:").append(2*lg).append("}");
 			StringBuilder columnBuf = new StringBuilder();
-			int order=-1;
+			int order=0;
 			for (int i = 0; i < formCells.size(); i++) {
 				W5FormCellHelper fc = formCells.get(i);
 				if (fc.getFormCell().getActiveFlag() == 0 || fc.getFormCell().getControlType()==0)
 					continue;
-				if (fc.getFormCell().getTabOrder() / 1000 != order) {
+				if (order<=2 && fc.getFormCell().getTabOrder() / 1000 != order) {
 					order = fc.getFormCell().getTabOrder() / 1000;
-					xl = Math.min(12, (12*(maxWidths[order]+labelWidth))/1140);// extraLarge >=1200px
-					lg = Math.min(12, (12*(maxWidths[order]+labelWidth))/960);// Large >=992px
-					md = Math.min(12, (12*(maxWidths[order]+labelWidth))/720);// Medium >=768px
-					sm = Math.min(12, (12*(maxWidths[order]+labelWidth))/320);// Small >=576px
 
-
+					
 					if (columnBuf.length() > 0) {
-						buf.append(columnBuf.append("), _(Col,{xs:'12',xl:'").append(xl).append("',lg:'").append(lg).append("',md:'").append(md).append("',sm:'").append(sm).append("'}"));
+						buf.append(columnBuf.append("), _(Col,{span:").append(2*Math.min(12, (fc.getFormCell().getControlWidth()/100))).append("}"));
 						columnBuf.setLength(0);
 					}
 				}
-				if(fc.getFormCell().getControlType() == 5){
-					columnBuf.append(", _(FormGroup, {row:true}, _(Label, {").append(labelBuf).append(",htmlFor:\"")
-					.append(fc.getFormCell().getDsc()).append("\"},_").append(fc.getFormCell().getDsc()).append(".label), _(Label,{ className: 'switch switch-3d switch-primary' }, _").append(fc.getFormCell().getDsc())
-					.append(",_('span', { className: 'switch-label' }),_('span', { className: 'switch-handle' })))");
-				} else {
-					columnBuf.append(", _(FormGroup, {row:true}, _(Label, {").append(fc.getFormCell().getControlType() == 102 ? "xxmd:null":labelBuf).append(",");//
-					if (fc.getFormCell().getControlType() == 102) {// displayField4info
-						columnBuf.append("}, \"").append(fc.getValue()).append("\"))");
-					} else {
-						columnBuf.append("htmlFor:\"").append(fc.getFormCell().getDsc()).append("\"},_").append(fc.getFormCell().getDsc()).append(".label), _(Col,{").append(inputBuf).append("},_")
-						.append(fc.getFormCell().getDsc()).append("))");
+				if (i < formCells.size() - 1 && formCells.get(i + 1).getFormCell().getControlType() != 0 && formCells.get(i + 1).getFormCell().getActiveFlag() != 0
+						&& formCells.get(i + 1).getFormCell().getTabOrder() == fc.getFormCell().getTabOrder()) { // yanyana koymak icin. 
+					columnBuf.append(",\n_(Row,{xs: 8, sm: 16, md:24, lg: 32 }}");
+					
+					columnBuf.append(", _(Col,{span:").append(2*Math.min(12, (fc.getFormCell().getControlWidth()/100))).append("}").append(renderFormCellWithLabelTop(fc)).append(")"); //").append(fc.getFormCell().getControlWidth()>200 ? 12:xs).append("
+					while (i < formCells.size() - 1 && formCells.get(i + 1).getFormCell().getControlType() != 0 && formCells.get(i + 1).getFormCell().getTabOrder() == fc.getFormCell().getTabOrder()) {
+						i++;
+						fc = formCells.get(i);
+						columnBuf.append(", _(Col,{span:").append(2*Math.min(12, (fc.getFormCell().getControlWidth()/100))).append("}").append(renderFormCellWithLabelTop(fc)).append(")");
 					}
+					columnBuf.append(")");
+				} else {
+					columnBuf.append(renderFormCellWithLabelTop(fc));
+
 				}
 			}
 			buf.append(columnBuf.append("))"));
@@ -1849,7 +1836,7 @@ public class PrimeReact16 implements ViewAdapter {
 			String dsc= fc.getFormCell().getDsc();
 			if(fc.getFormCell().getControlType() == 5){
 				buf.append(",\n_").append(dsc).append(" && _(FormGroup, {style:{marginBottom:'0.3rem', display: _").append(dsc).append(".hidden?'none':''}}, _(Label,{ className: 'switch switch-3d switch-primary' }, _(_").append(dsc)
-				.append(".$||Input,_").append(dsc).append("),_('span', { className: 'switch-label' }),_('span', { className: 'switch-handle' })), _(Label, {style:{marginLeft:'1rem'},htmlFor:\"")
+				.append(".$||InputText,_").append(dsc).append("),_('span', { className: 'switch-label' }),_('span', { className: 'switch-handle' })), _(Label, {style:{marginLeft:'1rem'},htmlFor:\"")
 				.append(dsc).append("\"},_").append(dsc).append(".label))");
 			} else {
 				if (fc.getFormCell().getControlType() == 102) {// displayField4info
@@ -1857,7 +1844,7 @@ public class PrimeReact16 implements ViewAdapter {
 				} else if (fc.getFormCell().getControlType() == 100) {// button
 					buf.append("\n, _").append(dsc).append(" && !_").append(dsc).append(".hidden && _(FormGroup, null, _(Button,_").append(dsc).append("))");
 				} else {
-					buf.append("\n, _").append(dsc).append(" && _(FormGroup, _").append(dsc).append(".hidden?{style:{display:'none'}}:null, _(Label, {className:'inputLabel', htmlFor:\"").append(dsc).append("\"},_").append(dsc).append(".label), _(_").append(dsc).append(".$||Input,_").append(dsc).append("))");
+					buf.append("\n, _").append(dsc).append(" && _(FormGroup, _").append(dsc).append(".hidden?{style:{display:'none'}}:null, _(Label, {className:'inputLabel', htmlFor:\"").append(dsc).append("\"},_").append(dsc).append(".label), _(_").append(dsc).append(".$||InputText,_").append(dsc).append("))");
 				}
 			}
 		}
@@ -1902,29 +1889,38 @@ public class PrimeReact16 implements ViewAdapter {
 		}
 		if(cellResult.getFormCell().getControlType()==2 && cellResult.getFormCell().getParentFormCellId()!=0 && cellResult.getFormCell().getParentFormCellId()!=cellResult.getFormCell().getFormCellId()) {
 			for(W5FormCellHelper fcr:formResult.getFormCellResults())if(fcr.getFormCell().getFormCellId()==cellResult.getFormCell().getParentFormCellId()) {
-				buf.append(",isValidDate:(current)=> {return values.").append(fcr.getFormCell().getDsc()).append(" ? current.isSameOrAfter(moment(values.").append(fcr.getFormCell().getDsc()).append(",iwb.dateFormat)):true}");
+				buf.append(",minDate:values.").append(fcr.getFormCell().getDsc()).append(" ? moment(values.").append(fcr.getFormCell().getDsc()).append(",'").append(dateFormatMulti[formResult!=null && formResult.getScd()!=null ? GenericUtil.uInt(formResult.getScd().get("date_format")):0]).append("').toDate():null");
 			}
 		}
 		
 		return buf;
 	}
 
+	private StringBuilder serializeFormula(String f) {
+		StringBuilder buf = new StringBuilder();
+		buf.append("(()=>{try{\n").append(f!=null && f.contains("return")?"":"return ")
+				.append(f).append("\n}catch(ee){return ''+ee}})()");
+		return buf;
+	}
 	
-	@SuppressWarnings("unchecked")
+	
 	private StringBuilder serializeFormCell(int customizationId,
 			String xlocale, W5FormCellHelper cellResult, W5FormResult formResult) {
 		W5FormCell fc = cellResult.getFormCell();
 		String value = cellResult.getValue(); // bu ilerde hashmap ten gelebilir
+		String label = LocaleMsgCache.get2(customizationId, xlocale, fc.getLocaleMsgKey());
 		// int customizationId =
 		// PromisUtil.uInt(formResult.getScd().get("customizationId"));
 		StringBuilder buf = new StringBuilder();
 		if (fc.getControlType() == 0)return buf.append("'").append(GenericUtil.stringToJS(value)).append("'");
-		buf.append("{");
+		buf.append("{key:'").append(fc.getFormCellId()).append("',");
 		
-		if (fc.getControlType() == 102)
-			return buf.append("$:'div', className:'alert alert-").append(labelMap[fc.getLookupQueryId()]).append("',children:[_('i',{className:'icon-info'}),' ','").append(GenericUtil.stringToJS(value)).append("']}");
-		else if ((fc.getControlType() == 101 || cellResult.getHiddenValue() != null)/* && (fc.getControlTip()!=9 && fc.getControlTip()!=16) */) {
-			buf.append("type:'text', readOnly:true, hiddenValue:'").append(GenericUtil.stringToJS(cellResult.getHiddenValue())).append("',label:'").append(LocaleMsgCache.get2(customizationId, xlocale, fc.getLocaleMsgKey())).append("',disabled:true, value:'").append(GenericUtil.stringToJS(value)).append("'");
+		if (fc.getControlType() == 102) {
+			buf.append("xtype:'alert', type:'").append(labelMap[fc.getLookupQueryId()]).append("',label:'").append(GenericUtil.stringToJS(value!=null ? value: label));
+			if(!GenericUtil.isEmpty(fc.getLookupIncludedParams()))buf.append("',description:'").append(GenericUtil.stringToJS2(fc.getLookupIncludedParams()));
+			return buf.append("'}");
+		} else if ((fc.getControlType() == 101 || cellResult.getHiddenValue() != null)/* && (fc.getControlTip()!=9 && fc.getControlTip()!=16) */) {
+			buf.append("type:'text', readOnly:true, hiddenValue:'").append(GenericUtil.stringToJS(cellResult.getHiddenValue())).append("',label:'").append(label).append("',disabled:true, value:'").append(GenericUtil.stringToJS(value)).append("'");
 			if(fc.get_sourceObjectDetail()==null && !GenericUtil.isEmpty(fc.getExtraDefinition())){
 				if(!fc.getExtraDefinition().startsWith(",")) {
 					buf.append(",");
@@ -1937,31 +1933,34 @@ public class PrimeReact16 implements ViewAdapter {
 			
 		}
 
+		boolean skipValue = false;
 		switch(fc.getControlType()){
-		case	1:buf.append("$:InputText");
-			break;//string
-		case	42:buf.append("$:Password");break;
-		case	2:buf.append("$:Calendar, dateFormat:'").append(FrameworkCache.getAppSettingStringValue(customizationId, "date_format", dateFormatMulti[formResult!=null && formResult.getScd()!=null ? GenericUtil.uInt(formResult.getScd().get("date_format")):0])).append("',showTime:false, closeOnSelect:true");break; //TODO:date
-		case	18:buf.append("$:Calendar, dateFormat:'").append(FrameworkCache.getAppSettingStringValue(customizationId, "date_format", dateFormatMulti[formResult!=null && formResult.getScd()!=null ? GenericUtil.uInt(formResult.getScd().get("date_format")):0])).append("',showTime:true,hourFormat:24");break; //TODO:datetime
-		case	22:buf.append("$:Calendar, timeOnly:true, showTime:true, hourFormat:24");break; //TODO:time
+		case	103:return buf.append("xtype:'divider', label:'").append(label).append("'}");
+		case	1:buf.append("xtype:'text'");break;//string
+		case	42:buf.append("xtype:'password'");break;
+		case	2:buf.append("xtype:'date'");break; //TODO:date
+		case	18:buf.append("xtype:'timestamp'");break; //TODO:datetime
+		case	22:buf.append("xtype:'time'");break; //TODO:time
 		case	3://double
-		case	4://integer
-			buf.append("$:InputNumber,style:{textAlign:'right'},className:'form-control");
-			if(fc.getNotNullFlag()!=0)buf.append("',required:true");else buf.append("'");
-			if(fc.getControlType()==3)
-				buf.append(",mode:'currency', currency:'USD'");
-			else
-				buf.append(",mode:'decimal'");
+			buf.append("xtype:'numeric', precision:").append(fc.getLookupQueryId()==0?2:fc.getLookupQueryId());
 			break;//int
-		case	5:buf.append("$:InputSwitch");break;
-		case	100:buf.append("$:Button,color:'primary',onClick:(ax){").append(fc.getDefaultValue()).append("},children:[");
-				if(fc.getLocaleMsgKey().startsWith("icon-"))buf.append("_('i',{className:'").append(fc.getLocaleMsgKey()).append("'})]");
-				else buf.append("'").append(LocaleMsgCache.get2(customizationId, xlocale, fc.getLocaleMsgKey())).append("']");
+		case	4://integer
+			buf.append("xtype:");
+			switch(fc.getLookupQueryId()) {
+			case	3:buf.append("'slider'");break;
+			case	2:buf.append("'rating'");break;
+			default: buf.append("'integer'");
+			}
+
+
+			break;//int
+		case	5:buf.append("xtype:'checkbox'");break;
+		case	100:buf.append("xtype:'button', onClick:(event)=>{").append(fc.getExtraDefinition()).append("},label:'").append(label).append("'");
+				if(!GenericUtil.isEmpty(fc.getLookupIncludedParams()))buf.append(", icon:'").append(fc.getLocaleMsgKey()).append("'");
 				if(fc.getControlWidth()>0)buf.append(",width:").append(fc.getControlWidth());
-				if(!GenericUtil.isEmpty(fc.getExtraDefinition())){
-					buf.append(fc.getExtraDefinition());//button
-				}
-				return buf.append(serializeFormCellProperty(cellResult, formResult)).append("}");
+				buf.append(",type:'").append(colorMap[fc.getLookupQueryId()]).append("'");
+
+				return buf.append(serializeFormCellProperty(cellResult, formResult)).append(", labelSpan}");
 
 		case	6://combo static
 		case	8:// lovcombo-static
@@ -1971,12 +1970,15 @@ public class PrimeReact16 implements ViewAdapter {
 		case	15://lovcombo query
 		case	59://superbox lovcombo query
 			if(fc.getControlType()==8 ||fc.getControlType()==58 || fc.getControlType()==15 ||fc.getControlType()==59)
-				buf.append("$:MultiSelect");
+				buf.append("xtype:'").append(formResult!=null && fc.getParentFormCellId()==0?"combo-multi'":"checkbox-group'");
 			else
-				buf.append("$:Dropdown");
+				buf.append("xtype:'").append(formResult!=null && fc.getParentFormCellId()==0?"combo'":"radio-group'");
+			if(formResult!=null && fc.getParentFormCellId()==2) {
+				buf.append(", optionType:'button', buttonStyle:'solid'");
+			}
 			
-			buf.append(", placeholder: getLocMsg('select_placeholder'), optionValue:'id',optionLabel:'dsc',options:[");//static combo
-			if ((fc.getControlType()==6 || fc.getControlType()==8 ||fc.getControlType()==58) && cellResult.getLookupListValues() != null) {
+			buf.append(", placeholder: getLocMsg('select_placeholder'), options:options.").append(fc.getDsc()).append("||[]");//static combo
+			/*if ((fc.getControlType()==6 || fc.getControlType()==8 ||fc.getControlType()==58) && cellResult.getLookupListValues() != null) {
 				boolean b1=false;
 				
 				for (W5Detay p : (List<W5Detay>) cellResult
@@ -2022,13 +2024,13 @@ public class PrimeReact16 implements ViewAdapter {
 					buf.append(",{dsc:'approved', id:998},{dsc:'rejected', id:999}");
 				}
 			}
-			buf.append("], clearable:").append(fc.getNotNullFlag()==0);
+			buf.append("]");*/
 		break; 
 		
 		case	9://combo query remote
 		case	16://lovcombo query remote
-			buf.append("$:Select, placeholder: getLocMsg('select_placeholder'), options:options.").append(fc.getDsc()).append("||[],optionValue:'id', optionLabel:'dsc',clearable:").append(fc.getNotNullFlag()==0);
-			if(fc.getControlType()==16)buf.append(",multi:true");
+			buf.append("xtype:'").append(fc.getControlType()==16?"dynamic-combo-multi":"dynamic-combo")
+				.append("', placeholder: getLocMsg('select_placeholder'), options:options.").append(fc.getDsc()).append("||[]");
 			break;
 		case	10://advanced select: TODO ilk geldiginde oo loadOptions'ta atanacak
 
@@ -2036,101 +2038,148 @@ public class PrimeReact16 implements ViewAdapter {
 					"advanced_select_max_rows");
 			if (maxRows == 0)
 				maxRows = 100;
-			buf.append("$:AutoComplete, cacheOptions:!0,/*isLoading:!0, */defaultOptions:options.").append(fc.getDsc()).append("||[],valueKey:'id', labelKey:'dsc', placeholder:'").append(LocaleMsgCache.get2(0, xlocale, "autocomplete_placeholder"))
-				.append("', loadOptions:(input, callback)=>{var xself=this;if(!input)callback();else iwb.request({url:'ajaxQueryData?_renderer=react16&_qid=").append(fc.getLookupQueryId()).append("&limit=").append(maxRows);
+			buf.append("xtype:'autocomplete', placeholder:'").append(LocaleMsgCache.get2(0, xlocale, "autocomplete_placeholder"))
+				.append("', url:'query/").append(fc.getLookupQueryId()).append("?limit=").append(maxRows);
 			if(!GenericUtil.isEmpty(fc.getLookupIncludedParams()))buf.append("&").append(fc.getLookupIncludedParams());
-			buf.append("', params:{xdsc:input}, successCallback:function(result, cfg){var options=xself.state.options||{};options.").append(fc.getDsc()).append("=result.data;xself.setState({options});callback(null, {options: result.data,complete: false});}});},clearable:").append(fc.getNotNullFlag()==0);
+			buf.append("', options:options.").append(fc.getDsc()).append("||[],onQuery4Autocomplete: this.onQuery4Autocomplete");
 		break; // advanced select
 		case	23://treecombo(local)
 		case	26://lovtreecombo(local) TODO
-			buf.append("type:'text'");
+			buf.append("xtype:'tree-combo");
+			if(fc.getControlType()==26)buf.append("-multi");
+			buf.append("', placeholder: getLocMsg('select_placeholder'), options:options.").append(fc.getDsc()).append("||[]");//static combo
+/*
+			if(cellResult.getLookupQueryResult()!=null && cellResult.getLookupQueryResult().getData() != null) {
+				boolean b1 = false;
+				for (Object[] p : cellResult.getLookupQueryResult().getData()) {
+					if (b1)
+						buf.append(",");
+					else
+						b1 = true;
+					boolean bb = false;
+					buf.append("{");
+					for (W5QueryField f : cellResult.getLookupQueryResult().getQuery().get_queryFields()) {
+						Object z = p[f.getTabOrder() - 1];
+						if (bb)
+							buf.append(",");
+						else
+							bb = true;
+						if (z == null)z = "";
+						buf.append(f.getDsc()).append(":'")
+								.append(f.getPostProcessType() == 2 ? LocaleMsgCache
+										.get2(customizationId, xlocale,
+												z.toString()) : GenericUtil
+										.stringToJS(z.toString()))
+								.append("'");
+					}
+					buf.append("}");
+				}
+			}
+			buf.append("]");
+*/
+				
 		break; // 		
 
 		case	12://html editor
-			buf.append("$:Editor, ");
+			buf.append("xtype:'html-editor'");
+			break;
 		case	25://textarea(ozel tanimlama)
-		case	41://codemirror
 		case	11:
-			buf.append("$:InputTextarea");
+			buf.append("xtype:'textarea'");
+			break; // textarea
+		case	41://monaco
+			buf.append("xtype:'code-editor', language:'").append(new String[]{"javascript","html","xml","sql","css"}[fc.getLookupQueryId()>0 && fc.getLookupQueryId()<6 ?fc.getLookupQueryId()-1:0]).append("'");
+
 			break; // textarea
 //		{ view:"label", label:'Fill the form below to access <br>the main datacore.'
 		
 		case	71://file attachment
-			buf.append("$:FileUpload, parentCt: this, onFileChange: this.onFileChange(), cfg:cfgForm");
-			Map evm = cellResult.getExtraValuesMap();
-			if(!GenericUtil.isEmpty(evm)) {
-				buf.append(", fileId:").append(evm.get("id")).append(", fileSize:").append(evm.get("fsize")).append(", fileName:\"").append(GenericUtil.stringToJS2((String)evm.get("dsc"))).append("\"");
-			}
+			buf.append("xtype:'file-upload', options:options.").append(fc.getDsc()).append("||{}, url:'./upload.form?table_id=").append(formResult!=null ? formResult.getForm().getObjectId():0)
+				.append("&table_pk=").append(1).append("'");
+
 			if(fc.getLookupQueryId()>0 && fc.getLookupQueryId()<=fileAcceptMap.length) {
 				buf.append(", accept:\"").append(fileAcceptMap[fc.getLookupQueryId()-1]).append("\"");
 			} else if(fc.getLookupQueryId()==-1 && !GenericUtil.isEmpty(fc.getLookupIncludedValues()))
 					buf.append(", accept:\"").append(GenericUtil.stringToJS2(fc.getLookupIncludedValues())).append("\"");
 			break;
-		
+		case	98:			
+			buf.append("xtype:'custom-form-element', componentId:").append(fc.getLookupQueryId());
+			break;
+		case	96://detail-form-multi
+			skipValue = true;
+			buf.append("xtype:'calculated-value', value:").append(serializeFormula(fc.getLookupIncludedParams()));
+			break;
+		case	97://detail-form-multi
+
+			W5FormResult dfr = formResult.getModuleFormMap().get(-fc.getLookupQueryId());
+			if(dfr==null)return buf.append("xtype:'error', description:'Wrong definition', title:'").append(fc.getDsc()).append("'}");
+			buf.append("xtype:'detail-form-multi', formId:").append(fc.getLookupQueryId()).append(", component:").append(dfr.getForm().getDsc()).append(", columns:[");
+			for(W5FormCell fc2:dfr.getForm().get_formCells())if(fc2.getActiveFlag()!=0 && fc2.getControlType()>0 && fc2.getControlType()<=100) {
+				buf.append("{label:'").append(LocaleMsgCache.get2(formResult.getScd(), fc2.getLocaleMsgKey()))
+					.append("', width:").append(fc2.getControlWidth());
+				if(fc2.getNotNullFlag()!=0)buf.append(", required:true");
+				buf.append("},");
+			}
+			buf.append("{label:'',width:30}], detail:details && details['").append(fc.getLookupQueryId()).append("']");
+			skipValue = true;
+			break;
 		default:			
-			buf.append("type:'text'");
+			buf.append("xtype:'text'");
 			break;
 		
 		
 		}
-		buf.append(",name:'").append(fc.getDsc()).append("'");//,id:'").append(fc.getDsc()).append("'");
-		
-		if(fc.getControlType()!=3 && fc.getControlType()!=4 && fc.getControlType()!=5 && fc.getControlType()!=22 && fc.getNotNullFlag()!=0)buf.append(",required:true");
-		buf.append(", label:'").append(LocaleMsgCache.get2(customizationId, xlocale, fc.getLocaleMsgKey())).append("'");
+		buf.append(",name:'").append(fc.getDsc()).append("',_id:").append(fc.getFormCellId());
 
-		if(formResult!=null){ //FORM
-			switch(fc.getControlType()){
-			case	8:	case	58: case	15:case	59://fc.getControlTip()==8 ||fc.getControlTip()==58 || fc.getControlTip()==15 ||fc.getControlTip()==59
-				buf.append(",value:values.").append(fc.getDsc()).append(" ? values.").append(fc.getDsc()).append(".split(','):[]");
-				break;
-			case	5:
-					buf.append(",checked:values.").append(fc.getDsc()).append("||false");
-					break; 
-			case	10:
-				buf.append(", value: values.").append(fc.getDsc()).append(" ? iwb.findAsyncValue(values.").append(fc.getDsc()).append(",options.").append(fc.getDsc()).append("):''");
-				break;
-			default:buf.append(",value:values.").append(fc.getDsc()).append("||''");
-			}
-		//	if(true)buf.append(",on:{onChange:function(newv, oldv){this.validate();}}");
-			
-			switch(fc.getControlType()){
-			case	6:	case	7:
-			case	9:	
-				buf.append(",onChange:this.onComboChange('").append(fc.getDsc()).append("')");
-				break;
-			case 10:
-				buf.append(",onChange:this.onComboChange('").append(fc.getDsc()).append("')");
-				break;
-			case	8:	case	58: case	15:case 16:case	59://fc.getControlTip()==8 ||fc.getControlTip()==58 || fc.getControlTip()==15 ||fc.getControlTip()==59
-				buf.append(",onChange:this.").append(fc.getParentFormCellId()==1?"onCheckboxGroupChange":"onLovComboChange").append("('").append(fc.getDsc()).append("')");
-				break;
-			case	3:	case	4:
-				buf.append(",onValueChange:this.onNumberChange('").append(fc.getDsc()).append("')");
-				break;
-			case	2:	case	18://case	22:
-				buf.append(",onChange:this.onDateChange('").append(fc.getDsc()).append("',").append(fc.getControlType()==18).append(")");
-				break;
-			case	12:	//html editor:
-				buf.append(",onHtmlChange:this.onHtmlChange('").append(fc.getDsc()).append("')");
-				break;
-			case 22:
-				buf.append(",onChange:this.onTimeChange('").append(fc.getDsc()).append("')");
-				break;
-			default:
-				buf.append(",onChange:this.onChange");
-			}
-		} else { //grid/toolbar/list/gantt
-			buf.append(",_control:").append(fc.getControlType());
-			switch(fc.getControlType()){
-				case	5:
-					buf.append(",defaultChecked:").append(GenericUtil.uInt(value)>0);
-					break; 
-				default:buf.append(",defaultValue:'").append(GenericUtil.stringToJS(value)).append("'");
+		if(fc.getNotNullFlag()!=0)buf.append(",required:true");
+		
+		buf.append(", label:'").append(label).append("'");
+
+		if(!skipValue) {
+			if(formResult!=null){ //FORM
+				buf.append(",value:values.").append(fc.getDsc()).append("||null");
+			//	if(true)buf.append(",on:{onChange:function(newv, oldv){this.validate();}}");
+				
+				switch(fc.getControlType()){
+				case	6:	case	7:
+				case	9:	
+					buf.append(",onChange:this.onComboChange");
+					break;
+				case 10:
+					buf.append(",onChange:this.onAutocompleteChange");
+					break;
+				case	8:	case	58: case	15:case 16:case	59: case 26://fc.getControlTip()==8 ||fc.getControlTip()==58 || fc.getControlTip()==15 ||fc.getControlTip()==59
+					buf.append(",onChange:this.").append(fc.getParentFormCellId()==1?"onCheckboxGroupChange":"onMultiComboChange");
+					break;
+	/*			case	2:	case	18://case	22:
+					buf.append(",onChange:this.onDateChange");
+					break; */
+		/*		case	12:	//html editor:
+					buf.append(",onHtmlChange:this.onHtmlChange");
+					break; */
+				case	71://file upload
+					buf.append(",onChange:this.onFileChange");
+					break;
+	/*			case 22:
+					buf.append(",onChange:this.onTimeChange");
+					break; */
+				default:
+					buf.append(",onChange:this.onChange");
+				}
+			} else { //grid/toolbar/list/gantt
+				buf.append(",_control:").append(fc.getControlType());
+				switch(fc.getControlType()){
+					case	5:
+						buf.append(",defaultChecked:").append(GenericUtil.uInt(value)>0);
+						break; 
+					default:buf.append(",defaultValue:'").append(GenericUtil.stringToJS(value)).append("'");
+				}
 			}
 		}
+		buf.append(",error:errors.").append(fc.getDsc());
 		buf.append(serializeFormCellProperty(cellResult, formResult));
 		if(!GenericUtil.isEmpty(fc.getExtraDefinition()))buf.append(fc.getExtraDefinition());
-
+		buf.append(", labelSpan");
 		buf.append("}");
 
 		return buf;
@@ -2386,55 +2435,88 @@ public class PrimeReact16 implements ViewAdapter {
 		W5Grid g = gridResult.getGrid();
 		W5Query q = g.get_query();
 		StringBuilder buf = new StringBuilder();
-		boolean expander = false;
 		if(dsc==null)dsc=g.getDsc();
 		
-		buf.append("var ").append(dsc).append(" = {gridId:")
-				.append(g.getGridId()).append(",queryId:").append(g.getQueryId()).append(",setCmp:(o)=> {")
-				.append(dsc).append(".cmp = o;}");
-		if (!gridResult.isViewLogMode() && g.getSelectionModeType()!=0){
-			if(g.getSelectionModeType()==2 || g.getSelectionModeType()==3)
-				buf.append(", multiselect:true");
+		buf.append("var ").append(dsc).append(" = { gridId:")
+				.append(g.getGridId()).append(", queryId:").append(g.getQueryId());
+		String uniqueId = GenericUtil.getNextId("ng");
+		buf.append("\n, name:'").append(LocaleMsgCache.get2(scd,g.getLocaleMsgKey())).append("', id:'")
+			.append(uniqueId).append("', gridName:'").append(g.getDsc()).append("'");
+
+/*		
+		buf.append("\n, _url:'ajaxQueryData?_renderer=preact16&.t='+_page_tab_id+'&.w='+_webPageId+'&_qid=").append(g.getQueryId()).append("&_gid=").append(g.getGridId());
+
+		if (g.getDefaultPageRecordNumber() != 0)
+			buf.append("&firstLimit=").append(g.getDefaultPageRecordNumber());
+		buf.append("'");
+		*/
+		if (g.getSelectionModeType()!=0){
+			buf.append("\n, rowSelect:").append(g.getSelectionModeType()==2 || g.getSelectionModeType()==3 ? "'multi'":"'single'");
 		}
-		buf.append(",keyField:'").append(g.get_pkQueryField().getDsc()).append("'");
+		buf.append("\n, keyField:'").append(g.get_pkQueryField().getDsc()).append("'");
+		if (g.get_autoExpandField() != null) {
+			boolean b = true;
+			if (g.get_defaultCrudForm() != null
+					&& g.get_autoExpandField().getMainTableFieldId() != 0) {
+				W5Table t = FrameworkCache.getTable(scd, g
+						.get_defaultCrudForm().getObjectId());// g.get_defaultCrudForm().get_sourceTable();
+				if (t != null) {
+					W5TableField dt = t.get_tableFieldMap().get(
+							g.get_autoExpandField().getMainTableFieldId());
+					if (dt != null
+							&& !GenericUtil.accessControl(scd,
+									dt.getAccessViewTip(),
+									dt.getAccessViewRoles(),
+									dt.getAccessViewUsers()))
+						b = false;
+				}
+			}
+			if (b) {
+				buf.append(", mainColumn:'").append(g.get_autoExpandField().getDsc()).append("'");
+			}
+		}
+		
 		if(g.getTreeMasterFieldId() != 0) {
 			W5QueryField treeMasterField = g.get_queryFieldMap().get(g.getTreeMasterFieldId());
 			if(treeMasterField != null) {
-				buf.append(",tree:!0, treeParentKey:'parent_id', tableTreeColumn:'").append(treeMasterField.getDsc()).append("'");
+				buf.append("\n, tree:true, treeParentField:'").append(treeMasterField.getDsc()).append("'");
 			}
 		} else if(g.getGroupingFieldId()!=0) {
 			W5QueryField groupingField = g.get_queryFieldMap().get(g.getGroupingFieldId());
 			if(groupingField != null) {
-				buf.append(",groupColumn:'").append(groupingField.getDsc()).append("'");
-			} else buf.append(",_disableIntegratedGrouping:!0");
-		} else buf.append(",_disableIntegratedGrouping:!0");
+				buf.append("\n, groupColumn:'").append(groupingField.getDsc()).append("'");
+			}
+		}
+
 		
+
 		if (gridResult.getExtraOutMap() != null
 				&& !gridResult.getExtraOutMap().isEmpty()) {
-			buf.append(",\n extraOutMap:")
+			buf.append("\n, extraOutMap:")
 					.append(GenericUtil.fromMapToJsonString(gridResult
 							.getExtraOutMap()));
 		}
 
 			
 
+		buf.append("\n, gridReport:").append(FrameworkCache.roleAccessControl(scd, 105));
 		if (g.getDefaultWidth() != 0)
 			buf.append(", defaultWidth:").append(g.getDefaultWidth());
-		if (gridResult.isViewLogMode())
-			buf.append(", defaultHeight:").append(
-					FrameworkCache.getAppSettingIntValue(scd,
-							"log_default_grid_height"));
-		else {
-			if (g.getSelectionModeType() == 2 || g.getSelectionModeType() == 3) // multi Select
-				buf.append(",\n selectRow:{mode: 'checkbox',clickToSelect: true}");
-			if (g.getDefaultHeight() > 0)
-				buf.append(", defaultHeight:").append(g.getDefaultHeight());
 
-			buf.append(",\n gridReport:").append(FrameworkCache.roleAccessControl(scd, 105));
-		}
-		buf.append(",\n displayInfo:").append(g.getDefaultPageRecordNumber()>0);
+/*			if (g.getSelectionModeType() == 2 || g.getSelectionModeType() == 3) // multi Select
+				buf.append(",\n selectRow:{mode: 'checkbox',clickToSelect: true}"); */
+		if (g.getDefaultHeight() > 0)
+			buf.append(", defaultHeight:").append(g.getDefaultHeight());
+
+		
+//		buf.append("\n, displayInfo:").append(g.getDefaultPageRecordNumber()>0);
+
+		if (g.getDefaultPageRecordNumber() != 0)
+			buf.append(", pageSize:").append(g
+							.getDefaultPageRecordNumber());
+		
 		if(q.get_aggQueryFields()!=null) {
-			buf.append(",\n displayAgg:[");
+			buf.append(", displayAgg:[");
 			for(W5QueryField f:q.get_aggQueryFields())
 				buf.append("{id:'").append(f.getDsc()).append("', f:(x)=> _('span',{},'")
 				.append(LocaleMsgCache.get2(scd, f.getDsc())).append(" ', _('span',{style:{borderRadius:100, background:'rgba(228, 242, 251, 0.8)', padding:'2px 5px'}},fmtDecimal(x,2,2)))},");
@@ -2443,7 +2525,7 @@ public class PrimeReact16 implements ViewAdapter {
 		}
 
 		if (!GenericUtil.isEmpty(g.get_crudFormSmsMailList())) {
-			buf.append(",\n formSmsMailList:[");
+			buf.append("\n, formSmsMailList:[");
 			boolean b = false;
 			for (W5FormSmsMail fsm : g.get_crudFormSmsMailList())
 				if (((fsm.getSmsMailType() == 0 && FrameworkSetting.sms) || (fsm
@@ -2467,156 +2549,132 @@ public class PrimeReact16 implements ViewAdapter {
 			buf.append("]");
 		}
 		if (!GenericUtil.isEmpty(g.get_crudFormConversionList())) {
-			buf.append(",\n formConversionList:[")
+			buf.append("\n, formConversionList:[")
 					.append(serializeManualConversions(scd,
 							g.get_crudFormConversionList())).append("]");
 		}
 		
-		String uniqueId = GenericUtil.getNextId("ng");
-		if(false)buf.append(",striped:true,hover:true,bordered:false,");
-		buf.append(",name:'").append(LocaleMsgCache.get2(scd,
-						g.getLocaleMsgKey())).append("',\n id:'").append(uniqueId).append("'");
+	
 
+
+
+		if (g.get_defaultCrudForm() != null) { // insert update delete buttons
+			W5Form f = g.get_defaultCrudForm();
+			if(f.getObjectType()==2) { //table
+
+				W5Table t = FrameworkCache.getTable(scd, f
+						.getObjectId());// f.get_sourceTable();
+				boolean insertFlag = GenericUtil.accessControl(scd,
+						t.getAccessInsertTip(), t.getAccessInsertRoles(),
+						t.getAccessInsertUsers());
+
+				buf.append("\n, recordLabel:'")//.append(LocaleMsgCache.get2(scd,"new_record_prefix"))
+					.append(LocaleMsgCache.get2(scd,f.getLocaleMsgKey()).toUpperCase())
+					.append("', crudFormWidth:").append(f.getDefaultWidth());
+				
+				
+				buf.append(", crudFormId:")
+						.append(g.getDefaultCrudFormId())
+						.append(", crudTableId:")
+						.append(t.getTableId())
+						.append(", crudFlags:{insert:")
+						.append(insertFlag)
+						.append(", edit:")
+						.append(t.getAccessUpdateUserFields() != null
+								|| GenericUtil.accessControl(scd,
+										t.getAccessUpdateTip(),
+										t.getAccessUpdateRoles(),
+										t.getAccessUpdateUsers()))
+						.append(", remove:")
+						.append(t.getAccessDeleteUserFields() != null
+								|| GenericUtil.accessControl(scd,
+										t.getAccessDeleteTip(),
+										t.getAccessDeleteRoles(),
+										t.getAccessDeleteUsers()));
+				if (g.getInsertEditModeFlag() != 0 && insertFlag)
+					buf.append(", insertEditMode:true");
+				if (insertFlag) {
+					if (t.getCopyTip() == 1)
+						buf.append(", xcopy:true");
+					else if (t.getCopyTip() == 2)
+						buf.append(", ximport:true");
+				}
+				// if(PromisCache.getAppSettingIntValue(scd, "revision_flag")!=0
+				// && t.getRevisionFlag()!=0)buf.append(",xrevision:true");
+				buf.append("}");
+				if ((t.getDoUpdateLogFlag() != 0 || t.getDoDeleteLogFlag() != 0)
+						&& FrameworkCache.roleAccessControl(scd,
+								108))
+					buf.append(",\n logFlags:{edit:")
+							.append(t.getDoUpdateLogFlag() != 0)
+							.append(",remove:")
+							.append(t.getDoDeleteLogFlag() != 0).append("}");
+
+				if (g.getInsertEditModeFlag() != 0 && insertFlag)
+					buf.append(serializeGridRecordCreate(gridResult));
+				// if(f.get_sourceTable().getFileAttachmentFlag()!=0)
+				int tableId = t.getTableId();
+				if (tableId != 0 && scd != null) {
+
+					if (FrameworkCache.getAppSettingIntValue(customizationId,
+							"file_attachment_flag") != 0
+							&& t.getFileAttachmentFlag() != 0
+							&& FrameworkCache.roleAccessControl(scd,
+									101)
+							&& FrameworkCache.roleAccessControl(scd,
+									 102))
+						buf.append(",\n fileAttachFlag:true");
+					if (FrameworkCache.getAppSettingIntValue(customizationId,
+							"make_comment_flag") != 0
+							&& t.getMakeCommentFlag() != 0
+							&& FrameworkCache.roleAccessControl(scd,
+									 103))
+						buf.append(",\n makeCommentFlag:true");
+					
+				
+				}
+			} else {
+				buf.append(",\n crudFormId:")
+				.append(g.getDefaultCrudFormId())
+				.append(", crudFlags:{insert:!0}");
+			}
+		}
+
+		if (!GenericUtil.isEmpty(g.get_toolbarItemList())) { // extra
+															// buttonlari
+															// var mi yok
+															// mu?
+			StringBuilder buttons = serializeToolbarItems(scd,
+					g.get_toolbarItemList(), false, gridResult.getExtraOutMap());
+			if (buttons != null && buttons.length() > 1) {
+				buf.append(",\n extraButtons:[")
+						.append(LocaleMsgCache.filter2(customizationId,
+								xlocale, buttons.toString())).append("]");
+			}
+		}
+
+		if (!GenericUtil.isEmpty(g.get_menuItemList())) { // extra buttonlari
+															// var mi yok
+															// mu?
+			StringBuilder buttons = serializeMenuItems(scd,
+					g.get_menuItemList());
+			if (buttons != null && buttons.length() > 1) {
+				buf.append(",\n menuButtons:[").append(buttons).append("]");
+			}
+		}
 		
-			buf.append(",\n _url:'ajaxQueryData?_renderer=react16&.t='+_page_tab_id+'&.w='+_webPageId+'&_qid=")
-					.append(g.getQueryId()).append("&_gid=")
-					.append(g.getGridId());
 
-			if (gridResult.isViewLogMode() || g.getDefaultPageRecordNumber() != 0)
-				buf.append("&firstLimit=").append(gridResult.isViewLogMode() ? FrameworkCache
-								.getAppSettingIntValue(scd,"log_default_record_per_page") : g
-								.getDefaultPageRecordNumber())
-						.append("',remote:{sort: true}"); //pagination: true, filter: true, sort: true, cellEdit: true
-			else
-				buf.append("'");
-
-			
-			
-
-		if (gridResult.isViewLogMode() || g.getDefaultPageRecordNumber() != 0)
-			buf.append(",\n pageSize:").append(
-					gridResult.isViewLogMode() ? FrameworkCache
-							.getAppSettingIntValue(scd,
-									"log_default_record_per_page") : g
-							.getDefaultPageRecordNumber());
 
 		if (gridResult.getSearchFormResult() != null) {
 			gridResult.getSearchFormResult().setUniqueId("s-"+uniqueId);
-			buf.append(",\n searchForm:class extends XForm").append(serializeGetForm(gridResult.getSearchFormResult()));
+			buf.append("\n, searchForm:class extends XForm").append(serializeGetForm(gridResult.getSearchFormResult()));
 
 		}
 		
 		if(g.getDefaultPageRecordNumber()>0 && g.get_query()!=null && g.get_query().get_queryParams()!=null){
 			for(W5QueryParam qp:g.get_query().get_queryParams())if(qp.getDsc().equals("xsearch"))
-				buf.append(",\n globalSearch:true");
+				buf.append("\n, globalSearch:true");
 		}
-		
-		if (!gridResult.isViewLogMode()) {
-
-			if (g.get_defaultCrudForm() != null) { // insert update delete buttons
-				if(g.get_defaultCrudForm().getObjectType()==2) { //table
-					W5Table t = FrameworkCache.getTable(scd, g.get_defaultCrudForm()
-							.getObjectId());// g.get_defaultCrudForm().get_sourceTable();
-					boolean insertFlag = GenericUtil.accessControl(scd,
-							t.getAccessInsertTip(), t.getAccessInsertRoles(),
-							t.getAccessInsertUsers());
-	
-					if(true || FrameworkCache.getAppSettingIntValue(customizationId, "new_record_label_flag")!=0)
-						buf.append(",newRecordLabel:'").append(LocaleMsgCache.get2(scd,"new_record_prefix"))
-						.append(LocaleMsgCache.get2(scd,g.get_defaultCrudForm().getLocaleMsgKey()).toUpperCase()).append("'");
-					
-					buf.append(",\n crudFormId:")
-							.append(g.getDefaultCrudFormId())
-							.append(", crudTableId:")
-							.append(t.getTableId())
-							.append(", crudFlags:{insert:")
-							.append(insertFlag)
-							.append(",edit:")
-							.append(t.getAccessUpdateUserFields() != null
-									|| GenericUtil.accessControl(scd,
-											t.getAccessUpdateTip(),
-											t.getAccessUpdateRoles(),
-											t.getAccessUpdateUsers()))
-							.append(",remove:")
-							.append(t.getAccessDeleteUserFields() != null
-									|| GenericUtil.accessControl(scd,
-											t.getAccessDeleteTip(),
-											t.getAccessDeleteRoles(),
-											t.getAccessDeleteUsers()));
-					if (g.getInsertEditModeFlag() != 0 && insertFlag)
-						buf.append(",insertEditMode:true");
-					if (insertFlag) {
-						if (t.getCopyTip() == 1)
-							buf.append(",xcopy:true");
-						else if (t.getCopyTip() == 2)
-							buf.append(",ximport:true");
-					}
-					// if(PromisCache.getAppSettingIntValue(scd, "revision_flag")!=0
-					// && t.getRevisionFlag()!=0)buf.append(",xrevision:true");
-					buf.append("}");
-					if ((t.getDoUpdateLogFlag() != 0 || t.getDoDeleteLogFlag() != 0)
-							&& FrameworkCache.roleAccessControl(scd,
-									108))
-						buf.append(",\n logFlags:{edit:")
-								.append(t.getDoUpdateLogFlag() != 0)
-								.append(",remove:")
-								.append(t.getDoDeleteLogFlag() != 0).append("}");
-	
-					if (g.getInsertEditModeFlag() != 0 && insertFlag)
-						buf.append(serializeGridRecordCreate(gridResult));
-					// if(g.get_defaultCrudForm().get_sourceTable().getFileAttachmentFlag()!=0)
-					int tableId = t.getTableId();
-					if (tableId != 0 && scd != null) {
-
-						if (FrameworkCache.getAppSettingIntValue(customizationId,
-								"file_attachment_flag") != 0
-								&& t.getFileAttachmentFlag() != 0
-								&& FrameworkCache.roleAccessControl(scd,
-										101)
-								&& FrameworkCache.roleAccessControl(scd,
-										 102))
-							buf.append(",\n fileAttachFlag:true");
-						if (FrameworkCache.getAppSettingIntValue(customizationId,
-								"make_comment_flag") != 0
-								&& t.getMakeCommentFlag() != 0
-								&& FrameworkCache.roleAccessControl(scd,
-										 103))
-							buf.append(",\n makeCommentFlag:true");
-						
-					
-					}
-				} else {
-					buf.append(",\n crudFormId:")
-					.append(g.getDefaultCrudFormId())
-					.append(", crudFlags:{insert:!0}");
-				}
-			}
-
-			if (!GenericUtil.isEmpty(g.get_toolbarItemList())) { // extra
-																// buttonlari
-																// var mi yok
-																// mu?
-				StringBuilder buttons = serializeToolbarItems(scd,
-						g.get_toolbarItemList(), false, gridResult.getExtraOutMap());
-				if (buttons != null && buttons.length() > 1) {
-					buf.append(",\n extraButtons:[")
-							.append(LocaleMsgCache.filter2(customizationId,
-									xlocale, buttons.toString())).append("]");
-				}
-			}
-
-			if (!GenericUtil.isEmpty(g.get_menuItemList())) { // extra buttonlari
-																// var mi yok
-																// mu?
-				StringBuilder buttons = serializeMenuItems(scd,
-						g.get_menuItemList());
-				if (buttons != null && buttons.length() > 1) {
-					buf.append(",\n menuButtons:[").append(buttons).append("]");
-				}
-			}
-		}
-
-	
 		buf.append("\n}");
 
 		buf.append(serializeGridColumns(gridResult, dsc));
@@ -2849,7 +2907,7 @@ columns:[
 				newColumns.add(c);
 			}			
 
-		if (!gridResult.isViewLogMode() && grid.get_postProcessQueryFields() != null && (gridResult.getRequestParams()==null || GenericUtil.uInt(gridResult.getRequestParams(), "_no_post_process_fields")==0)) {
+		if (grid.get_postProcessQueryFields() != null && (gridResult.getRequestParams()==null || GenericUtil.uInt(gridResult.getRequestParams(), "_no_post_process_fields")==0)) {
 			boolean gridPostProcessColumnFirst = FrameworkCache.getAppSettingIntValue(scd,"grid_post_process_column_first")!=0;
 			boolean gridPostProcessCommentFirst = FrameworkCache.getAppSettingIntValue(scd,"grid_post_process_comment_first")!=0;
 			int x = 0;
@@ -2909,30 +2967,7 @@ columns:[
 				}
 			}
 		}
-		if (gridResult.isViewLogMode()) {// log ile ilgili
-			gridResult.setViewReadOnlyMode(true);
-			W5QueryField qf_dttm = new W5QueryField();
-			qf_dttm.setDsc("log5_dttm");
-			W5GridColumn c_dttm = new W5GridColumn();
-			c_dttm.set_queryField(qf_dttm);
-			c_dttm.setWidth((short) 120);
-			c_dttm.setAlignType((short) 1);
-			c_dttm.setLocaleMsgKey("log_dttm");
-			c_dttm.setVisibleFlag((short) 1);
-			c_dttm.setRenderer("fmtDateTime");
-			newColumns.add(0, c_dttm);
 
-			W5QueryField qf_user = new W5QueryField();
-			qf_user.setDsc("log5_user_id");
-			W5GridColumn c_user = new W5GridColumn();
-			c_user.set_queryField(qf_user);
-			c_user.setWidth((short) 80);
-			c_user.setAlignType((short) 1);
-			c_user.setLocaleMsgKey("log_user");
-			c_user.setVisibleFlag((short) 1);
-			c_user.setRenderer("gridQwRenderer('log5_user_id')");
-			newColumns.add(1, c_user);
-		}
 //		if (newColumns.size() > 0)newColumns.get(0).setWidth((short) (newColumns.get(0).getWidth() + 10));
 
 		StringBuilder buf = new StringBuilder();
@@ -3022,19 +3057,57 @@ columns:[
 			if (!editableFlag) {
 				buf.append("'").append(LocaleMsgCache.get2(scd, c.getLocaleMsgKey())).append("'");
 			} else {
-				buf.append("_('span',{style:{color:'darkorange'}},'").append(LocaleMsgCache.get2(scd,c.getLocaleMsgKey())).append("')");
+				buf.append("_('span',{className:'x-editable-column'},'").append(LocaleMsgCache.get2(scd,c.getLocaleMsgKey())).append("')");
 			}
 			boolean qwRendererFlag = false;
 			boolean boolRendererFlag = false;
-			if(c.getFilterFlag()!=0)buf.append(", filter:!0");
-			buf.append(", name: '").append(qds).append("'");
-			if(c.getSortableFlag() != 0 && c.get_queryField().getPostProcessType() != 101){
-					buf.append(", sort:true");
-					if(c.get_queryField().getFieldType()>1){//TODO. custom after string sorting
-//						? new String[]{"","string","date","int","int","",""}[c.get_queryField().getFieldTip()] : "server").append("'");
+			if(c.getFilterFlag()!=0) {
+				buf.append(", filter:!0");
+				
+				 //filter values
+				switch(c.get_queryField().getPostProcessType()){
+				case	10://static lookup
+				case	11://lov-static lookup
+					if(c.get_queryField().getLookupQueryId()!=0){
+						W5LookUp lu = FrameworkCache.getLookUp(gridResult.getScd(),c.get_queryField().getLookupQueryId());
+						if(lu==null || lu.get_detayList().size()==0)break;
+						buf.append(",options:[ ");
+						for(W5LookUpDetay ld:lu.get_detayList())if(ld.getActiveFlag()!=0)
+							buf.append("{id:'").append(GenericUtil.stringToJS(ld.getVal())).append("',dsc:'").append(GenericUtil.stringToJS(LocaleMsgCache.get2(gridResult.getScd(), ld.getDsc()))).append("'},");
+						buf.setLength(buf.length()-1);
+						buf.append("]");
 					}
+					break;
+		/*		case	12://lookup table
+				case	13://lov-lookup table
+					if(c.get_queryField().getLookupQueryId()!=0){
+						W5Table ld = FrameworkCache.getTable(gridResult.getScd(),c.get_queryField().getLookupQueryId());
+						if(ld==null || ld.getDefaultLookupQueryId()==0)break;
+						buf.append(",options:'ajaxQueryData?_qid=").append(ld.getDefaultLookupQueryId()).append("'}");						
+					}
+					break;
+				case	16://lookup query
+				case	17://lov-lookup query
+					if(c.get_queryField().getLookupQueryId()!=0){
+						buf.append(",{content:'richSelectFilter', options:'ajaxQueryData?_qid=").append(c.get_queryField().getLookupQueryId()).append("'}");						
+					}
+					break; */
+				default:
+					//buf.append(",{content:'").append(filterMap[c.get_queryField().getFieldType()]).append("'}");
+					
+				}
+
 			}
 			
+			buf.append(", name: '").append(qds).append("'");
+//			if(FrameworkSetting.debug)buf.append(", _id:").append(c.getGridColumnId());
+			if(c.getSortableFlag() != 0 && c.get_queryField().getPostProcessType() != 101){
+					buf.append(", sort:true");
+
+			}
+			if(c.get_queryField().getFieldType()>1){//TODO. custom after string sorting
+				buf.append(", type:'").append(new String[]{"","","date","int","int","bool","","", ""}[c.get_queryField().getFieldType()]).append("'");
+			}			
 			if (c.getAlignType() != 1)buf.append(", align:'").append(FrameworkSetting.alignMap[c.getAlignType()]).append("'");// left'ten farkli ise
 //			if(grid.getAutoExpandFieldId()!=0 && grid.getAutoExpandFieldId()==c.getQueryFieldId())buf.append(", fillspace:!0").append(", minWidth: ").append((4*c.getWidth())/3);//.append(c.getWidth());
 //			else buf.append(", width: '").append((4*c.getWidth())/3).append("%'");//.append(c.getWidth());
@@ -3052,56 +3125,55 @@ columns:[
 				buf.append(", editor:").append(dsc).append("._").append(c.get_formCell().getDsc());
 			
 			if (!GenericUtil.isEmpty(c.getRenderer())) {
-				buf.append(", formatter:").append(c.getRenderer());// browser renderer ise
+				buf.append(", render:").append(c.getRenderer());// browser renderer ise
 				if (c.getRenderer().equals("disabledCheckBoxHtml"))
 					boolRendererFlag = true;
 			} else if (c.get_queryField().getPostProcessType() >= 10
 					&& c.get_queryField().getPostProcessType() <90) {
 				if (c.get_formCell() == null || !editableFlag) {
 					if (FrameworkSetting.chat && (c.get_queryField().getPostProcessType() == 20 || c.get_queryField().getPostProcessType() == 53)) // user lookup ise
-						buf.append(", formatter:gridUserRenderer");// browser renderer ise
+						buf.append(", render:gridUserRenderer");// browser renderer ise
 					else if (c.get_queryField().getPostProcessType() == 12) // table lookup ise
-						buf.append(", formatter:gridQwRendererWithLink(").append(c.get_queryField().getLookupQueryId()).append(")");// browser renderer ise
+						buf.append(", render:gridQwRendererWithLink('").append(qds).append("',").append(c.get_queryField().getLookupQueryId()).append(")");// browser renderer ise
 					else {
 						boolean bx = true;
 						if(c.get_queryField().getPostProcessType() < 11){
 							W5LookUp lu = FrameworkCache.getLookUp(scd, c.get_queryField().getLookupQueryId());
 							if(lu!=null && lu.getCssClassFlag()!=0){
 								bx = false;
-								buf.append(", formatter:function(row){var badgeMap={'':false");
+								buf.append(", render:gridQwRendererWithBadge('").append(qds).append("',{'':false");
 								for(W5LookUpDetay lud:lu.get_detayList())if(!GenericUtil.isEmpty(lud.getParentVal()))buf.append(",'").append(lud.getVal()).append("':'").append(lud.getParentVal()).append("'");
-								buf.append("};var badge=badgeMap[row.").append(qds).append("||''];return badge?_('span',{className:'badge badge-pill badge-'+badge},row.").append(qds).append("_qw_):row.").append(qds).append("_qw_;}");// browser renderer ise
+								buf.append("})");// browser renderer ise
 							}
 						}
-						if(bx)buf.append(", formatter:function(row){return row.").append(qds).append("_qw_;}");// browser renderer ise
+						if(bx)buf.append(", render: gridQwRenderer('").append(qds).append("')");// browser renderer ise
 					}
 					qwRendererFlag = true;
 				} else
 					switch (c.get_formCell().getControlType()) {
 					case 6:
 					case 7:
-						buf.append(", formatter:editGridComboRenderer('").append(qds).append("',")
+						buf.append(", render:editGridComboRenderer('").append(qds).append("',")
 								.append(grid.getDsc()).append("._").append(c.get_formCell().getDsc()).append(")");
 						break;
 					case 15:
-						buf.append(", formatter:editGridLovComboRenderer('").append(qds).append("',")
+						buf.append(", render:editGridLovComboRenderer('").append(qds).append("',")
 								.append(grid.getDsc()).append("._").append(c.get_formCell().getDsc()).append(")");
 						break;
 					default:
-						buf.append(", formatter:function(row){return row.").append(qds).append("_qw_;}");// browser renderer ise
+						buf.append(", render:function(row){return row.").append(qds).append("_qw_;}");// browser renderer ise
 						qwRendererFlag = true;
 					}
-			} else if (qds.length() > 3 && qds.endsWith("_dt"))
-				buf.append(", formatter:strShortDate");// browser formatter ise
+			} else if ((qds.length() > 3 && qds.endsWith("_dt")) || (tf!=null && tf.getFieldType()==2))
+				buf.append(", render:fmtShortDate");// browser formatter ise
 			else if (qds.length() > 5 && qds.endsWith("_dttm")){
-				buf.append(", formatter:strDateTime").append(FrameworkCache.getAppSettingIntValue(0, "fmt_date_time_ago_flag")!=0 ?"Ago":"");// browser formatter ise
+				buf.append(", render:fmtDateTime").append(FrameworkCache.getAppSettingIntValue(0, "fmt_date_time_ago_flag")!=0 ?"Ago":"");// browser formatter ise
 			} else if ((qds.length() > 5
-					&& qds.endsWith("_flag")) || (qds.length() > 3
-							&& qds.startsWith("is_"))) {
-				buf.append(", formatter:disabledCheckBoxHtml");// browser formatter ise
+					&& qds.endsWith("_flag")) || (tf!=null && tf.getFieldType()==5)) {
+				buf.append(", render:disabledCheckBoxHtml");// browser formatter ise
 				boolRendererFlag = true;
 			} else if (grid.get_queryFieldMapDsc().get(qds + "_qw_") != null) {
-				buf.append(", formatter:function(row){return row.").append(qds).append("_qw_;}");// browser renderer ise
+				buf.append(", render:function(row){return row.").append(qds).append("_qw_;}");// browser renderer ise
 				qwRendererFlag = true;
 			}
 			
@@ -3117,7 +3189,7 @@ columns:[
 
 	public StringBuilder serializeTreeQueryRemoteData(W5QueryResult queryResult) {
 		String children = queryResult.getRequestParams().get("_children") != null ? queryResult
-				.getRequestParams().get("_children") : "children";
+				.getRequestParams().get("_children") : "items";
 		int customizationId = (Integer) queryResult.getScd().get(
 				"customizationId");
 		String xlocale = (String) queryResult.getScd().get("locale");
@@ -3352,7 +3424,7 @@ columns:[
 
 		 */
 		String children = qr.getRequestParams().get("_children") != null ? qr
-				.getRequestParams().get("_children") : "data";
+				.getRequestParams().get("_children") : "items";
 		int customizationId = (Integer) qr.getScd().get(
 				"customizationId");
 		String xlocale = (String) qr.getScd().get("locale");
@@ -4010,20 +4082,37 @@ columns:[
 		StringBuilder buf = new StringBuilder();
 		StringBuilder postBuf = new StringBuilder();
 		String code = null;
-		int customizationId = (Integer) pr.getScd().get(
-				"customizationId");
+		String componentIds = null;
+		int customizationId = (Integer) pr.getScd().get("customizationId");
 		String xlocale = (String) pr.getScd().get("locale");
 		if (page.getPageType() != 0) { // not html 
 			// notification Control
 			// masterRecord Control
+
 			
 			if(pr.getRequestParams()!=null) {
-				if (pr.getMasterRecordList() != null
-						&& !pr.getMasterRecordList().isEmpty())
-					buf.append("\n_mrl=")
-							.append(serializeTableHelperList(customizationId,
-									xlocale, pr.getMasterRecordList()))
-							.append(";\n");
+
+				String componentCssIds = "";
+				if(pr.getPageObjectList()!=null)for (Object i : pr.getPageObjectList()) if(i instanceof W5Component){
+					W5Component c = (W5Component)i;
+					componentIds = ""+c.getComponentId();
+					for (Object i2 : pr.getPageObjectList()) if(i2 instanceof W5Component && ((W5Component) i2).getComponentId()!=c.getComponentId()){
+						componentIds += ","+((W5Component) i2).getComponentId();
+						if(!GenericUtil.isEmpty(c.getCssCode()))componentCssIds+=","+((W5Component) i2).getComponentId();
+					}
+					break;					
+				}
+
+				if(componentCssIds.length()>0)buf.append("iwb.importCss('").append(componentCssIds.substring(1)).append("');\n");
+
+				if(!GenericUtil.isEmpty(pr.getPage().getCssCode()) && pr.getPage().getCssCode().trim().length()>3){
+					FrameworkCache.addPageResource(pr.getScd(), "css-"+page.getPageId(), page.getCssCode());
+					buf.append("iwb.importCss('dyn-res/css-").append(page.getPageId()).append("');\n");
+				}
+				
+				if(componentIds!=null) {
+					buf.append("return _(XRequire,{componentIds:'").append(componentIds).append("', props, component:(props)=>{\n");
+				}
 				// request
 				buf.append("var _request=")
 						.append(GenericUtil.fromMapToJsonString(pr
@@ -4039,19 +4128,11 @@ columns:[
 				
 				buf.append(serializeLookUp(pr));
 				
-				if(!GenericUtil.isEmpty(pr.getPage().getCssCode()) && pr.getPage().getCssCode().trim().length()>3){
-					buf.append("iwb.addCssString(\"")
-					.append(GenericUtil.stringToJS2(pr.getPage().getCssCode().trim())).append("\",").append(pr.getPageId()).append(");\n");
-				}
+
 			}
 			
 			if(pr.getPageObjectList()!=null) { // has detail list
-				for (Object i : pr.getPageObjectList()) if(i instanceof W5Component){
-					W5Component c = (W5Component)i;
-					buf.append("\nvar ").append(c.getDsc()).append("= React.lazy(()=>iwb.import('comp/").append(c.getComponentId()).append(".js?.x='));\n");
-					if(!GenericUtil.isEmpty(c.getCssCode()))buf.append("\n iwb.addCss('comp/").append(c.getComponentId()).append(".css?.x=',").append(c.getComponentId()).append(");\n");
-					
-				}
+
 
 				int customObjectCount = 1, tabOrder = 1;
 				for (Object i : pr.getPageObjectList()) {
@@ -4177,11 +4258,7 @@ columns:[
 					buf.append("\n");
 				}
 			}
-			
-			if (replacePostJsCode) {
-
-			} else
-				code = page.getCode();
+			code = page.getCode();
 		} else {//html
 			StringBuilder buf2 = new StringBuilder();
 			buf2.append("var _webPageId='").append(GenericUtil.getNextId("wpi"))
@@ -4264,25 +4341,7 @@ columns:[
 					.append("\n");
 			// buf3.append("function getLocMsg(key){if(key==null)return '';var val=_localeMsg[key];return val || key;}\n");
 //			buf3.append("var _CompanyLogoFileId=1;\n");
-			code = page.getCode().replace("${promis}", buf2.toString())
-					.replace("${localemsg}", buf3.toString());
-			if (page.getCode().contains("${promis-css}")) {
-				StringBuilder buf4 = new StringBuilder();
-
-				if(!GenericUtil.isEmpty(page.getCssCode()) && page.getCssCode().trim().length()>3){
-					buf4.append(page.getCssCode()).append("\n");
-				}
-				/*W5LookUp c = FrameworkCache.getLookUp(pr.getScd(), 665);
-				if(c!=null)for (W5LookUpDetay d : c.get_detayList()) {
-					buf4.append(".bgColor")
-							.append(d.getVal().replace("#", ""))
-							.append("{background-color:")
-							.append(d.getVal()).append(";}\n");
-				}*/
-				FrameworkCache.addPageResource(pr.getScd(), "css-"+page.getPageId(), buf4.toString());
-				code = code.replace("${promis-css}", " <link rel=\"stylesheet\" type=\"text/css\" href=\"dyn-res/css-"+page.getPageId()+".css?.x="+page.getVersionNo()+"\" />");
-
-			}
+			code = page.getCode();
 			
 			if(page.getCode().contains("${components}")) {
 				StringBuilder bufc = new StringBuilder();
@@ -4293,7 +4352,7 @@ columns:[
 					if(bx)bufc.append(",").append(c.getComponentId());
 					else {
 						bx = true;
-						bufc.append("<script src=\"comp/").append(c.getComponentId());
+						bufc.append("<script id=\"all-components-script\" type=\"text/javascript\" src=\"comp/").append(c.getComponentId());
 					}
 					//if(!GenericUtil.isEmpty(c.getCssCode()))bufc.append("<link rel=\"stylesheet\" type=\"text/css\" href=\"comp/").append(c.getComponentId()).append(".css?.x=").append(c.getDsc()).append("\"/>\n");
 					
@@ -4308,29 +4367,28 @@ columns:[
 					if(bx)bufc.append(",").append(c.getComponentId());
 					else {
 						bx = true;
-						bufc.append("<link rel=\"stylesheet\" type=\"text/css\" href=\"comp/").append(c.getComponentId());
+						bufc.append("<link id=\"all-components-style\" rel=\"stylesheet\" type=\"text/css\" href=\"comp/").append(c.getComponentId());
 					}
 					
 					
 				}
-				if(bx)bufc.append(".css?.x=123").append("\"/>\n");
+				if(bx)bufc.append(".css?.x=123\"/>\n");
+				
+				if(!GenericUtil.isEmpty(page.getCssCode()) && page.getCssCode().length()>3){
+					FrameworkCache.addPageResource(pr.getScd(), "css-"+page.getPageId(), page.getCssCode());
+					bufc.append("<link rel=\"stylesheet\" type=\"text/css\" href=\"dyn-res/css-"+page.getPageId()+".css?.x="+page.getVersionNo()+"\" />\n");
+				}
+				if(buf2.length()>1) {
+					bufc.append("<script type=\"text/javascript\">\n").append(buf2).append("\n</script>\n");
+				}
+				
 				code = code.replace("${components}", bufc.toString());
 			}
 			
 		}
-		/*
-		 * if(templateResult.getTemplateId()==2){ // ana sayfa Map<String,
-		 * String> m = new HashMap<String, String>(); int customizationId =
-		 * PromisUtil.uInt(templateResult.getScd().get("customizationId"));
-		 * for(String key:PromisCache.publishAppSettings) m.put(key,
-		 * PromisCache.getAppSettingStringValue(customizationId, key));
-		 * buf.append
-		 * ("var appSetting =").append(PromisUtil.fromMapToJsonString(m));
-		 * 
-		 * }
-		 */
+
 		if(!GenericUtil.isEmpty(code))
-			buf.append("\n").append(code.startsWith("!") ? code.substring(1) : code);
+			buf.append("\n").append(code);
 
 		if(!GenericUtil.isEmpty(pr.getPageObjectList()))switch(pr.getPage().getPageType()){
 		case	2:case	4://page, pop up
@@ -4340,6 +4398,9 @@ columns:[
 			buf.append("\n").append(renderDashboardObject(pr));
 			break;
 			
+		}
+		if(componentIds!=null) {//dynamic loading
+			buf.append("\n}});");
 		}
 		
 		return page.getLocaleMsgFlag() != 0 ? GenericUtil.filterExt(
@@ -4879,5 +4940,158 @@ columns:[
 		return s;
 	}
 	
+	public	StringBuilder serializeShowForm2(W5FormResult fr) {
+		StringBuilder s = new StringBuilder();
 
+		if (!GenericUtil.isEmpty(fr.getModuleFormMap())) {
+			for(W5FormResult nfr:fr.getModuleFormMap().values())  // detail forms
+				s.append("class ").append(nfr.getForm().getDsc())
+					.append(" extends XDetailForm").append(serializeGetForm2(nfr))
+					.append(";\n");
+			s.append("\n//Main Form\n");
+		}
+		
+		s.append("class ").append(fr.getForm().getDsc()).append(" extends XForm").append(serializeGetForm2(fr));
+
+		if (fr.getForm().get_renderTemplate() != null && fr.getForm().getRenderTemplateId()!=26) {
+				s.append("\n").append(
+					fr.getForm().get_renderTemplate()
+							.getLocaleMsgFlag() != 0 ? GenericUtil
+							.filterExt(fr.getForm()
+									.get_renderTemplate().getCode(),
+									fr.getScd(),
+									fr.getRequestParams(), null)
+							: fr.getForm().get_renderTemplate()
+									.getCode());
+		} else if(true || fr.getForm().getObjectType()==2)
+			//s.append("\nreturn _(XTabForm, {body:bodyForm, cfg:cfgForm, parentCt:parentCt, callAttributes:callAttributes});");
+			s.append("\nreturn _(").append(fr.getForm().getDsc()).append(", props);");
+		
+		return s;
+		
+	}
+	private StringBuilder serializeGetForm2(W5FormResult fr) {
+		Map<String, Object> scd = fr.getScd();
+		StringBuilder s = new StringBuilder();
+		String xlocale = (String) scd.get("locale");
+		int customizationId = (Integer) scd.get("customizationId");
+		int userId = (Integer) scd.get("userId");
+		boolean mobile = GenericUtil.uInt(scd.get("mobile")) != 0;
+
+		if (fr.getUniqueId() == null)fr.setUniqueId(GenericUtil.getNextId("fi2"));
+		W5Form f = fr.getForm();
+		// s.append("var ").append(formResult.getForm().getDsc()).append("=");
+		String[] postFormStr = new String[] { "", "search-form",
+				"submit-form",
+				f.getObjectType() == 3 ? "rpt/" + f.getDsc() : "func",
+				"func",null,null,"search-form", "search-form", null,null,"ajaxCallWs?serviceName="+(f.getObjectType() == 11 ? FrameworkCache.getServiceNameByMethodId(scd,  f.getObjectId()):"")+"&"};
+		s.append("{\nconstructor(props, context){\n super(props, context);\n if (props.register) props.register('forms/").append(f.getFormId()).append("', this, {width:").append(f.getDefaultWidth())
+			.append(",contFlag:").append(f.getContEntryFlag()!=0).append(", maxStep:").append(f.getRenderType()==4 ? f.get_moduleList().size() : 0).append("});");
+		if(f.getObjectType()>1)s.append("\n this.url='").append(postFormStr[f.getObjectType()]).append("/").append(f.getFormId()).append("'; this.formId = ").append(f.getFormId());
+		s.append(";\n this.params={};\n this.state={status:0, errors:{}, values:props.values, options: props.options,activeStep:0}");
+		//\nif(this.componentWillPost)this.componentWillPost=this.componentWillPost.bind(this);
+		Map<String, List<W5FormCell>> pcr = new HashMap();
+		for (W5FormCell fc : f.get_formCells())if (fc.getActiveFlag() != 0 && (fc.getControlType()==9 ||fc.getControlType()==16) && fc.getParentFormCellId()!=0 && !GenericUtil.isEmpty(fc.getLookupIncludedParams())) {//combo remote
+			for (W5FormCell rfc : f.get_formCells()) {
+				if (rfc.getFormCellId() == fc.getParentFormCellId()) {
+					if (rfc.getControlType() == 6 || rfc.getControlType() == 7 || rfc.getControlType() == 9 || rfc.getControlType() == 10 || rfc.getControlType() == 51) {
+						List<W5FormCell> lfc = pcr.get(rfc.getDsc());
+						if(lfc==null){
+							lfc= new ArrayList();
+							pcr.put(rfc.getDsc(), lfc);
+						}
+						lfc.add(fc);
+					}
+					break;
+				}
+			}
+			
+			
+		}
+		s.append("\n this.triggerz4ComboRemotes={");
+		boolean b = false;
+		for(String k:pcr.keySet()){
+			if(b)s.append(",");else b=true;
+			s.append(k).append(":[");
+			List<W5FormCell> lfc = pcr.get(k);
+			for(W5FormCell fc:lfc){
+				s.append("{n:'").append(fc.getDsc()).append("', f:(ax,bx,cx)=>{\n").append(fc.getLookupIncludedParams()).append("\n}},");
+			}
+			s.setLength(s.length()-1);
+			s.append("]");
+		} 
+		s.append("}");
+
+//		if (liveSyncRecord)formResult.getRequestParams().put(".t", formResult.getUniqueId());
+		s.append("\n}");
+		s.append("\nrender(){");
+		s.append("\n if(this.state.status!==1)return this.showLoading();\n var {values, options, errors, details}=this.state;\n");
+		
+		s.append(" var labelSpan=").append(f.getLabelAlignType()>0 ? 3*f.getLabelWidth()/100 : 0)
+			.append(";\n var config={label: '").append(GenericUtil.stringToJS(LocaleMsgCache.get2(scd, f.getLocaleMsgKey()))).append("', style:this.props.style||{}, className:this.props.className, renderType:'").append(formRenderTypeMap[f.getRenderType()])
+			.append("', layout:'").append(formLayoutMap[f.getLabelAlignType()]).append("', span:").append(Math.min(24,4*f.getDefaultWidth()/100)).append(", labelSpan};\n\n//Form Elements");
+			
+
+		
+		fr.setFormCellResults(new ArrayList());
+		for (W5FormCell fc : f.get_formCells())
+			if (fc.getActiveFlag() != 0) {
+				W5FormCellHelper fcr = new W5FormCellHelper(fc);
+				fr.getFormCellResults().add(fcr);
+			}
+		for (W5FormCellHelper fcr : fr.getFormCellResults()){
+			W5FormCell fc =fcr.getFormCell();
+			s.append("\n var _").append(fc.getDsc()).append("= ");
+			if(fc.getControlType()<96)s.append("('").append(fc.getDsc()).append("' in values) && ");
+			s.append(serializeFormCell(customizationId, xlocale, fcr, fr)).append(";");
+		}
+
+		s.append("\n\n");
+
+		// 24 nolu form form edit form olduğu için onu çevirmesin.
+		String postCode = (fr.getForm().get_renderTemplate() != null
+				&& fr.getForm().get_renderTemplate().getLocaleMsgFlag() == 1 && fr
+				.getFormId() != 24) ? GenericUtil.filterExt(
+				fr.getForm().getJsCode(), scd,
+				fr.getRequestParams(), null).toString() : fr
+				.getForm().getJsCode();
+
+
+		if (!GenericUtil.isEmpty(postCode) && postCode.indexOf("Ext.")==-1) {
+			s.append("\n//Form Hook Point\ntry{\n").append(postCode).append("\n}catch(e){");
+			s.append(FrameworkSetting.debug ? "if(confirm('ERROR form.JS!!! Throw? : ' + e.message))throw e;"
+					: "alert('System/Customization ERROR : ' + e.message)");
+			s.append("}\n");
+		}
+
+		s.append("//Form Layout\nconfig.items=[");
+		
+		if(fr.getForm().getObjectType()==1 | fr.getForm().getObjectType() == 8 ){ //search ise
+			s.append(renderSearchFormModuleList(customizationId, xlocale,
+					fr.getUniqueId(),
+					fr.getFormCellResults(),
+					""));//.append("]};\n");
+		} else switch (fr.getForm().getRenderType()) {
+		case 1:// fieldset
+			s.append(renderFormAsFieldset(fr));
+			break;
+		case	4://wizard
+			s.append(renderFormAsWizard(fr));
+			break;
+		case 3:// accordion
+		case 2:// tabpanel
+			s.append(renderFormAsTabpanel(fr));
+			break;
+		case 0:// straight
+			s.append(renderFormSection(customizationId, xlocale,
+					fr.getUniqueId(),
+					fr.getFormCellResults(),
+					"\n var config=", GenericUtil.uInt(fr.getRequestParams(),"_openIn"), fr.getForm().getDefaultWidth())).append(";\n");
+		}
+
+
+		s.append("];\n return this.renderForm(config);\n}}");
+
+		return s;
+	}
 }

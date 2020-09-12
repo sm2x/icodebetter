@@ -11,56 +11,56 @@ import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;*/
 
-import iwb.domain.db.Log5Feed;
-import iwb.domain.db.M5List;
-import iwb.domain.db.W5Card;
-import iwb.domain.db.W5Component;
-import iwb.domain.db.W5Conversion;
-import iwb.domain.db.W5ConversionCol;
-import iwb.domain.db.W5CustomGridColumnCondition;
-import iwb.domain.db.W5CustomGridColumnRenderer;
-import iwb.domain.db.W5Customization;
-import iwb.domain.db.W5Exception;
-import iwb.domain.db.W5ExternalDb;
-import iwb.domain.db.W5Form;
-import iwb.domain.db.W5FormCell;
-import iwb.domain.db.W5FormCellProperty;
-import iwb.domain.db.W5FormHint;
-import iwb.domain.db.W5FormModule;
-import iwb.domain.db.W5FormSmsMail;
-import iwb.domain.db.W5GlobalFunc;
-import iwb.domain.db.W5GlobalFuncParam;
-import iwb.domain.db.W5Grid;
-import iwb.domain.db.W5GridColumn;
-import iwb.domain.db.W5JobSchedule;
-import iwb.domain.db.W5List;
-import iwb.domain.db.W5LookUp;
-import iwb.domain.db.W5LookUpDetay;
-import iwb.domain.db.W5Menu;
-import iwb.domain.db.W5Mq;
-import iwb.domain.db.W5ObjectMenuItem;
-import iwb.domain.db.W5ObjectToolbarItem;
-import iwb.domain.db.W5Page;
-import iwb.domain.db.W5PageObject;
-import iwb.domain.db.W5Project;
-import iwb.domain.db.W5Query;
-import iwb.domain.db.W5QueryField;
-import iwb.domain.db.W5QueryParam;
-import iwb.domain.db.W5RoleGroup;
-import iwb.domain.db.W5Table;
-import iwb.domain.db.W5TableChild;
-import iwb.domain.db.W5TableEvent;
-import iwb.domain.db.W5TableField;
-import iwb.domain.db.W5TableFieldCalculated;
-import iwb.domain.db.W5TableParam;
-import iwb.domain.db.W5Workflow;
-import iwb.domain.db.W5WorkflowStep;
-import iwb.domain.db.W5Ws;
-import iwb.domain.db.W5WsMethod;
-import iwb.domain.db.W5WsMethodParam;
-import iwb.domain.db.W5WsServer;
-import iwb.domain.result.W5QueryResult;
 import iwb.exception.IWBException;
+import iwb.model.db.Log5Feed;
+import iwb.model.db.M5List;
+import iwb.model.db.W5Card;
+import iwb.model.db.W5Component;
+import iwb.model.db.W5Conversion;
+import iwb.model.db.W5ConversionCol;
+import iwb.model.db.W5CustomGridColumnCondition;
+import iwb.model.db.W5CustomGridColumnRenderer;
+import iwb.model.db.W5Customization;
+import iwb.model.db.W5Exception;
+import iwb.model.db.W5ExternalDb;
+import iwb.model.db.W5Form;
+import iwb.model.db.W5FormCell;
+import iwb.model.db.W5FormCellProperty;
+import iwb.model.db.W5FormHint;
+import iwb.model.db.W5FormModule;
+import iwb.model.db.W5FormSmsMail;
+import iwb.model.db.W5GlobalFunc;
+import iwb.model.db.W5GlobalFuncParam;
+import iwb.model.db.W5Grid;
+import iwb.model.db.W5GridColumn;
+import iwb.model.db.W5JobSchedule;
+import iwb.model.db.W5List;
+import iwb.model.db.W5LookUp;
+import iwb.model.db.W5LookUpDetay;
+import iwb.model.db.W5Menu;
+import iwb.model.db.W5Mq;
+import iwb.model.db.W5ObjectMenuItem;
+import iwb.model.db.W5ObjectToolbarItem;
+import iwb.model.db.W5Page;
+import iwb.model.db.W5PageObject;
+import iwb.model.db.W5Project;
+import iwb.model.db.W5Query;
+import iwb.model.db.W5QueryField;
+import iwb.model.db.W5QueryParam;
+import iwb.model.db.W5RoleGroup;
+import iwb.model.db.W5Table;
+import iwb.model.db.W5TableChild;
+import iwb.model.db.W5TableEvent;
+import iwb.model.db.W5TableField;
+import iwb.model.db.W5TableFieldCalculated;
+import iwb.model.db.W5TableParam;
+import iwb.model.db.W5Workflow;
+import iwb.model.db.W5WorkflowStep;
+import iwb.model.db.W5Ws;
+import iwb.model.db.W5WsMethod;
+import iwb.model.db.W5WsMethodParam;
+import iwb.model.db.W5WsServer;
+import iwb.model.result.W5QueryResult;
 import iwb.util.GenericUtil;
 
 public class FrameworkCache {
@@ -219,7 +219,6 @@ public class FrameworkCache {
 	public static W5Component getComponent(Object o, int componentId) {
 		String projectId = getProjectId(o, "3351."+componentId);
 		if(!wComponents.containsKey(projectId)){
-			wComponents.put(projectId, new HashMap());
 			return null;
 		} else
 			return wComponents.get(projectId).get(componentId);
@@ -664,6 +663,16 @@ public class FrameworkCache {
 		W5Component css = m.get(componentId);
 		if(css==null)return "";
 		return css.getCode()==null ? "":css.getCode();
+	}
+	
+
+	public static String getComponentName(Object o, int componentId){
+		String p = getProjectId(o,"3351."+componentId);
+		Map<Integer, W5Component> m = wComponents.get(p);
+		if(m==null)return "";
+		W5Component c = m.get(componentId);
+		if(c==null)return "";
+		return c.getDsc();
 	}
 /*
 	private static RedissonClient redissonClient = null;
@@ -1568,4 +1577,13 @@ public class FrameworkCache {
 		return l;
 	}
 
+	final private static Map<String, String> linkMap = new HashMap<String,String>(); //wsId
+	
+	public static String getUrlFromLinkId(String linkId) {
+		return linkMap.get(linkId);
+	}
+	
+	public static String addUrlToLinkCache(String linkId, String url) {
+		return linkMap.put(linkId, url);
+	}
 }

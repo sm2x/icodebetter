@@ -2,18 +2,19 @@ package iwb.adapter.ui;
 
 import java.util.Map;
 
-import iwb.domain.helper.W5FormCellHelper;
-import iwb.domain.result.W5CardResult;
-import iwb.domain.result.W5FormResult;
-import iwb.domain.result.W5GlobalFuncResult;
-import iwb.domain.result.W5GridResult;
-import iwb.domain.result.W5ListViewResult;
-import iwb.domain.result.W5PageResult;
-import iwb.domain.result.W5QueryResult;
-import iwb.domain.result.W5TableRecordInfoResult;
+import iwb.model.helper.W5FormCellHelper;
+import iwb.model.result.W5CardResult;
+import iwb.model.result.W5FormResult;
+import iwb.model.result.W5GlobalFuncResult;
+import iwb.model.result.W5GridResult;
+import iwb.model.result.W5ListViewResult;
+import iwb.model.result.W5PageResult;
+import iwb.model.result.W5QueryResult;
+import iwb.model.result.W5TableRecordInfoResult;
 
 public interface ViewAdapter {
 	public	StringBuilder serializeShowForm(W5FormResult formResult);
+	public	StringBuilder serializeShowForm2(W5FormResult formResult);
 	public	StringBuilder serializePostForm(W5FormResult formResult);
 	public	StringBuilder serializeTemplate(W5PageResult templateResult);
 	public	StringBuilder serializeQueryData(W5QueryResult queryResult);
