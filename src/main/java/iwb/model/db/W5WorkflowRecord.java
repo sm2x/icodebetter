@@ -16,9 +16,6 @@ import javax.persistence.Table;
 @Table(name="w5_approval_record",schema="iwb")
 public class W5WorkflowRecord implements java.io.Serializable {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 338816354557731L;
 	private int approvalRecordId;
 	private int approvalStepId;

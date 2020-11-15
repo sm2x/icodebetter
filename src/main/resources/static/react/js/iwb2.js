@@ -9397,3 +9397,69 @@ iwb.findAsyncValue = function(value, options){
 	return '';
 	
 }
+
+iwb.toBeLoadedExternalLibrary = {}
+
+iwb.importExternalLibrary = (id, jsUrl, cssUrl, callback) => {
+    if (!id || (!jsUrl && !cssUrl)) {
+        callback(true);
+        return;
+    }
+    const id2 = id;
+
+    console.log('iwb.importExternalLibrary ', id2, jsUrl, cssUrl);
+    if (iwb.toBeLoadedExternalLibrary[id2]) {
+        console.log('iwb.importExternalLibrary-queue.push ', id2);
+        iwb.toBeLoadedExternalLibrary[id2].push(callback);
+        //setTimeout(() => iwb.importExternalLibrary(id2, jsUrl, cssUrl, callback), 100);
+        return;
+    }
+
+    if (cssUrl) {
+        const cssUrls = Array.isArray(cssUrl) ? cssUrl : [cssUrl];
+        cssUrls.map((ox, ix) => {
+            const cssId = 'external-css-' + id2 + '-' + ix;
+            if (!document.getElementById(cssId)) {
+                const style = document.createElement("link");
+                style.type = "text/css";
+                style.href = ox;
+                style.id = cssId;
+                style.rel = "stylesheet";
+                document.head.appendChild(style);
+            }
+        });
+    }
+    if (jsUrl) {
+        const jsId = 'external-js-' + id2;
+        if (!document.getElementById(jsId)) {
+            iwb.toBeLoadedExternalLibrary[id2] = [];
+            const script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.async = false;
+            script.src = jsUrl;
+            script.id = jsId;
+            script.onload = (e) => {
+                console.log('external library load succeed: ' + jsUrl);
+                try {
+                    callback(true);
+                } catch (ee) { console.error('callback error ' + jsId, ee) }
+                for (var xcallback = iwb.toBeLoadedExternalLibrary[id2].pop(); xcallback; xcallback = iwb.toBeLoadedExternalLibrary[id2].pop())try {
+                    console.log('iwb.importExternalLibrary-queue.pop ', id2);
+                    xcallback && xcallback(true);
+                } catch (ee) { console.error('callback error ' + jsId, ee) }
+                iwb.toBeLoadedExternalLibrary[id2] = false;
+            }
+            script.onerror = (e) => {
+                e.preventDefault();
+                console.log('external library load failed: ' + jsUrl, e);
+                try {
+                    callback(false, 'URL not found: ' + jsUrl);
+                } catch (ee) { console.error('load failed callback error ' + jsId, ee) }
+                iwb.toBeLoadedExternalLibrary[id2] = false;
+            }
+            document.head.appendChild(script);
+        } else {
+            callback(true);
+        }
+    } else callback(true);
+}

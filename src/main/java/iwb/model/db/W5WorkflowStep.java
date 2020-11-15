@@ -28,6 +28,7 @@ public class W5WorkflowStep implements java.io.Serializable, W5Base {
 	  private String dsc;
 	  private String approvalRoles;
 	  private String approvalUsers;
+	  private String approvalSql;
 	  private int onApproveStepId;
 	  private Integer onApproveFormId;
 	  private String onApproveStepSql;
@@ -360,6 +361,8 @@ public class W5WorkflowStep implements java.io.Serializable, W5Base {
     a.onReturnNotificationIds = this.onReturnNotificationIds;
     a.onRejectNotificationIds = this.onRejectNotificationIds;
     a.onEscalationNotificationIds = this.onEscalationNotificationIds;
+    
+    a.approvalSql = this.approvalSql;
     return a;
   }
 
@@ -557,6 +560,15 @@ public class W5WorkflowStep implements java.io.Serializable, W5Base {
 		return c!=null && c.getApprovalStepSeqId()==getApprovalStepSeqId() && c.getProjectUuid().equals(projectUuid);
 	}
 	
+	@Column(name = "approval_sql")
+	public String getApprovalSql() {
+		return approvalSql;
+	}
+
+	public void setApprovalSql(String approvalSql) {
+		this.approvalSql = approvalSql;
+	}
+
 	public int hashCode() {
 		return projectUuid.hashCode() + 100*getApprovalStepSeqId();
 	}	  

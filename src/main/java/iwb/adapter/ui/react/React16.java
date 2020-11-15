@@ -2110,7 +2110,9 @@ public class React16 implements ViewAdapter {
 			buf.append("type:'textarea'");
 			break; // textarea
 //		{ view:"label", label:'Fill the form below to access <br>the main datacore.'
-		
+		case	72://signature
+			buf.append("$:Signature, width:").append(fc.getControlWidth());
+			break;
 		case	71://file attachment
 			buf.append("$:FileInput, parentCt: this, onFileChange: this.onFileChange(), cfg:cfgForm");
 			Map evm = cellResult.getExtraValuesMap();

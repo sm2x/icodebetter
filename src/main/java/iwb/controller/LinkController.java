@@ -113,6 +113,12 @@ public class LinkController implements InitializingBean {
 				response.getWriter().write("Wrong link");
 				return;
 			}
+			Map<String, String> m = GenericUtil.getParameterMap(request);
+			if(!GenericUtil.isEmpty(m)) {
+				for(String k : m.keySet())if(!GenericUtil.isEmpty(m.get(k))) {
+					url+=(!url.contains("?") ? "?":"&")+k+"="+m.get(k);	
+				}
+			}
 			response.sendRedirect("/preview/"+url);
 		} catch(Exception e) {
 			response.getWriter().write("Error :" + e.getMessage());			

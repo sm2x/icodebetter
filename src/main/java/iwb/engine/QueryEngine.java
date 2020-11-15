@@ -142,10 +142,13 @@ public class QueryEngine {
 				if (!GenericUtil.isEmpty(requestParams.get(qp.getDsc()))) {
 					m2.put(qp.getExpressionDsc(), requestParams.get(qp.getDsc()));
 				}
-			if(query.getSqlFrom().equals("!")) {
+			if(query.getSqlFrom().startsWith("!")) {
 				m2.put("_iwb_raw", "1");
 				Map res = restEngine.REST(scd, wsm.get_ws().getDsc()+"."+wsm.getDsc(), m2);
 				queryResult.setExtraOutMap(res);
+				if(query.getSqlFrom().length()>1) {
+					scriptEngine.executeScript(queryResult.getScd(), queryResult.getRequestParams(), query.getSqlFrom().substring(1), new HashMap(), "qry_"+query.getQueryId());
+				}
 			} else {
 				StringBuilder rc = new StringBuilder();
 				rc.append("function _x_(x){\nreturn {").append(query.getSqlSelect())

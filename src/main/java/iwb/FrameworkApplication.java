@@ -78,7 +78,11 @@ public class FrameworkApplication {
 		
 		if(FrameworkSetting.argMap.get("timer")!=null)FrameworkSetting.localTimer=true;
 		
-		if(FrameworkSetting.argMap.get("project")!=null)FrameworkSetting.projectId=FrameworkSetting.argMap.get("project");
+		if(FrameworkSetting.argMap.get("project")!=null) {
+			FrameworkSetting.projectId=FrameworkSetting.argMap.get("project");
+			if(!FrameworkSetting.projectId.equals("1") && FrameworkSetting.argMap.get("projectName")!=null)
+				FrameworkSetting.projectName=FrameworkSetting.argMap.get("projectName");
+		}
 		
 
 		ConfigurableApplicationContext appContext = SpringApplication.run(FrameworkApplication.class, args);
@@ -90,7 +94,7 @@ public class FrameworkApplication {
 		if(GenericUtil.uInt(FrameworkSetting.argMap.get("metadata"))!=0) {
 			FrameworkSetting.systemStatus=0;
 			if(FrameworkSetting.projectId == null) FrameworkSetting.projectId = FrameworkSetting.devUuid;
-			vcsService.importProjectMetadata("http://code2.io/app/export/" + FrameworkSetting.projectId + ".zip");//"classpath:projects/"+FrameworkSetting.projectId+".zip"
+			vcsService.importProjectMetadata("http://app.code2.io/app/export/" + FrameworkSetting.projectId + ".zip");//"classpath:projects/"+FrameworkSetting.projectId+".zip"
 			FrameworkSetting.projectSystemStatus.put(FrameworkSetting.projectId, 0);
 			FrameworkSetting.metadata = true;
 		} else {

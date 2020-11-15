@@ -274,9 +274,9 @@ public class RESTEngine {
 			}
 			String params = null;
 			Map<String, String> reqPropMap = new HashMap();
-			reqPropMap.put("Content-Language", FrameworkCache.getAppSettingStringValue(scd, "rest_content_language", "tr-TR"));
+			//reqPropMap.put("Content-Language", FrameworkCache.getAppSettingStringValue(scd, "rest_content_language", "tr-TR"));
 			if (wsm.getHeaderAcceptTip() != null) {
-				reqPropMap.put("Accept", new String[] { "text/plain", "application/json", "application/xml", "application/octet-stream" }[wsm
+				reqPropMap.put("accept", new String[] { "text/plain", "application/json", "application/xml", "application/octet-stream" }[wsm
 						.getHeaderAcceptTip()]);
 			}
 			if (ws.getWsSecurityType() == 1 && !GenericUtil.isEmpty(ws.getWssCredentials())) { // credentials

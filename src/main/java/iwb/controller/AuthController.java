@@ -216,9 +216,12 @@ public class AuthController {
   @RequestMapping("/login")
   protected void login(final HttpServletRequest req, HttpServletResponse res) throws IOException {
     if (FrameworkSetting.projectId != null && FrameworkSetting.projectId.length() == 36) {
-      res.getWriter().write("/preview/" + FrameworkSetting.projectId + "/main.htm");
-      res.getWriter().close();
-      return;
+    	if(!GenericUtil.isEmpty(FrameworkSetting.projectName) )
+    		res.getWriter().write("/p/" + FrameworkSetting.projectName + "/main.htm");
+    	else
+    		res.getWriter().write("/preview/" + FrameworkSetting.projectId + "/main.htm");
+	    res.getWriter().close();
+	    return;
     }
     String email = req.getParameter("email");
     String projectId = req.getParameter("projectId");

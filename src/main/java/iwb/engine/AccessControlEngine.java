@@ -65,6 +65,12 @@ public class AccessControlEngine {
 				}
 			}
 		}
+		if(approvalStep!=null && !GenericUtil.isEmpty(approvalStep.getApprovalSql())) {
+			if(dao.findWorkflowStepSql(scd, t, approvalStep.getApprovalSql(), GenericUtil.uInt(requestParams
+					.get(t.get_tableParamList().get(0).getDsc() + (paramSuffix != null ? paramSuffix : "")))))
+					appRecord.setApprovalUsers(scd.get("userId").toString());
+			else appRecord.setApprovalUsers(null);
+		}
 		// edit veya delete isleminde, accessViewControl by userFields control
 		// var mi?
 		if ((action == 1 || action == 3)

@@ -56,7 +56,6 @@ public class WorkflowEngine {
 		if (!FrameworkSetting.workflow)
 			return result;
 
-		int customizationId = (Integer) scd.get("customizationId");
 		int userId = (Integer) scd.get("userId");
 		int versionNo = GenericUtil.uInt(parameterMap.get("_avno"));
 		W5WorkflowRecord ar = (W5WorkflowRecord) metadataLoader.getMetadataObject(

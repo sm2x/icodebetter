@@ -3904,7 +3904,35 @@ public class PostgreSQL extends BaseDAO {
 						|| queryResult.getQueryColMap().containsKey(FieldDefinitions.queryFieldName_Workflow))) { // approval
 																													// Record
 			sql2.append(
-					",(select cx.approval_record_id||';'||cx.approval_id||';'||cx.approval_step_id||';'||coalesce(cx.approval_roles,'')||';'||coalesce(cx.approval_users,'') from iwb.w5_approval_record cx where cx.table_id=")
+					",(select cx.approval_record_id||';'||cx.approval_id||';'||cx.approval_step_id||';'||coalesce(cx.approval_roles,'')||';'||coalesce(");
+			boolean bwf = false;
+			if(!FrameworkSetting.workflowSqlWhere && !GenericUtil.isEmpty(mainTable.get_approvalMap())) {
+				W5Workflow wf = mainTable.get_approvalMap().values().iterator().next();
+
+				for(W5WorkflowStep wfs:wf.get_approvalStepList()) if(!GenericUtil.isEmpty(wfs.getApprovalSql())){
+					if(!bwf) {						
+						sql2.append(" case cx.approval_step_id ");
+						bwf = true;
+					}
+					Object[] oz = DBUtil.filterExt4SQL(wfs.getApprovalSql(), queryResult.getScd(), new HashMap(), null);
+					
+					sql2.append(" when ").append(wfs.getApprovalStepId()).append(" then (case when (").
+					append(GenericUtil.replaceSql(oz[0].toString(), oz.length>1 ? (List)oz[1] : null)).append(") then '").
+					append(queryResult.getScd().get("userId")).append("' end)");
+		
+					
+				}
+			}
+			if(bwf) {
+				sql2.append(" else ");
+			}
+			
+			sql2.append("cx.approval_users");
+			if(bwf) {
+				sql2.append(" end ");
+			}
+			
+			sql2.append(",'') from iwb.w5_approval_record cx where cx.table_id=")
 					.append(query.getSourceObjectId()).append(" AND cx.project_uuid='").append(projectId)
 					.append("' AND cx.table_pk=z.").append(pkFieldName).append(" limit 1) ")
 					.append(FieldDefinitions.queryFieldName_Workflow).append(" ");
@@ -6266,6 +6294,23 @@ public class PostgreSQL extends BaseDAO {
 		}
 
 		return qr;
+	}
+
+	public boolean findWorkflowStepSql(Map scd, W5Table t, String approvalSql, int pk) {
+		StringBuilder sql = new StringBuilder();
+		sql.append("select 1 from ").append(t.getDsc()).append(" z where z.").append(t.get_tableParamList().get(0).getExpressionDsc()).append("=? AND ");
+		//TODO etenant control?
+		List<Object> params = new ArrayList();
+		params.add(pk);
+		Object[] oz = DBUtil.filterExt4SQL(approvalSql, scd,
+				new HashMap(), null);
+		sql.append(oz[0]);
+		if (oz[1] != null)
+			params.addAll((List) oz[1]);
+		
+		List l = executeSQLQuery2(sql.toString(), params);
+		
+		return l!=null;
 	}
 	
 }

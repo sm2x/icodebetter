@@ -718,12 +718,19 @@ public class NashornScript {
 	}
 
 	public Map getTableJSON(String tableDsc, String tablePk) {
+		int tableId = GenericUtil.uInt(tableDsc);
+		if(tableId==0)tableId=getTableId(tableDsc);
+		if(tableId==0)throw new IWBException("rhino", "getTableJSON", tableId, null,
+				"Table not found " + tableDsc, null);
 
-		return getTableJSON(getTableId(tableDsc), tablePk, 0);
+		return getTableJSON(tableId, tablePk, 0);
 	}
 
 	public Map insertTableJSON(String tableDsc, ScriptObjectMirror jsRequestParams) {
-		int tableId = getTableId(tableDsc);
+		int tableId = GenericUtil.uInt(tableDsc);
+		if(tableId==0)tableId=getTableId(tableDsc);
+		if(tableId==0)throw new IWBException("rhino", "getTableJSON", tableId, null,
+				"Table not found " + tableDsc, null);
 		scriptEngine.getDao().checkTenant(scd);
 		return scriptEngine.getDao().insertTableJSON(scd, tableId, fromScriptObject2Map3(jsRequestParams));
 	}

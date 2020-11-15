@@ -32,7 +32,7 @@ public class GenericTimer extends TimerTask {
 	private void checkJobs(){
 		for(String projectId:FrameworkCache.wJobs.keySet()) if(FrameworkSetting.projectId==null || FrameworkSetting.projectId.equals("1") || FrameworkSetting.projectId.equals(projectId)){
 			W5Project po = FrameworkCache.getProject(projectId);
-			if(po!=null && (po.getCustomizationId()==0 || false/*po.getCustomizationId()==140 || !FrameworkSetting.cloud*/)) {
+			if(po!=null && (po.getCustomizationId()==0 || GenericUtil.hasPartInside2b(FrameworkCache.getAppSettingStringValue(0, "project_jobs"), po.getProjectUuid())/*po.getCustomizationId()==140 || !FrameworkSetting.cloud*/)) {
 				Map<Integer, W5JobSchedule> miv = FrameworkCache.wJobs.get(projectId);
 				if(miv!=null)for(final W5JobSchedule j:miv.values()) {
 					if(j.runCheck()) { //

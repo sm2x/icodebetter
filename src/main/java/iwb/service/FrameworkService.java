@@ -859,7 +859,7 @@ public class FrameworkService {
 
 	@Transactional(propagation=Propagation.NEVER)
 	public String loadLink(String linkId) {
-		List l = dao.executeSQLQuery("select x.url, x.project_uuid from iwb.w5_link x where link_id=?", linkId);
+		List l = dao.executeSQLQuery("select x.project_uuid||'/'||x.url url from iwb.w5_link x where link_id=?", linkId);
 		return GenericUtil.isEmpty(l) ? "-":l.get(0).toString();
 	}
 	
@@ -890,7 +890,7 @@ public class FrameworkService {
 				
 		if(GenericUtil.isEmpty(murl))return null;
 		
-		List l = dao.executeSQLQuery("select x.link_id from iwb.w5_link x where url=? and project_uuid=?", url, po.getProjectUuid());
+		List l = dao.executeSQLQuery("select x.link_id from iwb.w5_link x where url=? and project_uuid=?", murl, po.getProjectUuid());
 		if(!GenericUtil.isEmpty(l))return l.get(0).toString();
 		l = dao.executeSQLQuery("select 1 from iwb.w5_link x where project_uuid=? limit 1", po.getProjectUuid());
 		if(GenericUtil.isEmpty(l)) {

@@ -792,7 +792,7 @@ public class CRUDEngine {
 					boolean b = dao.deleteTableRecord(formResult, paramSuffix);
 					if (!b)
 						formResult.getOutputMessages().add(LocaleMsgCache.get2(scd, "record_not_found"));
-				}
+				} else if(ptablePk == null) formResult.getErrorMap().put(t.get_tableParamList().get(0).getDsc(), "Missing PK Field");
 				if (formResult.getErrorMap().isEmpty()) {
 					// FrameworkCache.removeTableCacheValue(t.getCustomizationId(),
 					// t.getTableId(),GenericUtil.uInt(requestParams.get(t.get_tableParamList().get(0).getDsc()+paramSuffix)));//caching

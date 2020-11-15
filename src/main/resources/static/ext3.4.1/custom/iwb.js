@@ -2637,22 +2637,22 @@ function addDefaultReportButtons(xbuttons, xgrid, showMasterDetailReport) {
 function addDefaultGridPersonalizationButtons(xbuttons, xgrid) {
   xbuttons.push({
     id: "grd_pers_buttons" + xgrid.gridId,
-    text: getLocMsg("js_kisisellestir"),
+    text: getLocMsg("personalize"),
     _grid: xgrid,
     menu: {
       items: [
         {
-          text: getLocMsg("js_bu_ayarlari_kaydet"),
+          text: getLocMsg("save"),
           iconCls: "icon-ekle",
           _grid: xgrid,
           handler: function(ax, bx, cx) {
-            var pdsc = prompt(getLocMsg("js_yeni_goruntu_adi"));
-            if (!pdsc) return;
+            /*var pdsc = prompt(getLocMsg("js_yeni_goruntu_adi"));
+            if (!pdsc) return;*/
             var g = ax._grid,
               cols = "",
               sort = "",
-              cells = "";
-            for (var z = 0; z < g.columns.length; z++)
+              cells = "", cols2=[];
+            for (var z = 0; z < g.columns.length; z++){
               cols +=
                 ";" +
                 g.columns[z].dataIndex +
@@ -2660,6 +2660,16 @@ function addDefaultGridPersonalizationButtons(xbuttons, xgrid) {
                 g.columns[z].width +
                 "," +
                 (!g.columns[z].hidden ? 1 : 0);
+              cols2.push({dataIndex:g.columns[z].dataIndex, width:g.columns[z].width, hidden:g.columns[z].hidden})
+            }
+
+            window.localStorage.setItem('grid-cols-'+ax._grid.gridId,JSON.stringify(cols2));
+            Ext.infoMsg.msg(
+                    "success",
+                    getLocMsg("ok")
+                  );
+            return;
+            console.log(JSON.stringify(cols2))
             if (g.ds.sortInfo && g.ds.sortInfo.field) {
               sort = g.ds.sortInfo.field;
               if (g.ds.sortInfo.direction)
@@ -2698,9 +2708,15 @@ function addDefaultGridPersonalizationButtons(xbuttons, xgrid) {
           }
         },
         {
-          text: getLocMsg("js_kaydedilenleri_duzenle"),
+          text: getLocMsg("reset"),
           _grid: xgrid,
           handler: function(ax, bx, cx) {
+        	  window.localStorage.setItem('grid-cols-'+ax._grid.gridId,'');
+        	  Ext.infoMsg.msg(
+                      "success",
+                      getLocMsg("ok")
+                    );
+        	  return;
             mainPanel.loadTab({
               attributes: {
                 _title_: ax._grid.name,
@@ -2718,7 +2734,7 @@ function addDefaultGridPersonalizationButtons(xbuttons, xgrid) {
 }
 
 function addDefaultPrivilegeButtons(xbuttons, xgrid) {
-  if (_scd.administratorFlag || _scd.customizationId == 0) {
+  if (_scd.customizationId === 0) {
     if(!xgrid.gridReport)xbuttons.push("->");
     var xxmenu = [],
       bx = false;
@@ -2777,6 +2793,17 @@ function addDefaultPrivilegeButtons(xbuttons, xgrid) {
       _grid: xgrid,
       menu: xxmenu
     });
+  } else {
+	  if(!xgrid.gridReport)xbuttons.push("->");
+	    var xxmenu = [];
+	    addDefaultGridPersonalizationButtons(xxmenu, xgrid);
+	    xbuttons.push({
+	        // tooltip: getLocMsg("js_ayarlar"),
+	        cls: "x-btn-icon x-grid-setting",
+	        _activeOnSelection: false,
+	        _grid: xgrid,
+	        menu: xxmenu
+	      });  
   }
 }
 
@@ -2876,8 +2903,28 @@ function fnGSheet(a){
 	}
 	
 }
+function reorgColumns(g){
+	var cols2 = window.localStorage.getItem('grid-cols-'+g.gridId);
+	if(cols2)try{
+		var j = JSON.parse(cols2), m={};
+		j.map((o,ix)=>{
+			m[o.dataIndex]=o;
+			m[o.dataIndex].ix=ix;
+			
+		});
+		
+		g.columns.map(o=>{
+			if(m[o.dataIndex]){
+				o.width=m[o.dataIndex].width;
+				o.hidden=m[o.dataIndex].hidden;
+			}
+		});
+	}catch(e){}
+	return g;
+	
+}
 function addTab4GridWSearchForm(obj) {
-  var mainGrid = obj.grid,
+  var mainGrid = reorgColumns(obj.grid),
     searchFormPanel = null;
   if (obj.pk) mainGrid._pk = obj.pk; // {tcase_id:'case_id',tclient_id:'client_id',tobject_tip:'!4'}
 
@@ -3121,7 +3168,7 @@ function fnCardSearchListener(card){
 	}
 }
 function addTab4GridWSearchFormWithDetailGrids(obj, master_flag) {
-  var mainGrid = obj.grid;
+  var mainGrid = reorgColumns(obj.grid);
   if (obj.pk) mainGrid._pk = obj.pk;
 
   var grdExtra = Ext.apply(
@@ -3461,7 +3508,7 @@ function addTab4GridWSearchFormWithDetailGrids(obj, master_flag) {
       xmxm.closable = false;
       detailGridPanels.push(xmxm);
     } else {
-      var detailGrid = obj.detailGrids[i].grid;
+      var detailGrid = reorgColumns(obj.detailGrids[i].grid);
       if (!detailGrid || !detailGrid.gridId) continue;
       detailGrid._masterGrid = mainGrid;
       if (obj.t) detailGrid.id = obj.t + "-" + detailGrid.gridId;
@@ -5239,7 +5286,7 @@ function addTab4Portal(obj) {
       dgPanel._gp = p; // dgPanel.gridId=-dg.dashId;
       detailGridPanels.push(p);
     } else {
-      var detailGrid = obj.detailGrids[i].grid;
+      var detailGrid = reorgColumns(obj.detailGrids[i].grid);
       if (!detailGrid || !detailGrid.gridId) continue;
       if (detailGrid._ready) {
         detailGridPanels.push(detailGrid);
@@ -5706,7 +5753,7 @@ function addTab4DetailGridsWSearchForm(obj) {
       xmxm.closable = false;
       detailGridPanels.push(xmxm);
     } else {
-      var detailGrid = obj.detailGrids[i].grid;
+      var detailGrid = reorgColumns(obj.detailGrids[i].grid);
       if (!detailGrid || !detailGrid.gridId) continue;
       detailGrid._masterGrid = mainGrid;
       if (detailGrid._ready) {
@@ -7630,20 +7677,20 @@ iwb.getDate=function(x){// server DateTime OR parse(x)
 }
 
 iwb.ajax={}
-iwb.ajax.query=function(queryId,params,callback){
+iwb.ajax.query=function(queryId,params,callback, errorCallback){
 	params=params||{};
-	iwb.request({url:'ajaxQueryData?_qid='+queryId,params:params,requestWaitMsg:!!params._mask, successCallback:callback||false})
+	iwb.request({url:'ajaxQueryData?_qid='+queryId,params:params,requestWaitMsg:!!params._mask, successCallback:callback||false, noSuccessCallback:errorCallback||false})
 }
-iwb.ajax.postForm=function(formId,action,params,callback){
+iwb.ajax.postForm=function(formId,action,params,callback, errorCallback){
 	params=params||{};
-	iwb.request({url:'ajaxPostForm?_fid='+formId+'&a='+action,params:params,requestWaitMsg:!!params._mask,successCallback:callback||false})
+	iwb.request({url:'ajaxPostForm?_fid='+formId+'&a='+action,params:params,requestWaitMsg:!!params._mask,successCallback:callback||false, noSuccessCallback:errorCallback||false})
 }
-iwb.ajax.execFunc=function(funcId,params,callback){
+iwb.ajax.execFunc=function(funcId,params,callback, errorCallback){
 	params=params||{};
-	iwb.request({url:'ajaxExecDbFunc?_did='+funcId,params:params,requestWaitMsg:!!params._mask,successCallback:callback||false})
+	iwb.request({url:'ajaxExecDbFunc?_did='+funcId,params:params,requestWaitMsg:!!params._mask,successCallback:callback||false, noSuccessCallback:errorCallback||false})
 }
-iwb.ajax.REST=function(serviceName,params,callback){
-	iwb.request({url:'ajaxCallWs?serviceName='+serviceName,params:params||{},successCallback:callback||false})
+iwb.ajax.REST=function(serviceName,params,callback, errorCallback){
+	iwb.request({url:'ajaxCallWs?serviceName='+serviceName,params:params||{},requestWaitMsg:!!params._mask,successCallback:callback||false, noSuccessCallback:errorCallback||false})
 }
 
 iwb.ui.openForm=function(formId,action,params, reloadGrid, callback){

@@ -18,6 +18,8 @@ import iwb.model.db.W5QueryParam;
 import iwb.model.db.W5Table;
 import iwb.model.db.W5TableField;
 import iwb.model.db.W5TableParam;
+import iwb.model.db.W5Workflow;
+import iwb.model.db.W5WorkflowStep;
 import iwb.util.DBUtil;
 import iwb.util.GenericUtil;
 
@@ -817,13 +819,37 @@ public class W5QueryResult implements W5MetaResult{
 			sqlWhere.append(")");
 		}
 		
-		if(mainTable!=null){
+		if(mainTable!=null && FrameworkSetting.workflow){
 			String pkField = mainTable.get_tableFieldList().get(0).getDsc();
-			
+
+			boolean bwf = false;
+			if(FrameworkSetting.workflowSqlWhere && !GenericUtil.isEmpty(mainTable.get_approvalMap())) {
+				W5Workflow wf = mainTable.get_approvalMap().values().iterator().next();
+
+				for(W5WorkflowStep wfs:wf.get_approvalStepList()) if(!GenericUtil.isEmpty(wfs.getApprovalSql())){
+					if(!bwf) {
+						if(sqlWhere.length()>0)sqlWhere.append(" AND");
+						sqlWhere.append(" case ");
+						bwf = true;
+					}
+					Object[] oz = DBUtil.filterExt4SQL(wfs.getApprovalSql(), scd, requestParams2, null);
+					
+					sqlWhere.append(" when (select cx.approval_step_id from iwb.w5_approval_record cx where cx.finished_flag=0 AND cx.table_id=")
+							.append(query.getSourceObjectId()).append(" AND cx.project_uuid=? AND cx.table_pk=x.").append(pkField)
+							.append(")=").append(wfs.getApprovalStepId()).append(" then (").append(oz[0]).append(")");
+					sqlParams.add(scd.get("projectId"));
+					if(oz[1]!=null)sqlParams.addAll((List)oz[1]);
+					
+				}
+			}
 			
 			//workflow row based security
-			if(FrameworkSetting.workflow && mainTable.get_hasApprovalViewControlFlag()!=0){
-				if(sqlWhere.length()>0)sqlWhere.append(" AND");
+			if(mainTable.get_hasApprovalViewControlFlag()!=0){
+				
+				if(bwf) {
+					sqlWhere.append(" else ");
+				} else if(sqlWhere.length()>0)sqlWhere.append(" AND");
+				
 				sqlWhere.append(" (not exists(select 1 from iwb.w5_approval_record cx where cx.finished_flag=0 AND cx.table_id=")
 					.append(query.getSourceObjectId()).append(" AND cx.project_uuid=? AND cx.table_pk=x.").append(pkField)
 					.append(") OR exists(select 1 from iwb.w5_approval_record cx where cx.finished_flag=0 AND cx.table_id=")
@@ -834,8 +860,12 @@ public class W5QueryResult implements W5MetaResult{
 				sqlParams.add(scd.get("projectId"));
 				sqlParams.add(scd.get("roleId"));
 				sqlParams.add(scd.get("userId"));
+				
 			}
-			
+			if(bwf) {
+				if(mainTable.get_hasApprovalViewControlFlag()==0)sqlWhere.append(" else 1=1");
+				sqlWhere.append(" end ");
+			}
 			//approval_status var mi?
 			if(requestParams2!=null && mainTable.get_approvalMap()!=null && !mainTable.get_approvalMap().isEmpty()){ //simdilik manuel4 nakit akis
 				String approvalStepIds = mainTable.get_approvalMap().get((short)1)!=null ? requestParams2.get("_approval_step_ids1") : null;//edit icin
@@ -849,9 +879,6 @@ public class W5QueryResult implements W5MetaResult{
 					sqlParams.add(query.getSourceObjectId());
 				}
 			}
-			
-
-			
 		}
 
 		

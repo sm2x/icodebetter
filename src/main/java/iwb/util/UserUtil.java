@@ -505,6 +505,7 @@ public class UserUtil {
 	//projectId, key, userId, webPageId
 	final private static Map<String, Map<Integer, Map<String, SyncTabMapHelper3>>> gridSyncMap3 = new HashMap<String, Map<Integer, Map<String, SyncTabMapHelper3>>>();
 	//projectId, tableId, tabId, 
+	final public static String TOKEN_STRING = "tokenKey";
 	
 
 	public static void clearDevices(){
@@ -1498,7 +1499,7 @@ public class UserUtil {
 		return scd;
 	}
 	
-	public static Map<String, Object> getScd4Preview(HttpServletRequest request, String scdKey, boolean onlineCheck){
+	public static Map<String, Object> getScd4Preview(HttpServletRequest request, String scdKey, boolean createTemporarySession){
 		Map<String, Object> scd = null; //only in developer mode
 		String pid = getProjectId(request, "preview");
 		W5Project po = FrameworkCache.getProject(pid,"Wrong Project");
@@ -1506,6 +1507,17 @@ public class UserUtil {
 		if(FrameworkSetting.projectSystemStatus.get(pid)!=0){
 			throw new IWBException("framework","System Suspended",0,null, "System Suspended. Please wait", null);
 		}
+		if(FrameworkSetting.jwt) {
+			String header = request.getHeader(JWTUtil.HEADER_STRING);
+	        if (header == null || !header.startsWith(JWTUtil.TOKEN_PREFIX)) {
+	        	//throw new IWBException("session","Invalid.Token",0,null, "Token is required", null);
+	        	//throw new IWBException("session","No Session",0,null, "No valid session", null);
+	        } else {
+		        scd=JWTUtil.decodeJWT(header.substring(7));
+		        return scd;
+	        }
+		}
+		
 		String newScdKey = "preview-"+pid;
 
 		HttpSession session = request.getSession(false);
@@ -1544,7 +1556,7 @@ public class UserUtil {
 			}
 		}
 		if(newScd!=null)return newScd;
-		if(po.getAuthenticationFuncId()==0){
+		if(po.getAuthenticationFuncId()==0 || createTemporarySession){
 			newScd=new HashMap<String, Object>();
 			newScd.put("customizationId",po.getCustomizationId());newScd.put("ocustomizationId",po.getCustomizationId());newScd.put("userId",10);newScd.put("completeName","XXX");
 			newScd.put("projectId",po.getProjectUuid());newScd.put("projectName", po.getDsc());newScd.put("roleId",10);newScd.put("roleDsc", "XXX Role");
@@ -1556,9 +1568,12 @@ public class UserUtil {
 			newScd.put("chat", 1);newScd.put("chatStatusTip", 1);
 			newScd.put("userTip",po.get_defaultRoleGroupId());
 			newScd.put("path", "../");
-			if(session==null)session = request.getSession(true);
 			newScd.put("sessionId", "nosession");
-			session.setAttribute(newScdKey, newScd);
+			if(session==null && !createTemporarySession) {
+				session = request.getSession(true);
+				session.setAttribute(newScdKey, newScd);
+			}
+
 			return newScd;
 		}
 		
@@ -1572,9 +1587,33 @@ public class UserUtil {
 		int ix = uri.indexOf(prefix);
 		if(ix>-1){
 			pid = uri.substring(ix+prefix.length());
-			return pid.substring(0,pid.indexOf('/'));
+			pid = pid.substring(0,pid.indexOf('/'));
+			if(FrameworkSetting.projectName!=null && pid.equals(FrameworkSetting.projectName))
+				return FrameworkSetting.projectId;
+			return pid;
+		} else if(prefix.startsWith("preview")) {
+			prefix = "p/";
+			ix = uri.indexOf(prefix);
+			if(ix>-1){
+				pid = uri.substring(ix+prefix.length());
+				pid = pid.substring(0,pid.indexOf('/'));
+				if(FrameworkSetting.projectName!=null && pid.equals(FrameworkSetting.projectName))
+					return FrameworkSetting.projectId;
+				return pid;
+			}
 		}
 		return null;		
+		/*
+		String uri = request.getRequestURI();
+		String pid = null;
+		if(GenericUtil.isEmpty(prefix))prefix = "";
+		if(!prefix.endsWith("/"))prefix+="/";
+		int ix = uri.indexOf(prefix);
+		if(ix>-1){
+			pid = uri.substring(ix+prefix.length());
+			return pid.substring(0,pid.indexOf('/'));
+		}
+		return null;		*/
 	}
 	
 	public static Map<String, Object> getScd4PAppSpace(HttpServletRequest request){

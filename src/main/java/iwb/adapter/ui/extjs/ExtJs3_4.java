@@ -5990,7 +5990,7 @@ public class ExtJs3_4 implements ViewAdapter {
 					}
 					for (Object[] o : datas) {
 						String id = o[idField].toString();
-						String parent = o[parentField].toString();
+						String parent = o[parentField]==null ? "0":o[parentField].toString();
 						List childTree = mapOfParent.get(parent);
 						if(childTree==null)childTree=treeData;
 						
@@ -6228,7 +6228,7 @@ public class ExtJs3_4 implements ViewAdapter {
 						bx = true;
 					buf.append("{"); // satir
 					boolean b = false;
-					for (W5QueryField f : qr.getNewQueryFields()) {
+					for (W5QueryField f : qr.getNewQueryFields())if(f!=null) {
 						Object obj = isMap ? ((Map)o).get(f.getDsc()) : ((Object[])o)[f.getTabOrder() - 1];
 						if(obj==null && dismissNull)continue;
 						if (b)
